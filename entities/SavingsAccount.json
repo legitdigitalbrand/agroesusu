@@ -1,0 +1,93 @@
+{
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to User"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "flex",
+        "goal",
+        "vault",
+        "stash"
+      ],
+      "description": "Type of savings account"
+    },
+    "name": {
+      "type": "string",
+      "description": "Account name e.g. 'Planting Season Inputs'"
+    },
+    "target_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Goal target (0 for flex accounts)"
+    },
+    "current_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "interest_rate": {
+      "type": "number",
+      "default": 0,
+      "description": "Annual interest rate as percentage"
+    },
+    "lock_type": {
+      "type": "string",
+      "enum": [
+        "none",
+        "soft",
+        "hard"
+      ],
+      "default": "none"
+    },
+    "unlock_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When locked funds become available"
+    },
+    "auto_save_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Automated contribution amount"
+    },
+    "auto_save_frequency": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekly",
+        "monthly"
+      ],
+      "description": "Auto-save schedule"
+    },
+    "auto_save_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "closed",
+        "locked"
+      ],
+      "default": "active"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji or icon identifier for the goal"
+    },
+    "description": {
+      "type": "string",
+      "description": "What the savings is for"
+    }
+  },
+  "type": "object",
+  "required": [
+    "user_id",
+    "type",
+    "name"
+  ],
+  "name": "SavingsAccount"
+}

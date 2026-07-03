@@ -1,0 +1,62 @@
+{
+  "properties": {
+    "phone": {
+      "type": "string",
+      "description": "User phone number (unique identifier)"
+    },
+    "bvn": {
+      "type": "string",
+      "description": "Bank Verification Number (hashed)"
+    },
+    "selfie_url": {
+      "type": "string",
+      "description": "URL to KYC selfie photo"
+    },
+    "kyc_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "credit_score": {
+      "type": "number",
+      "default": 300,
+      "minimum": 300,
+      "maximum": 850
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "premium"
+      ],
+      "default": "basic"
+    },
+    "account_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suspended",
+        "deleted"
+      ],
+      "default": "active"
+    },
+    "total_saved": {
+      "type": "number",
+      "default": 0
+    },
+    "total_withdrawn": {
+      "type": "number",
+      "default": 0
+    },
+    "last_active_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "type": "object",
+  "required": []
+}
