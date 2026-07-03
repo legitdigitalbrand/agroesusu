@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
@@ -72,6 +73,7 @@ export default async function RootLayout({
           </main>
         </div>
         <BottomNav />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
