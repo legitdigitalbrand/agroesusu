@@ -19,6 +19,16 @@ export const metadata: Metadata = {
   title: "AgroEsusu — Save. Grow. Thrive.",
   description: "Personal and group savings for agripreneurs. Save towards your farming goals, build credit, and grow your agribusiness.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
