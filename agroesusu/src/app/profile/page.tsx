@@ -33,7 +33,7 @@ export default async function ProfilePage() {
         <div className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 rounded-full bg-brand-green/10 flex items-center justify-center">
             <span className="text-brand-green font-bold text-xl">
-              {(profile?.full_name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              {(profile?.full_name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
             </span>
           </div>
           <div>

@@ -13,32 +13,39 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          supabaseResponse.cookies.set(name, value);
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              request.cookies.set(name, value)
+            );
+            supabaseResponse = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options as any)
+            );
+          } catch {
+            // Can be ignored when called from a Server Component
+          }
         },
       },
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Routes that don't require auth
   const publicRoutes = ['/auth/login', '/auth/register', '/auth/callback'];
-  const isPublicRoute = publicRoutes.some(route => 
+  const isPublicRoute = publicRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );
 
-  // Redirect to login if not authenticated and trying to access protected route
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
   }
 
-  // Redirect to dashboard if authenticated and on auth pages
   if (user && isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/';

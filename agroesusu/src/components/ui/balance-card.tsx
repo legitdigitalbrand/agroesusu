@@ -4,9 +4,10 @@ interface BalanceCardProps {
   totalBalance: number;
   totalSaved: number;
   totalWithdrawn: number;
+  activeGoals?: number;
 }
 
-export function BalanceCard({ totalBalance, totalSaved }: BalanceCardProps) {
+export function BalanceCard({ totalBalance, totalSaved, totalWithdrawn, activeGoals = 0 }: BalanceCardProps) {
   return (
     <div className="bg-brand-green rounded-2xl p-5 text-white">
       <div className="flex items-start justify-between">
@@ -32,8 +33,13 @@ export function BalanceCard({ totalBalance, totalSaved }: BalanceCardProps) {
         </div>
         <div className="w-px h-8 bg-white/10" />
         <div>
-          <p className="text-[11px] text-white/50 uppercase tracking-wide">Active Goals</p>
-          <p className="text-sm font-medium mt-0.5">3</p>
+          <p className="text-[11px] text-white/50 uppercase tracking-wide">Withdrawn</p>
+          <p className="text-sm font-medium tabular-nums mt-0.5">{formatNaira(totalWithdrawn)}</p>
+        </div>
+        <div className="w-px h-8 bg-white/10" />
+        <div>
+          <p className="text-[11px] text-white/50 uppercase tracking-wide">Active Pots</p>
+          <p className="text-sm font-medium mt-0.5">{activeGoals}</p>
         </div>
       </div>
     </div>
