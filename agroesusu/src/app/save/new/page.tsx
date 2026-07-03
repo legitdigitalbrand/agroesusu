@@ -58,12 +58,12 @@ export default function CreatePotPage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand-green mb-6">Create a Savings Pot</h1>
+      <h1 className="text-2xl font-bold text-brand-50 mb-6">Create a Savings Pot</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Pot Type */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-2">Pot Type</label>
+          <label className="block text-sm font-medium text-brand-200 mb-2">Pot Type</label>
           <div className="grid grid-cols-2 gap-3">
             {potTypes.map((pt) => (
               <button
@@ -72,14 +72,14 @@ export default function CreatePotPage() {
                 onClick={() => setType(pt.value)}
                 className={`p-4 rounded-xl border text-left transition ${
                   type === pt.value
-                    ? 'border-brand-lime bg-brand-lime/5 ring-2 ring-brand-lime/20'
-                    : 'border-stone-200 hover:border-stone-300'
+                    ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500/20'
+                    : 'border-brand-500/10 bg-brand-900 hover:border-brand-500/25'
                 }`}
               >
                 <div className="text-2xl mb-1">{pt.icon}</div>
-                <div className="font-semibold text-sm text-stone-800">{pt.label}</div>
-                <div className="text-xs text-stone-500">{pt.desc}</div>
-                <div className="text-xs text-brand-green font-medium mt-1">{pt.rate}% interest</div>
+                <div className="font-semibold text-sm text-brand-50">{pt.label}</div>
+                <div className="text-xs text-brand-300/60">{pt.desc}</div>
+                <div className="text-xs text-brand-400 font-medium mt-1">{pt.rate}% interest</div>
               </button>
             ))}
           </div>
@@ -87,56 +87,56 @@ export default function CreatePotPage() {
 
         {/* Pot Name */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">Pot Name</label>
+          <label className="block text-sm font-medium text-brand-200 mb-1">Pot Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="e.g. Tractor Fund"
-            className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:border-brand-lime focus:ring-2 focus:ring-brand-lime/20 outline-none transition"
+            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
           />
         </div>
 
         {/* Target Amount */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">Target Amount (₦)</label>
+          <label className="block text-sm font-medium text-brand-200 mb-1">Target Amount (₦)</label>
           <input
             type="number"
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
             placeholder="50000"
-            className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:border-brand-lime focus:ring-2 focus:ring-brand-lime/20 outline-none transition"
+            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
           />
-          <p className="text-xs text-stone-400 mt-1">You can change this later</p>
+          <p className="text-xs text-brand-300/40 mt-1">You can change this later</p>
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">Description (optional)</label>
+          <label className="block text-sm font-medium text-brand-200 mb-1">Description (optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="What are you saving for?"
-            className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:border-brand-lime focus:ring-2 focus:ring-brand-lime/20 outline-none transition"
+            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
           />
         </div>
 
-        {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{error}</div>}
+        {error && <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>}
 
         <div className="flex gap-3">
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-3 border border-stone-200 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 transition"
+            className="px-4 py-3 border border-brand-500/15 rounded-lg text-sm font-medium text-brand-200 hover:bg-brand-900 transition"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-brand-green text-white py-3 rounded-lg font-semibold hover:bg-brand-green/90 transition disabled:opacity-50"
+            className="flex-1 bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Pot'}
           </button>

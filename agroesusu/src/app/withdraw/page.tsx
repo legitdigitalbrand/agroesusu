@@ -17,11 +17,11 @@ export default async function WithdrawPage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand-green mb-6">Withdraw Money</h1>
+      <h1 className="text-2xl font-bold text-brand-50 mb-6">Withdraw Money</h1>
 
       {!accounts || accounts.length === 0 ? (
-        <div className="bg-white border border-brand-border rounded-xl p-8 text-center">
-          <p className="text-stone-400 text-sm">No active savings pots to withdraw from.</p>
+        <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-8 text-center">
+          <p className="text-brand-300/50 text-sm">No active savings pots to withdraw from.</p>
         </div>
       ) : (
         <WithdrawForm accounts={accounts} userId={user.id} />

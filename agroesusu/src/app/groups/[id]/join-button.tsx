@@ -66,11 +66,11 @@ export default function JoinButton({ groupId }: { groupId: string }) {
   if (error) {
     return (
       <div>
-        <p className="text-sm text-red-600 mb-2">{error}</p>
+        <p className="text-sm text-red-400 mb-2">{error}</p>
         <button
           onClick={handleJoin}
           disabled={loading}
-          className="px-4 py-2 bg-brand-green text-white rounded-lg text-sm font-medium hover:bg-brand-green/90 transition disabled:opacity-50"
+          className="px-4 py-2 bg-brand-500 text-brand-950 rounded-lg text-sm font-semibold hover:bg-brand-400 transition disabled:opacity-50"
         >
           Try again
         </button>
@@ -82,7 +82,7 @@ export default function JoinButton({ groupId }: { groupId: string }) {
     <button
       onClick={handleJoin}
       disabled={loading}
-      className="w-full bg-brand-green text-white py-3 rounded-lg font-semibold hover:bg-brand-green/90 transition disabled:opacity-50"
+      className="w-full bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
     >
       {loading ? 'Joining...' : 'Join Group'}
     </button>

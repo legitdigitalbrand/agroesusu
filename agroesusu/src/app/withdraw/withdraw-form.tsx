@@ -96,11 +96,11 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
 
   if (success) {
     return (
-      <div className="bg-white border border-brand-border rounded-xl p-8 text-center">
+      <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-8 text-center">
         <div className="text-4xl mb-3">✅</div>
-        <h2 className="text-lg font-semibold text-brand-green">Withdrawal Processing</h2>
-        <p className="text-sm text-stone-500 mt-1">₦{Number(amount).toLocaleString()} will be sent to your bank.</p>
-        <p className="text-xs text-stone-400 mt-3">Redirecting to dashboard...</p>
+        <h2 className="text-lg font-semibold text-brand-400">Withdrawal Processing</h2>
+        <p className="text-sm text-brand-300/60 mt-1">₦{Number(amount).toLocaleString()} will be sent to your bank.</p>
+        <p className="text-xs text-brand-300/40 mt-3">Redirecting to dashboard...</p>
       </div>
     );
   }
@@ -108,11 +108,11 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">Withdraw From</label>
+        <label className="block text-sm font-medium text-brand-200 mb-1">Withdraw From</label>
         <select
           value={accountId}
           onChange={(e) => setAccountId(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:border-brand-lime focus:ring-2 focus:ring-brand-lime/20 outline-none transition bg-white"
+          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
         >
           {accounts.map((acc) => (
             <option key={acc.id} value={acc.id}>
@@ -123,7 +123,7 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">Amount (₦)</label>
+        <label className="block text-sm font-medium text-brand-200 mb-1">Amount (₦)</label>
         <input
           type="number"
           value={amount}
@@ -132,26 +132,26 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
           min="100"
           max={availableBalance}
           placeholder="5000"
-          className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:border-brand-lime focus:ring-2 focus:ring-brand-lime/20 outline-none transition text-lg"
+          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition text-lg"
         />
-        <p className="text-xs text-stone-400 mt-1">Available: ₦{availableBalance.toLocaleString()}</p>
+        <p className="text-xs text-brand-300/40 mt-1">Available: ₦{availableBalance.toLocaleString()}</p>
         {availableBalance > 0 && (
           <button
             type="button"
             onClick={() => setAmount(String(availableBalance))}
-            className="text-xs text-brand-lime font-medium mt-1 hover:underline"
+            className="text-xs text-brand-400 font-medium mt-1 hover:underline"
           >
             Withdraw all
           </button>
         )}
       </div>
 
-      {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{error}</div>}
+      {error && <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-brand-green text-white py-3 rounded-lg font-semibold hover:bg-brand-green/90 transition disabled:opacity-50"
+        className="w-full bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
       >
         {loading ? 'Processing...' : `Withdraw ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>

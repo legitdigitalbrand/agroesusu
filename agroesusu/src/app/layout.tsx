@@ -21,13 +21,13 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "AgroEsusu",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d4f2c",
+  themeColor: "#001907",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -55,9 +55,9 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen bg-brand-950">
           <Sidebar user={profile} />
-          <main className="flex-1 bg-white pb-20 lg:pb-0">
+          <main className="flex-1 pb-20 lg:pb-0">
             {children}
           </main>
         </div>

@@ -27,13 +27,13 @@ export function Sidebar({ user }: SidebarProps) {
     : "??";
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 bg-brand-green text-white h-screen sticky top-0">
-      <div className="px-6 py-6 border-b border-white/10">
+    <aside className="hidden lg:flex flex-col w-60 bg-brand-900 text-brand-50 h-screen sticky top-0 border-r border-brand-500/10">
+      <div className="px-6 py-6 border-b border-brand-500/10">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-brand-lime flex items-center justify-center">
-            <span className="text-brand-green font-bold text-sm">A</span>
+          <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
+            <span className="text-brand-950 font-bold text-sm">A</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight">AgroEsusu</span>
+          <span className="text-lg font-semibold tracking-tight text-brand-50">AgroEsusu</span>
         </Link>
       </div>
 
@@ -48,8 +48,8 @@ export function Sidebar({ user }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-white/10 text-brand-lime"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
+                  ? "bg-brand-500/15 text-brand-400"
+                  : "text-brand-200/60 hover:text-brand-100 hover:bg-brand-500/5"
               )}
             >
               <Icon className="w-4.5 h-4.5" strokeWidth={2} />
@@ -59,14 +59,14 @@ export function Sidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-white/10">
+      <div className="px-4 py-4 border-t border-brand-500/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand-lime/20 flex items-center justify-center shrink-0">
-            <span className="text-brand-lime font-medium text-sm">{initials}</span>
+          <div className="w-9 h-9 rounded-full bg-brand-500/15 flex items-center justify-center shrink-0">
+            <span className="text-brand-400 font-medium text-sm">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.full_name || "User"}</p>
-            <p className="text-xs text-white/50 capitalize">{user?.tier || "basic"} tier</p>
+            <p className="text-sm font-medium text-brand-100 truncate">{user?.full_name || "User"}</p>
+            <p className="text-xs text-brand-300/50 capitalize">{user?.tier || "basic"} tier</p>
           </div>
         </div>
       </div>

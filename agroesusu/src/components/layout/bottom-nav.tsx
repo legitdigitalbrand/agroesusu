@@ -19,7 +19,7 @@ export function BottomNav() {
   if (pathname.startsWith('/auth')) return null;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-border z-50">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-900 border-t border-brand-500/15 z-50">
       <div className="flex items-center justify-around px-2 py-2 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -30,7 +30,7 @@ export function BottomNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg",
-                isActive ? "text-brand-green" : "text-stone-400"
+                isActive ? "text-brand-400" : "text-brand-200/40"
               )}
             >
               <Icon

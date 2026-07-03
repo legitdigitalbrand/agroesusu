@@ -72,11 +72,11 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">Select Pot</label>
+        <label className="block text-sm font-medium text-brand-200 mb-1">Select Pot</label>
         <select
           value={accountId}
           onChange={(e) => setAccountId(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:border-brand-lime focus:ring-2 focus:ring-brand-lime/20 outline-none transition bg-white"
+          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
         >
           {accounts.map((acc) => (
             <option key={acc.id} value={acc.id}>
@@ -87,7 +87,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">Amount (₦)</label>
+        <label className="block text-sm font-medium text-brand-200 mb-1">Amount (₦)</label>
         <input
           type="number"
           value={amount}
@@ -95,7 +95,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
           required
           min="100"
           placeholder="5000"
-          className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:border-brand-lime focus:ring-2 focus:ring-brand-lime/20 outline-none transition text-lg"
+          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition text-lg"
         />
         <div className="flex gap-2 mt-2">
           {[1000, 5000, 10000, 50000].map((preset) => (
@@ -103,7 +103,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
               key={preset}
               type="button"
               onClick={() => setAmount(String(preset))}
-              className="px-3 py-1.5 text-xs bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition"
+              className="px-3 py-1.5 text-xs bg-brand-900 text-brand-300 rounded-lg hover:bg-brand-800 transition border border-brand-500/10"
             >
               ₦{preset.toLocaleString()}
             </button>
@@ -111,18 +111,18 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
         </div>
       </div>
 
-      <div className="bg-brand-lime/5 border border-brand-lime/20 rounded-lg p-3">
-        <p className="text-xs text-stone-600">
+      <div className="bg-brand-500/10 border border-brand-500/20 rounded-lg p-3">
+        <p className="text-xs text-brand-200">
           🔒 You'll be redirected to Paystack to complete your payment securely. Card, USSD, and bank transfer supported.
         </p>
       </div>
 
-      {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{error}</div>}
+      {error && <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-brand-green text-white py-3 rounded-lg font-semibold hover:bg-brand-green/90 transition disabled:opacity-50"
+        className="w-full bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
       >
         {loading ? 'Initializing payment...' : `Deposit ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>
