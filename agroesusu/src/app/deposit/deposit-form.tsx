@@ -9,7 +9,6 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -25,69 +24,50 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
       return;
     }
 
-    // Create transaction record
-    const { error: txError } = await supabase.from('transactions').insert({
-      user_id: userId,
-      account_id: accountId,
-      type: 'deposit',
-      amount: depositAmount,
-      payment_method: 'card',
-      status: 'pending',
-      description: 'Card deposit',
-      payment_reference: `DEP_${Date.now()}`,
-    });
-
-    if (txError) {
-      setError(txError.message);
+    const account = accounts.find(a => a.id === accountId);
+    if (!account) {
+      setError('Please select a savings pot');
       setLoading(false);
       return;
     }
 
-    // For MVP: directly credit the account (no payment gateway yet)
-    // TODO: Replace with Paystack integration
-    const account = accounts.find(a => a.id === accountId);
-    const newBalance = Number(account.current_amount) + depositAmount;
-
-    await supabase.from('savings_accounts')
-      .update({ current_amount: newBalance })
-      .eq('id', accountId);
-
-    // Update transaction status
-    await supabase.from('transactions')
-      .update({ status: 'completed', completed_date: new Date().toISOString() })
-      .eq('account_id', accountId)
-      .eq('type', 'deposit')
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    // Update profile total_saved
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('total_saved')
-      .eq('id', userId)
-      .single();
-
-    if (profile) {
-      await supabase.from('profiles')
-        .update({ total_saved: Number(profile.total_saved) + depositAmount })
-        .eq('id', userId);
+    // Get user email
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      setError('Unable to get user email. Please try again.');
+      setLoading(false);
+      return;
     }
 
-    setSuccess(true);
-    setLoading(false);
-    setTimeout(() => router.push('/'), 2000);
-  };
+    try {
+      // Initialize Paystack transaction
+      const res = await fetch('/api/deposit/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: depositAmount,
+          account_id: accountId,
+          account_name: account.name,
+          email: user.email,
+          user_id: userId,
+        }),
+      });
 
-  if (success) {
-    return (
-      <div className="bg-white border border-brand-border rounded-xl p-8 text-center">
-        <div className="text-4xl mb-3">✅</div>
-        <h2 className="text-lg font-semibold text-brand-green">Deposit Successful!</h2>
-        <p className="text-sm text-stone-500 mt-1">₦{Number(amount).toLocaleString()} added to your pot.</p>
-        <p className="text-xs text-stone-400 mt-3">Redirecting to dashboard...</p>
-      </div>
-    );
-  }
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to initialize payment');
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to Paystack checkout
+      window.location.href = data.authorization_url;
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      setLoading(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -133,7 +113,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
 
       <div className="bg-brand-lime/5 border border-brand-lime/20 rounded-lg p-3">
         <p className="text-xs text-stone-600">
-          💡 Deposits are credited instantly. Paystack integration coming soon for card payments.
+          🔒 You'll be redirected to Paystack to complete your payment securely. Card, USSD, and bank transfer supported.
         </p>
       </div>
 
@@ -144,7 +124,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
         disabled={loading}
         className="w-full bg-brand-green text-white py-3 rounded-lg font-semibold hover:bg-brand-green/90 transition disabled:opacity-50"
       >
-        {loading ? 'Processing...' : `Deposit ₦${amount ? Number(amount).toLocaleString() : '0'}`}
+        {loading ? 'Initializing payment...' : `Deposit ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>
     </form>
   );

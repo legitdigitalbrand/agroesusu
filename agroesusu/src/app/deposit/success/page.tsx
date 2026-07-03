@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Check, Loader2 } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -30,6 +31,56 @@ function SuccessContent() {
         if (data.status === "success") {
           setDetails({ amount: data.amount, reference: data.reference });
           setStatus("success");
+
+          // Credit the account client-side as backup to webhook
+          // The webhook should handle this, but this is a fallback
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            // Check if transaction is still pending
+            const { data: tx } = await supabase
+              .from("transactions")
+              .select("status, account_id, amount")
+              .eq("payment_reference", reference)
+              .single();
+
+            if (tx && tx.status === "pending") {
+              // Credit account
+              const { data: account } = await supabase
+                .from("savings_accounts")
+                .select("current_amount")
+                .eq("id", tx.account_id)
+                .single();
+
+              if (account) {
+                const newBalance = Number(account.current_amount) + Number(tx.amount);
+                await supabase
+                  .from("savings_accounts")
+                  .update({ current_amount: newBalance })
+                  .eq("id", tx.account_id);
+              }
+
+              // Update transaction status
+              await supabase
+                .from("transactions")
+                .update({ status: "completed", completed_date: new Date().toISOString() })
+                .eq("payment_reference", reference);
+
+              // Update profile
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("total_saved")
+                .eq("id", user.id)
+                .single();
+
+              if (profile) {
+                await supabase
+                  .from("profiles")
+                  .update({ total_saved: Number(profile.total_saved) + Number(tx.amount) })
+                  .eq("id", user.id);
+              }
+            }
+          }
         } else {
           setStatus("failed");
         }
@@ -109,7 +160,7 @@ function SuccessContent() {
 
       <Link
         href="/"
-        className="block w-full bg-brand-green text-white rounded-xl py-3.5 font-semibold text-sm mt-6 hover:bg-brand-green-dark transition-colors"
+        className="block w-full bg-brand-green text-white rounded-xl py-3.5 font-semibold text-sm mt-6 hover:bg-brand-green/90 transition-colors"
       >
         Back to Dashboard
       </Link>

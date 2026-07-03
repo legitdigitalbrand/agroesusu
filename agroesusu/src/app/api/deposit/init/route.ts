@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeTransaction, generateReference } from "@/lib/paystack";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,9 +15,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!email) {
+    if (!email || !user_id || !account_id) {
       return NextResponse.json(
-        { error: "Email is required" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -24,15 +25,38 @@ export async function POST(request: NextRequest) {
     const reference = generateReference("AGC_DEP");
     const origin = request.nextUrl.origin;
 
+    // Create pending transaction in Supabase
+    const supabase = await createClient();
+    const { error: txError } = await supabase.from("transactions").insert({
+      user_id,
+      account_id,
+      type: "deposit",
+      amount: Number(amount),
+      payment_method: "card",
+      payment_reference: reference,
+      status: "pending",
+      description: `Deposit to ${account_name || "savings pot"}`,
+      fee_amount: 0,
+    });
+
+    if (txError) {
+      console.error("Transaction insert error:", txError);
+      return NextResponse.json(
+        { error: "Failed to create transaction record" },
+        { status: 500 }
+      );
+    }
+
+    // Initialize Paystack transaction
     const response = await initializeTransaction({
       email,
-      amount,
+      amount: Number(amount),
       reference,
       callback_url: `${origin}/deposit/success?reference=${reference}`,
       metadata: {
         user_id,
         account_id,
-        account_name,
+        account_name: account_name || "",
       },
     });
 
