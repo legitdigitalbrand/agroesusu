@@ -1,144 +1,145 @@
-import Link from "next/link";
-import { BalanceCard } from "@/components/ui/balance-card";
-import { GoalCard } from "@/components/ui/goal-card";
-import { TransactionRow } from "@/components/ui/transaction-row";
-import { Plus, Bell, ArrowRight } from "lucide-react";
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { BalanceCard } from '@/components/ui/balance-card';
+import { GoalCard } from '@/components/ui/goal-card';
+import { TransactionRow } from '@/components/ui/transaction-row';
+import Link from 'next/link';
+import { Plus, Users, TrendingUp } from 'lucide-react';
 
-// Mock data — will be replaced with real API calls
-const mockData = {
-  user: { name: "Chinedu" },
-  balance: { totalBalance: 127500, totalSaved: 185000, totalWithdrawn: 57500 },
-  goals: [
-    {
-      id: "1",
-      name: "Planting Season Inputs",
-      targetAmount: 150000,
-      currentAmount: 90000,
-      unlockDate: "2026-09-15",
-    },
-    {
-      id: "2",
-      name: "Tractor Fund",
-      targetAmount: 200000,
-      currentAmount: 50000,
-      unlockDate: "2026-12-31",
-    },
-  ],
-  transactions: [
-    {
-      type: "deposit" as const,
-      amount: 20000,
-      description: "Deposit to Planting Season",
-      status: "completed" as const,
-      date: "2026-07-02T14:30:00",
-    },
-    {
-      type: "interest" as const,
-      amount: 320,
-      description: "Interest on Flex Savings",
-      status: "completed" as const,
-      date: "2026-07-01T00:00:00",
-    },
-    {
-      type: "deposit" as const,
-      amount: 10000,
-      description: "Deposit to Tractor Fund",
-      status: "completed" as const,
-      date: "2026-06-28T09:15:00",
-    },
-    {
-      type: "withdrawal" as const,
-      amount: 15000,
-      description: "Withdrawal from Flex Savings",
-      status: "completed" as const,
-      date: "2026-06-25T16:45:00",
-    },
-  ],
-};
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export default function DashboardPage() {
-  const { user, balance, goals, transactions } = mockData;
+  if (!user) redirect('/auth/login');
+
+  // Fetch user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  // Fetch savings accounts
+  const { data: accounts } = await supabase
+    .from('savings_accounts')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  // Fetch recent transactions
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // Fetch groups
+  const { data: memberships } = await supabase
+    .from('group_members')
+    .select('group_id, savings_groups(*)')
+    .eq('user_id', user.id)
+    .limit(3);
+
+  // Calculate totals
+  const totalBalance = accounts?.reduce((sum, acc) => sum + Number(acc.current_amount || 0), 0) || 0;
+  const activeGoals = accounts?.filter(a => a.status === 'active') || [];
+  const totalSaved = profile?.total_saved || 0;
+  const totalWithdrawn = profile?.total_withdrawn || 0;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto">
       {/* Header */}
-      <header className="flex items-center justify-between mb-6">
-        <div>
-            <p className="text-sm text-stone-500">Good afternoon,</p>
-            <h1 className="text-xl font-semibold text-stone-900">{user.name} 👋</h1>
-        </div>
-        <button className="relative w-10 h-10 rounded-full bg-brand-gray flex items-center justify-center hover:bg-stone-200 transition-colors">
-          <Bell className="w-4.5 h-4.5 text-stone-600" />
-          <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-brand-lime ring-2 ring-white" />
-        </button>
-      </header>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-brand-green">
+          Welcome back, {profile?.full_name?.split(' ')[0] || 'there'}
+        </h1>
+        <p className="text-sm text-stone-500 mt-1">Here's your savings overview</p>
+      </div>
 
       {/* Balance Card */}
       <BalanceCard
-        totalBalance={balance.totalBalance}
-        totalSaved={balance.totalSaved}
-        totalWithdrawn={balance.totalWithdrawn}
+        totalBalance={totalBalance}
+        totalSaved={totalSaved}
+        totalWithdrawn={totalWithdrawn}
+        activeGoals={activeGoals.length}
       />
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-3 mt-4">
-        <Link
-          href="/deposit"
-          className="flex items-center justify-center gap-2 bg-brand-gold text-stone-900 rounded-xl py-3.5 font-semibold text-sm hover:brightness-95 transition-all"
-        >
-          <Plus className="w-4 h-4" strokeWidth={2.5} />
-          Deposit
+      <div className="grid grid-cols-3 gap-3 mt-6">
+        <Link href="/save" className="flex flex-col items-center justify-center p-4 bg-white border border-brand-border rounded-xl hover:border-brand-lime transition">
+          <Plus className="w-5 h-5 text-brand-green mb-1" />
+          <span className="text-xs font-medium text-stone-600">New Goal</span>
         </Link>
-        <Link
-          href="/withdraw"
-          className="flex items-center justify-center gap-2 bg-white border border-brand-border text-stone-700 rounded-xl py-3.5 font-semibold text-sm hover:bg-stone-50 transition-colors"
-        >
-          Withdraw
+        <Link href="/deposit" className="flex flex-col items-center justify-center p-4 bg-white border border-brand-border rounded-xl hover:border-brand-lime transition">
+          <TrendingUp className="w-5 h-5 text-brand-lime mb-1" />
+          <span className="text-xs font-medium text-stone-600">Deposit</span>
+        </Link>
+        <Link href="/groups" className="flex flex-col items-center justify-center p-4 bg-white border border-brand-border rounded-xl hover:border-brand-lime transition">
+          <Users className="w-5 h-5 text-[#f5b800] mb-1" />
+          <span className="text-xs font-medium text-stone-600">Groups</span>
         </Link>
       </div>
 
-      {/* Active Goals */}
-      <section className="mt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-stone-900">Active Goals</h2>
-          <Link
-            href="/save"
-            className="flex items-center gap-1 text-xs font-medium text-brand-green hover:gap-2 transition-all"
-          >
-            View all <ArrowRight className="w-3 h-3" />
-          </Link>
+      {/* Savings Pots */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-stone-800">Your Pots</h2>
+          <Link href="/save" className="text-sm text-brand-lime font-medium hover:underline">View all</Link>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {goals.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              id={goal.id}
-              name={goal.name}
-              targetAmount={goal.targetAmount}
-              currentAmount={goal.currentAmount}
-              unlockDate={goal.unlockDate}
-            />
-          ))}
-        </div>
-      </section>
+
+        {activeGoals.length === 0 ? (
+          <div className="bg-white border border-brand-border rounded-xl p-8 text-center">
+            <p className="text-stone-400 text-sm mb-4">No savings pots yet. Start by creating one!</p>
+            <Link href="/save" className="inline-flex items-center gap-2 px-4 py-2 bg-brand-green text-white rounded-lg text-sm font-medium hover:bg-brand-green/90 transition">
+              <Plus className="w-4 h-4" />
+              Create your first pot
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {activeGoals.map((account) => (
+              <GoalCard
+                key={account.id}
+                id={account.id}
+                name={account.name}
+                type={account.type}
+                currentAmount={Number(account.current_amount || 0)}
+                targetAmount={Number(account.target_amount || 0)}
+                icon={account.icon}
+                interestRate={Number(account.interest_rate || 0)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Recent Activity */}
-      <section className="mt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-stone-900">Recent Activity</h2>
-          <Link
-            href="/transactions"
-            className="flex items-center gap-1 text-xs font-medium text-brand-green hover:gap-2 transition-all"
-          >
-            View all <ArrowRight className="w-3 h-3" />
-          </Link>
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-stone-800">Recent Activity</h2>
+          <Link href="/transactions" className="text-sm text-brand-lime font-medium hover:underline">View all</Link>
         </div>
-        <div className="bg-white border border-brand-border rounded-2xl px-4">
-          {transactions.map((txn, i) => (
-            <TransactionRow key={i} {...txn} />
-          ))}
-        </div>
-      </section>
+
+        {!transactions || transactions.length === 0 ? (
+          <div className="bg-white border border-brand-border rounded-xl p-6 text-center">
+            <p className="text-stone-400 text-sm">No transactions yet. Make your first deposit!</p>
+          </div>
+        ) : (
+          <div className="bg-white border border-brand-border rounded-xl divide-y divide-stone-100">
+            {transactions.map((tx) => (
+              <TransactionRow
+                key={tx.id}
+                type={tx.type}
+                amount={Number(tx.amount)}
+                description={tx.description || ''}
+                date={tx.created_at}
+                status={tx.status}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

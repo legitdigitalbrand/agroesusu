@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PiggyBank, Users, Receipt, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
@@ -15,10 +17,32 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [user, setUser] = useState<{ full_name?: string; email?: string; tier?: string } | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, email, tier')
+          .eq('id', authUser.id)
+          .single();
+        if (profile) setUser(profile);
+      }
+    };
+    if (!pathname.startsWith('/auth')) fetchUser();
+  }, [pathname]);
+
+  if (pathname.startsWith('/auth')) return null;
+
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : '...';
 
   return (
     <aside className="hidden lg:flex flex-col w-60 bg-brand-green text-white h-screen sticky top-0">
-      {/* Logo */}
       <div className="px-6 py-6 border-b border-white/10">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-brand-lime flex items-center justify-center">
@@ -28,7 +52,6 @@ export function Sidebar() {
         </Link>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -51,15 +74,14 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User Profile */}
       <div className="px-4 py-4 border-t border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-brand-lime/20 flex items-center justify-center">
-            <span className="text-brand-lime font-medium text-sm">CO</span>
+            <span className="text-brand-lime font-medium text-sm">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Chinedu O.</p>
-            <p className="text-xs text-white/50">Basic tier</p>
+            <p className="text-sm font-medium truncate">{user?.full_name || 'Loading...'}</p>
+            <p className="text-xs text-white/50 capitalize">{user?.tier || 'basic'} tier</p>
           </div>
         </div>
       </div>
