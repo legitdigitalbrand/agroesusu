@@ -6,20 +6,19 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { user_id } = body;
 
-    // Get user's savings accounts
-    const accounts = await base44.entities.SavingsAccount.list({
-      filter: { user_id },
-      limit: 20,
-    });
+    // Use asServiceRole + filter() method (not list with filter object)
+    const accounts = await base44.asServiceRole.entities.SavingsAccount.filter(
+      { user_id },
+      undefined,
+      20
+    );
 
-    // Get recent transactions
-    const transactions = await base44.entities.Transaction.list({
-      filter: { user_id },
-      limit: 10,
-      sort: "-created_date",
-    });
+    const transactions = await base44.asServiceRole.entities.Transaction.filter(
+      { user_id },
+      "-created_date",
+      10
+    );
 
-    // Calculate totals
     const totalBalance = accounts.reduce((sum: number, acc: any) => sum + (acc.current_amount || 0), 0);
     const totalSaved = transactions
       .filter((t: any) => t.type === "deposit" && t.status === "completed")
@@ -47,6 +46,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       status: "error",
       error: error.message || "Failed to fetch dashboard data",
+      stack: error.stack,
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

@@ -7,27 +7,21 @@ Deno.serve(async (req) => {
     const { user_id, limit, skip } = body;
 
     if (!user_id) {
-      return new Response(JSON.stringify({
-        status: "error",
-        error: "user_id is required",
-      }), { status: 400, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ status: "error", error: "user_id is required" }), {
+        status: 400, headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const transactions = await base44.entities.Transaction.list({
-      filter: { user_id },
-      limit: limit || 50,
-      page: Math.floor((skip || 0) / (limit || 50)),
-      sort: "-created_date",
-    });
+    const transactions = await base44.asServiceRole.entities.Transaction.filter(
+      { user_id }, "-created_date", limit || 50, skip || 0
+    );
 
-    return new Response(JSON.stringify({
-      status: "ok",
-      data: transactions,
-    }), { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ status: "ok", data: transactions }), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    return new Response(JSON.stringify({
-      status: "error",
-      error: error.message || "Failed to fetch transactions",
-    }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ status: "error", error: error.message }), {
+      status: 500, headers: { "Content-Type": "application/json" },
+    });
   }
 });

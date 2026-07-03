@@ -13,31 +13,21 @@ Deno.serve(async (req) => {
       }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
-    const account = await base44.entities.SavingsAccount.create({
-      user_id,
-      type,
-      name,
-      target_amount,
-      current_amount: 0,
+    const account = await base44.asServiceRole.entities.SavingsAccount.create({
+      user_id, type, name, target_amount, current_amount: 0,
       interest_rate: type === "flex" ? 2 : type === "goal" ? 5 : type === "seasonal" ? 7 : 3,
       lock_type: type === "flex" ? "none" : "until_date",
       unlock_date: unlock_date || null,
-      auto_save_amount: 0,
-      auto_save_frequency: "monthly",
-      auto_save_enabled: false,
-      status: "active",
-      icon: icon || "🎯",
-      description: description || "",
+      auto_save_amount: 0, auto_save_frequency: "monthly", auto_save_enabled: false,
+      status: "active", icon: icon || "🎯", description: description || "",
     });
 
-    return new Response(JSON.stringify({
-      status: "ok",
-      data: account,
-    }), { status: 201, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ status: "ok", data: account }), {
+      status: 201, headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    return new Response(JSON.stringify({
-      status: "error",
-      error: error.message || "Failed to create savings goal",
-    }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ status: "error", error: error.message }), {
+      status: 500, headers: { "Content-Type": "application/json" },
+    });
   }
 });

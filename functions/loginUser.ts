@@ -13,10 +13,7 @@ Deno.serve(async (req) => {
       }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
-    const users = await base44.entities.AppUser.list({
-      filter: { email },
-      limit: 1,
-    });
+    const users = await base44.asServiceRole.entities.AppUser.filter({ email }, undefined, 1);
 
     if (!users || users.length === 0) {
       return new Response(JSON.stringify({

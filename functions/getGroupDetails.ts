@@ -7,41 +7,24 @@ Deno.serve(async (req) => {
     const { group_id } = body;
 
     if (!group_id) {
-      return new Response(JSON.stringify({
-        status: "error",
-        error: "group_id is required",
-      }), { status: 400, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ status: "error", error: "group_id is required" }), {
+        status: 400, headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Get group
-    const group = await base44.entities.SavingsGroup.get(group_id);
-
+    const group = await base44.asServiceRole.entities.SavingsGroup.get(group_id);
     if (!group) {
-      return new Response(JSON.stringify({
-        status: "error",
-        error: "Group not found",
-      }), { status: 404, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ status: "error", error: "Group not found" }), {
+        status: 404, headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Get members
-    const members = await base44.entities.GroupMember.list({
-      filter: { group_id },
-      limit: 50,
-      sort: "slot_position",
-    });
+    const members = await base44.asServiceRole.entities.GroupMember.filter({ group_id }, "slot_position", 50);
+    const contributions = await base44.asServiceRole.entities.GroupContribution.filter({ group_id }, "-created_date", 100);
 
-    // Get contributions
-    const contributions = await base44.entities.GroupContribution.list({
-      filter: { group_id },
-      limit: 100,
-      sort: "-created_date",
-    });
-
-    // Calculate stats
     const totalContributed = contributions
       .filter((c: any) => c.status === "verified")
       .reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
-
     const currentCycleContributions = contributions.filter(
       (c: any) => c.cycle_number === group.current_cycle && c.status === "verified"
     );
@@ -49,9 +32,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       status: "ok",
       data: {
-        ...group,
-        members,
-        contributions,
+        ...group, members, contributions,
         stats: {
           totalContributed,
           currentCyclePaid: currentCycleContributions.length,
@@ -61,9 +42,8 @@ Deno.serve(async (req) => {
       },
     }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (error) {
-    return new Response(JSON.stringify({
-      status: "error",
-      error: error.message || "Failed to fetch group details",
-    }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ status: "error", error: error.message }), {
+      status: 500, headers: { "Content-Type": "application/json" },
+    });
   }
 });

@@ -14,10 +14,7 @@ Deno.serve(async (req) => {
     }
 
     // Check if user already exists
-    const existing = await base44.entities.AppUser.list({
-      filter: { email },
-      limit: 1,
-    });
+    const existing = await base44.asServiceRole.entities.AppUser.filter({ email }, undefined, 1);
 
     if (existing && existing.length > 0) {
       return new Response(JSON.stringify({
@@ -26,8 +23,7 @@ Deno.serve(async (req) => {
       }), { status: 409, headers: { "Content-Type": "application/json" } });
     }
 
-    // Create the user
-    const user = await base44.entities.AppUser.create({
+    const user = await base44.asServiceRole.entities.AppUser.create({
       email,
       full_name,
       password_hash,
