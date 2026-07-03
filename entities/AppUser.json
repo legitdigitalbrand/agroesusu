@@ -1,16 +1,34 @@
 {
   "properties": {
+    "email": {
+      "type": "string",
+      "description": "User email (unique identifier for login)"
+    },
+    "password_hash": {
+      "type": "string",
+      "description": "Bcrypt hashed password"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "User's full name"
+    },
     "phone": {
       "type": "string",
-      "description": "User phone number (unique identifier)"
+      "description": "Phone number"
     },
-    "bvn": {
+    "tier": {
       "type": "string",
-      "description": "Bank Verification Number (hashed)"
+      "enum": [
+        "basic",
+        "premium"
+      ],
+      "default": "basic"
     },
-    "selfie_url": {
-      "type": "string",
-      "description": "URL to KYC selfie photo"
+    "credit_score": {
+      "type": "number",
+      "default": 300,
+      "minimum": 300,
+      "maximum": 850
     },
     "kyc_status": {
       "type": "string",
@@ -20,20 +38,6 @@
         "rejected"
       ],
       "default": "pending"
-    },
-    "credit_score": {
-      "type": "number",
-      "default": 300,
-      "minimum": 300,
-      "maximum": 850
-    },
-    "tier": {
-      "type": "string",
-      "enum": [
-        "basic",
-        "premium"
-      ],
-      "default": "basic"
     },
     "account_status": {
       "type": "string",
@@ -51,16 +55,13 @@
     "total_withdrawn": {
       "type": "number",
       "default": 0
-    },
-    "last_active_date": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "password_hash": {
-      "type": "string",
-      "description": "Bcrypt hashed password"
     }
   },
   "type": "object",
-  "required": []
+  "required": [
+    "email",
+    "password_hash",
+    "full_name"
+  ],
+  "name": "AppUser"
 }
