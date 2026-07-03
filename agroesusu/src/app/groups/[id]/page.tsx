@@ -11,12 +11,24 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
 
   if (!user) redirect('/auth/login');
 
-  // Fetch group
-  const { data: group } = await supabase
-    .from('savings_groups')
-    .select('*')
-    .eq('id', id)
-    .single();
+  // Parallel queries — no waterfall
+  const [
+    { data: group },
+    { data: members },
+    { data: contributions },
+  ] = await Promise.all([
+    supabase.from('savings_groups').select('*').eq('id', id).single(),
+    supabase
+      .from('group_members')
+      .select(`*, profiles!group_members_user_id_fkey(full_name)`)
+      .eq('group_id', id)
+      .order('slot_position', { ascending: true }),
+    supabase
+      .from('group_contributions')
+      .select(`*, profiles!group_contributions_user_id_fkey(full_name)`)
+      .eq('group_id', id)
+      .order('created_at', { ascending: false }),
+  ]);
 
   if (!group) {
     return (
@@ -27,29 +39,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     );
   }
 
-  // Fetch members with profiles
-  const { data: members } = await supabase
-    .from('group_members')
-    .select(`
-      *,
-      profiles!group_members_user_id_fkey(full_name)
-    `)
-    .eq('group_id', id)
-    .order('slot_position', { ascending: true });
-
-  // Fetch contributions
-  const { data: contributions } = await supabase
-    .from('group_contributions')
-    .select(`
-      *,
-      profiles!group_contributions_user_id_fkey(full_name)
-    `)
-    .eq('group_id', id)
-    .order('created_at', { ascending: false });
-
-  // Check if current user is a member
   const isMember = members?.some((m: any) => m.user_id === user.id);
-  const isAdmin = group.admin_id === user.id;
   const isFull = group.member_count >= group.max_members;
 
   const totalContributed = contributions
@@ -98,7 +88,6 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className="mt-4">
           <div className="flex justify-between text-xs text-stone-500 mb-1">
             <span>Members joined</span>
@@ -112,7 +101,6 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
-        {/* Join button */}
         {!isMember && !isFull && group.status === 'recruiting' && (
           <div className="mt-4">
             <JoinButton groupId={group.id} />

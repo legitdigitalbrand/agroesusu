@@ -9,19 +9,22 @@ export default async function GroupsPage() {
 
   if (!user) redirect('/auth/login');
 
-  // Fetch groups the user is a member of
-  const { data: memberships } = await supabase
-    .from('group_members')
-    .select('group_id, slot_position, status, has_received_payout, savings_groups(*)')
-    .eq('user_id', user.id)
-    .order('joined_date', { ascending: false });
-
-  // Fetch available groups (recruiting)
-  const { data: availableGroups } = await supabase
-    .from('savings_groups')
-    .select('*')
-    .eq('status', 'recruiting')
-    .limit(5);
+  // Parallel queries
+  const [
+    { data: memberships },
+    { data: availableGroups },
+  ] = await Promise.all([
+    supabase
+      .from('group_members')
+      .select('group_id, slot_position, status, has_received_payout, savings_groups(*)')
+      .eq('user_id', user.id)
+      .order('joined_date', { ascending: false }),
+    supabase
+      .from('savings_groups')
+      .select('*')
+      .eq('status', 'recruiting')
+      .limit(5),
+  ]);
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">

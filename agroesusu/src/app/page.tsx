@@ -12,36 +12,19 @@ export default async function DashboardPage() {
 
   if (!user) redirect('/auth/login');
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Parallel queries — no waterfall
+  const [
+    { data: profile },
+    { data: accounts },
+    { data: transactions },
+    { data: memberships },
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('savings_accounts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    supabase.from('transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+    supabase.from('group_members').select('group_id, savings_groups(*)').eq('user_id', user.id).limit(3),
+  ]);
 
-  // Fetch savings accounts
-  const { data: accounts } = await supabase
-    .from('savings_accounts')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // Fetch recent transactions
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  // Fetch groups
-  const { data: memberships } = await supabase
-    .from('group_members')
-    .select('group_id, savings_groups(*)')
-    .eq('user_id', user.id)
-    .limit(3);
-
-  // Calculate totals
   const totalBalance = accounts?.reduce((sum, acc) => sum + Number(acc.current_amount || 0), 0) || 0;
   const activeGoals = accounts?.filter(a => a.status === 'active') || [];
   const totalSaved = profile?.total_saved || 0;
@@ -49,7 +32,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-brand-green">
           Welcome back, {profile?.full_name?.split(' ')[0] || 'there'}
@@ -57,7 +39,6 @@ export default async function DashboardPage() {
         <p className="text-sm text-stone-500 mt-1">Here's your savings overview</p>
       </div>
 
-      {/* Balance Card */}
       <BalanceCard
         totalBalance={totalBalance}
         totalSaved={totalSaved}
@@ -65,7 +46,6 @@ export default async function DashboardPage() {
         activeGoals={activeGoals.length}
       />
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-3 mt-6">
         <Link href="/save" className="flex flex-col items-center justify-center p-4 bg-white border border-brand-border rounded-xl hover:border-brand-lime transition">
           <Plus className="w-5 h-5 text-brand-green mb-1" />
@@ -81,7 +61,6 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Savings Pots */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-stone-800">Your Pots</h2>
@@ -114,7 +93,6 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Recent Activity */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-stone-800">Recent Activity</h2>

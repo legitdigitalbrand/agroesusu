@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PiggyBank, Users, Receipt, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
@@ -15,31 +13,18 @@ const navItems = [
   { href: "/profile", label: "Profile", icon: User },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  user: { full_name: string; email: string; tier: string } | null;
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ full_name?: string; email?: string; tier?: string } | null>(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const supabase = createClient();
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, email, tier')
-          .eq('id', authUser.id)
-          .single();
-        if (profile) setUser(profile);
-      }
-    };
-    if (!pathname.startsWith('/auth')) fetchUser();
-  }, [pathname]);
-
-  if (pathname.startsWith('/auth')) return null;
+  if (pathname.startsWith("/auth")) return null;
 
   const initials = user?.full_name
-    ? user.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
-    : '...';
+    ? user.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "??";
 
   return (
     <aside className="hidden lg:flex flex-col w-60 bg-brand-green text-white h-screen sticky top-0">
@@ -61,7 +46,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
                   ? "bg-white/10 text-brand-lime"
                   : "text-white/70 hover:text-white hover:bg-white/5"
@@ -76,12 +61,12 @@ export function Sidebar() {
 
       <div className="px-4 py-4 border-t border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand-lime/20 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-brand-lime/20 flex items-center justify-center shrink-0">
             <span className="text-brand-lime font-medium text-sm">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.full_name || 'Loading...'}</p>
-            <p className="text-xs text-white/50 capitalize">{user?.tier || 'basic'} tier</p>
+            <p className="text-sm font-medium truncate">{user?.full_name || "User"}</p>
+            <p className="text-xs text-white/50 capitalize">{user?.tier || "basic"} tier</p>
           </div>
         </div>
       </div>
