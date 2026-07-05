@@ -1,9 +1,8 @@
-const CACHE_NAME = "agroesusu-v1";
+const CACHE_NAME = "agroesusu-v2";
 const OFFLINE_URL = "/offline";
 
 // Core routes to pre-cache on install
 const PRECACHE_URLS = [
-  "/",
   "/offline",
   "/manifest.json",
   "/icon-192.png",
@@ -27,6 +26,12 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
@@ -48,7 +53,7 @@ self.addEventListener("fetch", (event) => {
   // Network-first for pages, fall back to cache, then offline page
   if (request.mode === "navigate" || (request.headers.get("accept") || "").includes("text/html")) {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then((response) => {
           // Cache successful page responses
           if (response.ok) {
@@ -64,8 +69,26 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for static assets (images, fonts, CSS, JS)
-  if (request.destination === "style" || request.destination === "script" || request.destination === "image" || request.destination === "font") {
+  // Network-first for JS/CSS (Next.js hashes filenames per build, so a stale
+  // cache-first strategy here can trap users on an old bundle). Fall back to
+  // cache only if the network is unavailable.
+  if (request.destination === "style" || request.destination === "script") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Cache-first for images/fonts — these rarely change and don't affect UI correctness
+  if (request.destination === "image" || request.destination === "font") {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
