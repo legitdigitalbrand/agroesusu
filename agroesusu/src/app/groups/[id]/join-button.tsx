@@ -20,7 +20,6 @@ export default function JoinButton({ groupId }: { groupId: string }) {
       return;
     }
 
-    // Get current group to find member count
     const { data: group } = await supabase
       .from('savings_groups')
       .select('member_count, max_members')
@@ -39,7 +38,6 @@ export default function JoinButton({ groupId }: { groupId: string }) {
       return;
     }
 
-    // Join group
     const { error: memberError } = await supabase.from('group_members').insert({
       group_id: groupId,
       user_id: user.id,
@@ -54,7 +52,6 @@ export default function JoinButton({ groupId }: { groupId: string }) {
       return;
     }
 
-    // Update member count
     await supabase.from('savings_groups').update({
       member_count: group.member_count + 1,
       status: group.member_count + 1 >= group.max_members ? 'active' : 'recruiting',
@@ -66,11 +63,12 @@ export default function JoinButton({ groupId }: { groupId: string }) {
   if (error) {
     return (
       <div>
-        <p className="text-sm text-red-400 mb-2">{error}</p>
+        <p className="text-sm mb-2" style={{ color: "var(--danger)" }}>{error}</p>
         <button
           onClick={handleJoin}
           disabled={loading}
-          className="px-4 py-2 bg-brand-500 text-brand-950 rounded-lg text-sm font-semibold hover:bg-brand-400 transition disabled:opacity-50"
+          className="px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+          style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
         >
           Try again
         </button>
@@ -82,7 +80,8 @@ export default function JoinButton({ groupId }: { groupId: string }) {
     <button
       onClick={handleJoin}
       disabled={loading}
-      className="w-full bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
+      className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
+      style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
     >
       {loading ? 'Joining...' : 'Join Group'}
     </button>

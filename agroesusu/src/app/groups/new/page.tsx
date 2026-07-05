@@ -26,7 +26,6 @@ export default function CreateGroupPage() {
       return;
     }
 
-    // Create group
     const { data: group, error: groupError } = await supabase.from('savings_groups').insert({
       name,
       admin_id: user.id,
@@ -44,7 +43,6 @@ export default function CreateGroupPage() {
       return;
     }
 
-    // Add creator as first member
     const { error: memberError } = await supabase.from('group_members').insert({
       group_id: group.id,
       user_id: user.id,
@@ -63,49 +61,42 @@ export default function CreateGroupPage() {
     router.refresh();
   };
 
+  const inputStyle = {
+    background: "var(--input-bg)",
+    borderColor: "var(--input-border)",
+    color: "var(--text-primary)",
+  };
+
   return (
     <div className="p-4 lg:p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand-50 mb-6">Create an Esusu Group</h1>
+      <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Create an Esusu Group</h1>
 
-      <div className="bg-brand-500/10 border border-brand-500/20 rounded-lg p-3 mb-6">
-        <p className="text-xs text-brand-200">
-          💡 <strong className="text-brand-300">How Esusu works:</strong> Members contribute a fixed amount each cycle. 
+      <div className="rounded-lg p-3 mb-6 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
+        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+          💡 <strong>How Esusu works:</strong> Members contribute a fixed amount each cycle.
           One member receives the total pool each cycle, rotating until everyone gets paid.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Group Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Group Name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
             placeholder="e.g. Agro Farmers Cooperative"
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          />
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Contribution Amount (₦)</label>
-          <input
-            type="number"
-            value={contributionAmount}
-            onChange={(e) => setContributionAmount(e.target.value)}
-            required
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Contribution Amount (₦)</label>
+          <input type="number" value={contributionAmount} onChange={(e) => setContributionAmount(e.target.value)} required
             placeholder="5000"
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          />
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Frequency</label>
-          <select
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          >
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Frequency</label>
+          <select value={frequency} onChange={(e) => setFrequency(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle}>
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
@@ -113,45 +104,36 @@ export default function CreateGroupPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Max Members</label>
-          <input
-            type="number"
-            value={maxMembers}
-            onChange={(e) => setMaxMembers(e.target.value)}
-            required
-            min="2"
-            max="20"
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          />
-          <p className="text-xs text-brand-300/40 mt-1">Each member gets one payout cycle. 2-20 members.</p>
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Max Members</label>
+          <input type="number" value={maxMembers} onChange={(e) => setMaxMembers(e.target.value)} required
+            min="2" max="20"
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle} />
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Each member gets one payout cycle. 2-20 members.</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Description (optional)</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Description (optional)</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
             placeholder="What is this group for?"
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          />
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle} />
         </div>
 
-        {error && <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>}
+        {error && (
+          <div className="text-sm p-3 rounded-lg border"
+            style={{ background: "rgba(255,77,109,0.1)", color: "var(--danger)", borderColor: "rgba(255,77,109,0.2)" }}>
+            {error}
+          </div>
+        )}
 
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-4 py-3 border border-brand-500/15 rounded-lg text-sm font-medium text-brand-200 hover:bg-brand-900 transition"
-          >
+          <button type="button" onClick={() => router.back()}
+            className="px-4 py-3 border rounded-lg text-sm font-medium transition"
+            style={{ borderColor: "var(--border-default)", color: "var(--text-secondary)" }}>
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading}
+            className="flex-1 py-3 rounded-lg font-semibold transition disabled:opacity-50"
+            style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
             {loading ? 'Creating...' : 'Create Group'}
           </button>
         </div>

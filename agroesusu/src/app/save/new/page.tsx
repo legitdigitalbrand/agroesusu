@@ -56,88 +56,79 @@ export default function CreatePotPage() {
     }
   };
 
+  const inputStyle = {
+    background: "var(--input-bg)",
+    borderColor: "var(--input-border)",
+    color: "var(--text-primary)",
+  };
+
   return (
     <div className="p-4 lg:p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand-50 mb-6">Create a Savings Pot</h1>
+      <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Create a Savings Pot</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Pot Type */}
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-2">Pot Type</label>
+          <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-secondary)" }}>Pot Type</label>
           <div className="grid grid-cols-2 gap-3">
             {potTypes.map((pt) => (
               <button
                 key={pt.value}
                 type="button"
                 onClick={() => setType(pt.value)}
-                className={`p-4 rounded-xl border text-left transition ${
-                  type === pt.value
-                    ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500/20'
-                    : 'border-brand-500/10 bg-brand-900 hover:border-brand-500/25'
-                }`}
+                className="p-4 rounded-xl border text-left transition"
+                style={{
+                  background: type === pt.value ? "var(--accent-subtle)" : "var(--surface-card)",
+                  borderColor: type === pt.value ? "var(--accent)" : "var(--border-default)",
+                  boxShadow: type === pt.value ? "0 0 0 2px var(--accent-subtle)" : "none",
+                }}
               >
                 <div className="text-2xl mb-1">{pt.icon}</div>
-                <div className="font-semibold text-sm text-brand-50">{pt.label}</div>
-                <div className="text-xs text-brand-300/60">{pt.desc}</div>
-                <div className="text-xs text-brand-400 font-medium mt-1">{pt.rate}% interest</div>
+                <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{pt.label}</div>
+                <div className="text-xs" style={{ color: "var(--text-muted)" }}>{pt.desc}</div>
+                <div className="text-xs font-medium mt-1" style={{ color: "var(--accent)" }}>{pt.rate}% interest</div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Pot Name */}
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Pot Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Pot Name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
             placeholder="e.g. Tractor Fund"
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          />
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle} />
         </div>
 
-        {/* Target Amount */}
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Target Amount (₦)</label>
-          <input
-            type="number"
-            value={targetAmount}
-            onChange={(e) => setTargetAmount(e.target.value)}
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Target Amount (₦)</label>
+          <input type="number" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)}
             placeholder="50000"
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          />
-          <p className="text-xs text-brand-300/40 mt-1">You can change this later</p>
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle} />
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>You can change this later</p>
         </div>
 
-        {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-brand-200 mb-1">Description (optional)</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Description (optional)</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
             placeholder="What are you saving for?"
-            className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-          />
+            className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle} />
         </div>
 
-        {error && <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>}
+        {error && (
+          <div className="text-sm p-3 rounded-lg border"
+            style={{ background: "rgba(255,77,109,0.1)", color: "var(--danger)", borderColor: "rgba(255,77,109,0.2)" }}>
+            {error}
+          </div>
+        )}
 
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-4 py-3 border border-brand-500/15 rounded-lg text-sm font-medium text-brand-200 hover:bg-brand-900 transition"
-          >
+          <button type="button" onClick={() => router.back()}
+            className="px-4 py-3 border rounded-lg text-sm font-medium transition"
+            style={{ borderColor: "var(--border-default)", color: "var(--text-secondary)" }}>
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading}
+            className="flex-1 py-3 rounded-lg font-semibold transition disabled:opacity-50"
+            style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
             {loading ? 'Creating...' : 'Create Pot'}
           </button>
         </div>
