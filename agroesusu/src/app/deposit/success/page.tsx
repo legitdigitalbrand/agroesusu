@@ -2,20 +2,15 @@
 
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, Loader2 } from "lucide-react";
+import { CheckIcon } from "@/components/icons";
 import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get("reference");
-  const [status, setStatus] = useState<"verifying" | "success" | "failed">(
-    "verifying"
-  );
-  const [details, setDetails] = useState<{
-    amount?: number;
-    reference?: string;
-  }>({});
+  const [status, setStatus] = useState<"verifying" | "success" | "failed">("verifying");
+  const [details, setDetails] = useState<{ amount?: number; reference?: string }>({});
 
   useEffect(() => {
     if (!reference) {
@@ -32,7 +27,6 @@ function SuccessContent() {
           setDetails({ amount: data.amount, reference: data.reference });
           setStatus("success");
 
-          // Credit the account client-side as backup to webhook
           const supabase = createClient();
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -90,11 +84,10 @@ function SuccessContent() {
   if (status === "verifying") {
     return (
       <div className="max-w-md mx-auto px-6 py-20 text-center">
-        <Loader2 className="w-10 h-10 text-brand-500 animate-spin mx-auto mb-4" />
-        <p className="text-sm font-medium text-brand-200">
-          Verifying your deposit...
-        </p>
-        <p className="text-xs text-brand-300/40 mt-1">Please don't close this page</p>
+        <div className="w-10 h-10 border-2 rounded-full animate-spin mx-auto mb-4"
+          style={{ borderColor: "var(--border-default)", borderTopColor: "var(--accent)" }} />
+        <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Verifying your deposit...</p>
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Please don&apos;t close this page</p>
       </div>
     );
   }
@@ -102,20 +95,16 @@ function SuccessContent() {
   if (status === "failed") {
     return (
       <div className="max-w-md mx-auto px-6 py-20 text-center">
-        <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{ background: "rgba(255,77,109,0.1)" }}>
           <span className="text-2xl">⚠️</span>
         </div>
-        <h1 className="text-xl font-semibold text-brand-50">
-          Verification Failed
-        </h1>
-        <p className="text-sm text-brand-300/60 mt-2">
-          We couldn't verify your payment. If you were charged, your money is
-          safe — contact support with reference: {reference}
+        <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>Verification Failed</h1>
+        <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
+          We couldn&apos;t verify your payment. If you were charged, your money is safe — contact support with reference: {reference}
         </p>
-        <Link
-          href="/"
-          className="block w-full bg-brand-900 text-brand-200 rounded-xl py-3.5 font-semibold text-sm mt-6 hover:bg-brand-800 border border-brand-500/15"
-        >
+        <Link href="/" className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 border"
+          style={{ background: "var(--surface-card)", color: "var(--text-secondary)", borderColor: "var(--border-default)" }}>
           Back to Dashboard
         </Link>
       </div>
@@ -124,39 +113,36 @@ function SuccessContent() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-20 text-center">
-      <div className="w-16 h-16 rounded-full bg-brand-500/15 flex items-center justify-center mx-auto mb-5">
-        <Check className="w-8 h-8 text-brand-400" strokeWidth={2.5} />
+      <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+        style={{ background: "var(--accent-subtle)" }}>
+        <CheckIcon className="w-8 h-8" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
       </div>
-      <h1 className="text-xl font-semibold text-brand-50">
-        Deposit Successful
-      </h1>
-      <p className="text-sm text-brand-300/60 mt-2">
+      <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>Deposit Successful</h1>
+      <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
         ₦{details.amount?.toLocaleString()} has been added to your savings
       </p>
 
-      <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-4 mt-6 text-left">
+      <div className="rounded-xl p-4 mt-6 text-left border"
+        style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
         <div className="flex justify-between text-sm py-1.5">
-          <span className="text-brand-300/50">Amount</span>
-          <span className="font-medium tabular-nums text-brand-100">
+          <span style={{ color: "var(--text-muted)" }}>Amount</span>
+          <span className="font-medium tabular-nums" style={{ color: "var(--text-secondary)" }}>
             ₦{details.amount?.toLocaleString()}
           </span>
         </div>
         <div className="flex justify-between text-sm py-1.5">
-          <span className="text-brand-300/50">Fee</span>
-          <span className="font-medium text-brand-100">₦0</span>
+          <span style={{ color: "var(--text-muted)" }}>Fee</span>
+          <span className="font-medium" style={{ color: "var(--text-secondary)" }}>₦0</span>
         </div>
-        <div className="flex justify-between text-sm py-1.5 border-t border-brand-500/10 mt-1.5 pt-2.5">
-          <span className="text-brand-300/50">Reference</span>
-          <span className="font-mono text-xs text-brand-200">
-            {details.reference}
-          </span>
+        <div className="flex justify-between text-sm py-1.5 border-t mt-1.5 pt-2.5"
+          style={{ borderColor: "var(--border-subtle)" }}>
+          <span style={{ color: "var(--text-muted)" }}>Reference</span>
+          <span className="font-mono text-xs" style={{ color: "var(--text-secondary)" }}>{details.reference}</span>
         </div>
       </div>
 
-      <Link
-        href="/"
-        className="block w-full bg-brand-500 text-brand-950 rounded-xl py-3.5 font-semibold text-sm mt-6 hover:bg-brand-400 transition-colors"
-      >
+      <Link href="/" className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition"
+        style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
         Back to Dashboard
       </Link>
     </div>
@@ -168,8 +154,9 @@ export default function DepositSuccessPage() {
     <Suspense
       fallback={
         <div className="max-w-md mx-auto px-6 py-20 text-center">
-          <Loader2 className="w-10 h-10 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-sm text-brand-300/60">Loading...</p>
+          <div className="w-10 h-10 border-2 rounded-full animate-spin mx-auto mb-4"
+            style={{ borderColor: "var(--border-default)", borderTopColor: "var(--accent)" }} />
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading...</p>
         </div>
       }
     >

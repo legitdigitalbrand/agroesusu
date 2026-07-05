@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import LogoutButton from './logout-button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -26,20 +27,43 @@ export default async function ProfilePage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand-50 mb-6">Profile</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Profile</h1>
+      </div>
+
+      {/* Appearance */}
+      <div
+        className="rounded-xl p-4 mb-6 border flex items-center justify-between"
+        style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
+      >
+        <div>
+          <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Appearance</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Switch between dark and light mode</p>
+        </div>
+        <ThemeToggle />
+      </div>
 
       {/* Profile Card */}
-      <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-6 mb-6">
+      <div
+        className="rounded-xl p-6 mb-6 border"
+        style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
+      >
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-brand-500/15 flex items-center justify-center">
-            <span className="text-brand-400 font-bold text-xl">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: "var(--accent-subtle)" }}
+          >
+            <span className="font-bold text-xl" style={{ color: "var(--accent)" }}>
               {(profile?.full_name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
             </span>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-brand-50">{profile?.full_name || 'User'}</h2>
-            <p className="text-sm text-brand-300/60">{profile?.email}</p>
-            <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-400 font-medium capitalize">
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{profile?.full_name || 'User'}</h2>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>{profile?.email}</p>
+            <span
+              className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium capitalize"
+              style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}
+            >
               {profile?.tier || 'basic'} tier
             </span>
           </div>
@@ -47,41 +71,40 @@ export default async function ProfilePage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-brand-300/50">Phone</p>
-            <p className="text-sm font-medium text-brand-100">{profile?.phone || 'Not set'}</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Phone</p>
+            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{profile?.phone || 'Not set'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-300/50">KYC Status</p>
-            <p className="text-sm font-medium text-brand-100 capitalize">{profile?.kyc_status || 'pending'}</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>KYC Status</p>
+            <p className="text-sm font-medium capitalize" style={{ color: "var(--text-secondary)" }}>{profile?.kyc_status || 'pending'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-300/50">Credit Score</p>
-            <p className="text-sm font-medium text-brand-100">{profile?.credit_score || 300}</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Credit Score</p>
+            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{profile?.credit_score || 300}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-300/50">Account Status</p>
-            <p className="text-sm font-medium text-brand-400 capitalize">{profile?.account_status || 'active'}</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Account Status</p>
+            <p className="text-sm font-medium capitalize" style={{ color: "var(--accent)" }}>{profile?.account_status || 'active'}</p>
           </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-brand-400">{accounts?.length || 0}</p>
-          <p className="text-xs text-brand-300/50 mt-1">Savings Pots</p>
+        <div className="rounded-xl p-4 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+          <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{accounts?.length || 0}</p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Savings Pots</p>
         </div>
-        <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-brand-400">{groupCount || 0}</p>
-          <p className="text-xs text-brand-300/50 mt-1">Groups</p>
+        <div className="rounded-xl p-4 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+          <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{groupCount || 0}</p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Groups</p>
         </div>
-        <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-brand-400">₦{Number(profile?.total_saved || 0).toLocaleString()}</p>
-          <p className="text-xs text-brand-300/50 mt-1">Total Saved</p>
+        <div className="rounded-xl p-4 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+          <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>₦{Number(profile?.total_saved || 0).toLocaleString()}</p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Total Saved</p>
         </div>
       </div>
 
-      {/* Logout */}
       <LogoutButton />
     </div>
   );

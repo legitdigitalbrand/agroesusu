@@ -17,14 +17,14 @@ export default async function TransactionsPage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand-50 mb-6">Transaction History</h1>
+      <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Transaction History</h1>
 
       {!transactions || transactions.length === 0 ? (
-        <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-12 text-center">
-          <p className="text-brand-300/50">No transactions yet.</p>
+        <div className="rounded-xl p-12 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+          <p style={{ color: "var(--text-muted)" }}>No transactions yet.</p>
         </div>
       ) : (
-        <div className="bg-brand-900 border border-brand-500/10 rounded-xl">
+        <div className="rounded-xl border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
           {transactions.map((tx) => (
             <TransactionRow
               key={tx.id}

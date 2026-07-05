@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Users, Plus, ArrowRight } from 'lucide-react';
+import { UsersIcon, PlusIcon, ChevronRightIcon } from '@/components/icons';
 
 export default async function GroupsPage() {
   const supabase = await createClient();
@@ -9,7 +9,6 @@ export default async function GroupsPage() {
 
   if (!user) redirect('/auth/login');
 
-  // Parallel queries
   const [
     { data: memberships },
     { data: availableGroups },
@@ -30,31 +29,32 @@ export default async function GroupsPage() {
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-brand-50">Esusu Groups</h1>
-          <p className="text-sm text-brand-300/60 mt-1">Save together, grow together</p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Esusu Groups</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Save together, grow together</p>
         </div>
         <Link
           href="/groups/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-brand-950 rounded-lg text-sm font-semibold hover:bg-brand-400 transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition"
+          style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
         >
-          <Plus className="w-4 h-4" />
+          <PlusIcon className="w-4 h-4" />
           New Group
         </Link>
       </div>
 
-      {/* My Groups */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-brand-50 mb-4">My Groups</h2>
+        <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>My Groups</h2>
 
         {!memberships || memberships.length === 0 ? (
-          <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-8 text-center">
-            <Users className="w-8 h-8 text-brand-500/40 mx-auto mb-3" />
-            <p className="text-brand-300/50 text-sm mb-4">You're not in any savings group yet.</p>
+          <div className="rounded-xl p-8 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+            <UsersIcon className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-faint)" }} />
+            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>You&apos;re not in any savings group yet.</p>
             <Link
               href="/groups/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-brand-950 rounded-lg text-sm font-semibold hover:bg-brand-400 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition"
+              style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
             >
-              <Plus className="w-4 h-4" />
+              <PlusIcon className="w-4 h-4" />
               Create a group
             </Link>
           </div>
@@ -68,40 +68,38 @@ export default async function GroupsPage() {
                 <Link
                   key={m.group_id}
                   href={`/groups/${group.id}`}
-                  className="bg-brand-900 border border-brand-500/10 rounded-xl p-5 hover:border-brand-500/30 transition block"
+                  className="rounded-xl p-5 border transition block"
+                  style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-semibold text-brand-50">{group.name}</h3>
-                      <p className="text-xs text-brand-300/60 mt-0.5">
+                      <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                         ₦{Number(group.contribution_amount).toLocaleString()}/{group.frequency}
                       </p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      group.status === 'active' ? 'bg-brand-500/15 text-brand-400' :
-                      group.status === 'recruiting' ? 'bg-brand-gold/15 text-brand-gold' :
-                      'bg-brand-500/10 text-brand-300/60'
-                    }`}>
+                    <span className="text-xs px-2 py-1 rounded-full font-medium capitalize"
+                      style={{
+                        background: group.status === 'active' ? "var(--accent-subtle)" : group.status === 'recruiting' ? "rgba(245,184,0,0.12)" : "var(--surface-elevated)",
+                        color: group.status === 'active' ? "var(--accent)" : group.status === 'recruiting' ? "var(--color-brand-gold)" : "var(--text-muted)",
+                      }}>
                       {group.status}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-brand-300/60 mb-2">
-                    <Users className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+                    <UsersIcon className="w-3.5 h-3.5" />
                     {group.member_count}/{group.max_members} members
                   </div>
 
-                  <div className="w-full h-2 bg-brand-950 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-brand-500 rounded-full"
-                      style={{ width: `${progress}%` }}
-                    />
+                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-elevated)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "var(--accent)" }} />
                   </div>
 
                   <div className="flex items-center justify-between mt-3 text-xs">
-                    <span className="text-brand-300/60">Your slot: #{m.slot_position}</span>
+                    <span style={{ color: "var(--text-muted)" }}>Your slot: #{m.slot_position}</span>
                     {m.has_received_payout && (
-                      <span className="text-brand-gold font-medium">✓ Payout received</span>
+                      <span className="font-medium" style={{ color: "var(--color-brand-gold)" }}>✓ Payout received</span>
                     )}
                   </div>
                 </Link>
@@ -111,10 +109,9 @@ export default async function GroupsPage() {
         )}
       </div>
 
-      {/* Available Groups */}
       {availableGroups && availableGroups.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-brand-50 mb-4">Open Groups</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Open Groups</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {availableGroups.map((group) => {
               const progress = Math.round((group.member_count / group.max_members) * 100);
@@ -122,26 +119,24 @@ export default async function GroupsPage() {
                 <Link
                   key={group.id}
                   href={`/groups/${group.id}`}
-                  className="bg-brand-900 border border-brand-500/10 rounded-xl p-5 hover:border-brand-500/30 transition block"
+                  className="rounded-xl p-5 border transition block"
+                  style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-semibold text-brand-50">{group.name}</h3>
-                      <p className="text-xs text-brand-300/60 mt-0.5">
+                      <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                         ₦{Number(group.contribution_amount).toLocaleString()}/{group.frequency}
                       </p>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-brand-500/40" />
+                    <ChevronRightIcon className="w-4 h-4" style={{ color: "var(--text-faint)" }} />
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-brand-300/60 mb-2">
-                    <Users className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+                    <UsersIcon className="w-3.5 h-3.5" />
                     {group.member_count}/{group.max_members} members
                   </div>
-                  <div className="w-full h-2 bg-brand-950 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-brand-500 rounded-full"
-                      style={{ width: `${progress}%` }}
-                    />
+                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-elevated)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "var(--accent)" }} />
                   </div>
                 </Link>
               );

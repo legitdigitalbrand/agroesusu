@@ -48,8 +48,6 @@ export default function RegisterPage() {
       setError(error.message);
       setLoading(false);
     } else if (data.user) {
-      // Profile is auto-created by the database trigger
-      // Update with phone number
       if (data.user) {
         await supabase.from('profiles').upsert({
           id: data.user.id,
@@ -63,95 +61,81 @@ export default function RegisterPage() {
     }
   };
 
+  const inputStyle = {
+    background: "var(--input-bg)",
+    borderColor: "var(--input-border)",
+    color: "var(--text-primary)",
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-950 px-4 py-8">
-      <div className="bg-brand-900 border border-brand-500/10 rounded-2xl p-8 w-full max-w-md shadow-2xl overflow-y-auto max-h-[95vh]">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: "var(--surface-base)" }}>
+      <div
+        className="rounded-2xl p-8 w-full max-w-md shadow-soft border overflow-y-auto max-h-[95vh]"
+        style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
+      >
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center">
-              <span className="text-brand-950 font-bold text-base">A</span>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "var(--accent)" }}>
+              <span className="font-bold text-base" style={{ color: "var(--nav-bg)" }}>A</span>
             </div>
-            <h1 className="text-3xl font-bold text-brand-50">AgroEsusu</h1>
+            <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>AgroEsusu</h1>
           </div>
-          <p className="text-brand-300/60 mt-2 text-sm">Create your savings account</p>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>Create your savings account</p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-brand-200 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-950 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-              placeholder="Chinedu Okonkwo"
-            />
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Full Name</label>
+            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required
+              className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle}
+              placeholder="Chinedu Okonkwo" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-brand-200 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-950 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-              placeholder="you@example.com"
-            />
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+              className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle}
+              placeholder="you@example.com" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-brand-200 mb-1">Phone Number</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-950 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-              placeholder="08012345678"
-            />
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Phone Number</label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle}
+              placeholder="08012345678" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-brand-200 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-950 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-              placeholder="At least 6 characters"
-            />
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+              className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle}
+              placeholder="At least 6 characters" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-brand-200 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-950 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
-              placeholder="••••••••"
-            />
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Confirm Password</label>
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
+              className="w-full px-4 py-3 rounded-lg border outline-none transition" style={inputStyle}
+              placeholder="••••••••" />
           </div>
 
           {error && (
-            <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>
+            <div className="text-sm p-3 rounded-lg border"
+              style={{ background: "rgba(255,77,109,0.1)", color: "var(--danger)", borderColor: "rgba(255,77,109,0.2)" }}>
+              {error}
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading}
+            className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
+            style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-brand-300/60 mt-6">
+        <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-brand-400 font-semibold hover:underline">
+          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: "var(--accent)" }}>
             Sign in
           </Link>
         </p>

@@ -1,5 +1,5 @@
 import { formatNaira, timeAgo } from "@/lib/utils";
-import { ArrowDownLeft, ArrowUpRight, Gift } from "lucide-react";
+import { ArrowDownLeftIcon, ArrowUpRightIcon, GiftIcon } from "@/components/icons";
 
 interface TransactionRowProps {
   type: "deposit" | "withdrawal" | "interest" | "fee" | "bonus";
@@ -9,45 +9,39 @@ interface TransactionRowProps {
   date: string;
 }
 
-const iconMap = {
-  deposit: { icon: ArrowDownLeft, bg: "bg-brand-500/10", color: "text-brand-400" },
-  withdrawal: { icon: ArrowUpRight, bg: "bg-red-500/10", color: "text-red-400" },
-  interest: { icon: Gift, bg: "bg-brand-gold/10", color: "text-brand-gold" },
-  fee: { icon: ArrowUpRight, bg: "bg-brand-500/5", color: "text-brand-300/60" },
-  bonus: { icon: Gift, bg: "bg-brand-gold/10", color: "text-brand-gold" },
-};
-
-const statusColor = {
-  pending: "text-brand-300/50",
-  completed: "text-brand-50",
-  failed: "text-red-400",
-};
-
 export function TransactionRow({ type, amount, description, status, date }: TransactionRowProps) {
-  const { icon: Icon, bg, color } = iconMap[type] || iconMap.deposit;
   const isCredit = type === "deposit" || type === "interest" || type === "bonus";
+  const Icon = type === "deposit" ? ArrowDownLeftIcon : type === "withdrawal" || type === "fee" ? ArrowUpRightIcon : GiftIcon;
+
+  const iconBg = isCredit ? "var(--accent-subtle)" : type === "withdrawal" ? "rgba(255,77,109,0.1)" : "var(--accent-subtle)";
+  const iconColor = isCredit ? "var(--accent)" : type === "withdrawal" ? "var(--danger)" : "var(--color-brand-gold)";
+
+  const statusColor = status === "pending" ? "var(--text-muted)" : status === "failed" ? "var(--danger)" : "var(--text-primary)";
 
   return (
-    <div className="flex items-center gap-3 py-3.5 border-b border-brand-500/8 last:border-0">
-      <div className={`w-9 h-9 rounded-full flex items-center justify-center ${bg}`}>
-        <Icon className={`w-4 h-4 ${color}`} strokeWidth={2.5} />
+    <div
+      className="flex items-center gap-3 py-3.5 border-b last:border-0"
+      style={{ borderColor: "var(--border-subtle)" }}
+    >
+      <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: iconBg }}>
+        <Icon className="w-4 h-4" style={{ color: iconColor }} strokeWidth={2.5} />
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-brand-50 truncate">{description}</p>
-        <p className="text-xs text-brand-300/40 mt-0.5">{timeAgo(date)}</p>
+        <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{description}</p>
+        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{timeAgo(date)}</p>
       </div>
 
       <div className="text-right">
-        <p className={`text-sm font-semibold tabular-nums ${statusColor[status]}`}>
+        <p className="text-sm font-semibold tabular-nums" style={{ color: statusColor }}>
           {isCredit ? "+" : "−"}
           {formatNaira(amount)}
         </p>
         {status === "pending" && (
-          <p className="text-[10px] text-brand-300/40 mt-0.5 uppercase tracking-wide">Pending</p>
+          <p className="text-[10px] mt-0.5 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Pending</p>
         )}
         {status === "failed" && (
-          <p className="text-[10px] text-red-400 mt-0.5 uppercase tracking-wide">Failed</p>
+          <p className="text-[10px] mt-0.5 uppercase tracking-wide" style={{ color: "var(--danger)" }}>Failed</p>
         )}
       </div>
     </div>

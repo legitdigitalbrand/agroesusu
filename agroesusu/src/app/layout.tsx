@@ -44,12 +44,20 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+const themeScript = `
+  (function() {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = stored || (prefersDark ? 'dark' : 'light');
+    if (theme === 'light') document.documentElement.classList.add('light');
+  })();
+`;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Fetch user data once on the server — runs in parallel with page data
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -64,9 +72,12 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div className="flex min-h-screen bg-brand-950">
+        <div className="flex min-h-screen" style={{ background: "var(--surface-base)" }}>
           <Sidebar user={profile} />
           <main className="flex-1 pb-20 lg:pb-0">
             {children}

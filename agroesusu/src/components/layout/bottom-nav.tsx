@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, PiggyBank, Users, Receipt, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HomeIcon, PiggyIcon, UsersIcon, ReceiptIcon, UserIcon } from "@/components/icons";
 
 const navItems = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/save", label: "Save", icon: PiggyBank },
-  { href: "/groups", label: "Groups", icon: Users },
-  { href: "/transactions", label: "Activity", icon: Receipt },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/", label: "Home", icon: HomeIcon },
+  { href: "/save", label: "Save", icon: PiggyIcon },
+  { href: "/groups", label: "Groups", icon: UsersIcon },
+  { href: "/transactions", label: "Activity", icon: ReceiptIcon },
+  { href: "/profile", label: "Profile", icon: UserIcon },
 ];
 
 export function BottomNav() {
@@ -19,7 +19,13 @@ export function BottomNav() {
   if (pathname.startsWith('/auth')) return null;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-900 border-t border-brand-500/15 z-50">
+    <nav
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t"
+      style={{
+        background: "var(--nav-bg)",
+        borderColor: "var(--border-subtle)",
+      }}
+    >
       <div className="flex items-center justify-around px-2 py-2 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -28,16 +34,21 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg",
-                isActive ? "text-brand-400" : "text-brand-200/40"
-              )}
+              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg"
             >
               <Icon
                 className="w-5 h-5"
-                strokeWidth={isActive ? 2.5 : 2}
+                style={{
+                  color: isActive ? "var(--accent)" : "rgba(255,255,255,0.35)",
+                  strokeWidth: isActive ? 2.5 : 2,
+                }}
               />
-              <span className={cn("text-[10px]", isActive ? "font-semibold" : "font-medium")}>
+              <span
+                className={cn("text-[10px]", isActive ? "font-semibold" : "font-medium")}
+                style={{
+                  color: isActive ? "var(--accent)" : "rgba(255,255,255,0.35)",
+                }}
+              >
                 {item.label}
               </span>
             </Link>

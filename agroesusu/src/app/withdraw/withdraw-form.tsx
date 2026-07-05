@@ -34,7 +34,6 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
       return;
     }
 
-    // Check if account is locked
     if (selectedAccount?.lock_type !== 'none' && selectedAccount?.unlock_date) {
       const unlockDate = new Date(selectedAccount.unlock_date);
       if (unlockDate > new Date()) {
@@ -44,7 +43,6 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
       }
     }
 
-    // Create transaction
     const { error: txError } = await supabase.from('transactions').insert({
       user_id: userId,
       account_id: accountId,
@@ -62,13 +60,11 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
       return;
     }
 
-    // Deduct from account
     const newBalance = availableBalance - withdrawAmount;
     await supabase.from('savings_accounts')
       .update({ current_amount: newBalance })
       .eq('id', accountId);
 
-    // Mark transaction as completed
     await supabase.from('transactions')
       .update({ status: 'completed', completed_date: new Date().toISOString() })
       .eq('account_id', accountId)
@@ -76,7 +72,6 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
       .order('created_at', { ascending: false })
       .limit(1);
 
-    // Update profile total_withdrawn
     const { data: profile } = await supabase
       .from('profiles')
       .select('total_withdrawn')
@@ -94,13 +89,19 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
     setTimeout(() => router.push('/'), 2000);
   };
 
+  const inputStyle = {
+    background: "var(--input-bg)",
+    borderColor: "var(--input-border)",
+    color: "var(--text-primary)",
+  };
+
   if (success) {
     return (
-      <div className="bg-brand-900 border border-brand-500/10 rounded-xl p-8 text-center">
+      <div className="rounded-xl p-8 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
         <div className="text-4xl mb-3">✅</div>
-        <h2 className="text-lg font-semibold text-brand-400">Withdrawal Processing</h2>
-        <p className="text-sm text-brand-300/60 mt-1">₦{Number(amount).toLocaleString()} will be sent to your bank.</p>
-        <p className="text-xs text-brand-300/40 mt-3">Redirecting to dashboard...</p>
+        <h2 className="text-lg font-semibold" style={{ color: "var(--accent)" }}>Withdrawal Processing</h2>
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>₦{Number(amount).toLocaleString()} will be sent to your bank.</p>
+        <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>Redirecting to dashboard...</p>
       </div>
     );
   }
@@ -108,11 +109,12 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-brand-200 mb-1">Withdraw From</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Withdraw From</label>
         <select
           value={accountId}
           onChange={(e) => setAccountId(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
+          className="w-full px-4 py-3 rounded-lg border outline-none transition"
+          style={inputStyle}
         >
           {accounts.map((acc) => (
             <option key={acc.id} value={acc.id}>
@@ -123,7 +125,7 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-brand-200 mb-1">Amount (₦)</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Amount (₦)</label>
         <input
           type="number"
           value={amount}
@@ -132,27 +134,28 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
           min="100"
           max={availableBalance}
           placeholder="5000"
-          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition text-lg"
+          className="w-full px-4 py-3 rounded-lg border outline-none transition text-lg"
+          style={inputStyle}
         />
-        <p className="text-xs text-brand-300/40 mt-1">Available: ₦{availableBalance.toLocaleString()}</p>
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Available: ₦{availableBalance.toLocaleString()}</p>
         {availableBalance > 0 && (
-          <button
-            type="button"
-            onClick={() => setAmount(String(availableBalance))}
-            className="text-xs text-brand-400 font-medium mt-1 hover:underline"
-          >
+          <button type="button" onClick={() => setAmount(String(availableBalance))}
+            className="text-xs font-medium mt-1 hover:underline" style={{ color: "var(--accent)" }}>
             Withdraw all
           </button>
         )}
       </div>
 
-      {error && <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>}
+      {error && (
+        <div className="text-sm p-3 rounded-lg border"
+          style={{ background: "rgba(255,77,109,0.1)", color: "var(--danger)", borderColor: "rgba(255,77,109,0.2)" }}>
+          {error}
+        </div>
+      )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
-      >
+      <button type="submit" disabled={loading}
+        className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
+        style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
         {loading ? 'Processing...' : `Withdraw ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>
     </form>

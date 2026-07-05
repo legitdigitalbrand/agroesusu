@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function DepositForm({ accounts, userId }: { accounts: any[]; userId: string }) {
@@ -9,7 +8,6 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +29,6 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
       return;
     }
 
-    // Get user email
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.email) {
       setError('Unable to get user email. Please try again.');
@@ -40,7 +37,6 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
     }
 
     try {
-      // Initialize Paystack transaction
       const res = await fetch('/api/deposit/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,7 +57,6 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
         return;
       }
 
-      // Redirect to Paystack checkout
       window.location.href = data.authorization_url;
     } catch (err) {
       setError('Something went wrong. Please try again.');
@@ -69,14 +64,21 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
     }
   };
 
+  const inputStyle = {
+    background: "var(--input-bg)",
+    borderColor: "var(--input-border)",
+    color: "var(--text-primary)",
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-brand-200 mb-1">Select Pot</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Select Pot</label>
         <select
           value={accountId}
           onChange={(e) => setAccountId(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"
+          className="w-full px-4 py-3 rounded-lg border outline-none transition"
+          style={inputStyle}
         >
           {accounts.map((acc) => (
             <option key={acc.id} value={acc.id}>
@@ -87,7 +89,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-brand-200 mb-1">Amount (₦)</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Amount (₦)</label>
         <input
           type="number"
           value={amount}
@@ -95,7 +97,8 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
           required
           min="100"
           placeholder="5000"
-          className="w-full px-4 py-3 rounded-lg border border-brand-500/15 bg-brand-900 text-brand-50 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition text-lg"
+          className="w-full px-4 py-3 rounded-lg border outline-none transition text-lg"
+          style={inputStyle}
         />
         <div className="flex gap-2 mt-2">
           {[1000, 5000, 10000, 50000].map((preset) => (
@@ -103,7 +106,8 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
               key={preset}
               type="button"
               onClick={() => setAmount(String(preset))}
-              className="px-3 py-1.5 text-xs bg-brand-900 text-brand-300 rounded-lg hover:bg-brand-800 transition border border-brand-500/10"
+              className="px-3 py-1.5 text-xs rounded-lg transition border"
+              style={{ background: "var(--surface-card)", color: "var(--text-secondary)", borderColor: "var(--border-default)" }}
             >
               ₦{preset.toLocaleString()}
             </button>
@@ -111,18 +115,24 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
         </div>
       </div>
 
-      <div className="bg-brand-500/10 border border-brand-500/20 rounded-lg p-3">
-        <p className="text-xs text-brand-200">
-          🔒 You'll be redirected to Paystack to complete your payment securely. Card, USSD, and bank transfer supported.
+      <div className="rounded-lg p-3 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
+        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+          🔒 You&apos;ll be redirected to Paystack to complete your payment securely. Card, USSD, and bank transfer supported.
         </p>
       </div>
 
-      {error && <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg border border-red-500/20">{error}</div>}
+      {error && (
+        <div className="text-sm p-3 rounded-lg border"
+          style={{ background: "rgba(255,77,109,0.1)", color: "var(--danger)", borderColor: "rgba(255,77,109,0.2)" }}>
+          {error}
+        </div>
+      )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-brand-500 text-brand-950 py-3 rounded-lg font-semibold hover:bg-brand-400 transition disabled:opacity-50"
+        className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
+        style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
       >
         {loading ? 'Initializing payment...' : `Deposit ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>
