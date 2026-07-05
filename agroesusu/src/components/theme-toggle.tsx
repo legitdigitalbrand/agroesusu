@@ -4,21 +4,21 @@ import { useEffect, useState } from "react";
 import { SunIcon, MoonIcon } from "@/components/icons";
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
     const stored = localStorage.getItem("theme") as "dark" | "light" | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initial = stored || (prefersDark ? "dark" : "light");
+    const initial = stored || "light";
     setTheme(initial);
-    document.documentElement.classList.toggle("light", initial === "light");
+    // Light is default (no class). Dark adds .dark class.
+    document.documentElement.classList.toggle("dark", initial === "dark");
   }, []);
 
   const toggle = () => {
-    const next = theme === "dark" ? "light" : "dark";
+    const next = theme === "light" ? "dark" : "light";
     setTheme(next);
     localStorage.setItem("theme", next);
-    document.documentElement.classList.toggle("light", next === "light");
+    document.documentElement.classList.toggle("dark", next === "dark");
   };
 
   return (

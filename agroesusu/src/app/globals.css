@@ -22,8 +22,56 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* ===== DARK MODE (default) — "AFTER" from mockup v2 ===== */
+/* ===== LIGHT MODE (default — primary design) ===== */
 :root {
+  --surface-base: #FFFFFF;
+  --surface-card: #FFFFFF;
+  --surface-card-hover: #F5F7F6;
+  --surface-elevated: #FFFFFF;
+  --text-primary: #0B0F0D;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
+  --text-faint: #9CA3AF;
+  --border-subtle: #F0F2F1;
+  --border-default: #E5E7EB;
+  --border-strong: #D1D5DB;
+  --accent: #014D15;
+  --accent-hover: #027420;
+  --accent-subtle: #ECFDF3;
+  --accent-text: #014D15;
+  --danger: #DC2626;
+  --success: #014D15;
+  --input-bg: #FFFFFF;
+  --input-border: #D1D5DB;
+  --nav-bg: #FFFFFF;
+  --nav-border: #E5E7EB;
+  --nav-text-active: #014D15;
+  --nav-text-inactive: #9CA3AF;
+  --balance-card-bg: #014D15;
+  --balance-card-border: #014D15;
+  --balance-card-text: #FFFFFF;
+  --balance-card-label: rgba(255, 255, 255, 0.65);
+  --balance-card-sub: rgba(255, 255, 255, 0.55);
+  --progress-track: #E5E7EB;
+  --progress-fill: #014D15;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --qa-bg: #FFFFFF;
+  --qa-border: #E5E7EB;
+  --qa-icon-bg: #ECFDF3;
+  --qa-icon-color: #014D15;
+  --qa-label: #374151;
+  --qa-primary-bg: #014D15;
+  --qa-primary-text: #FFFFFF;
+  --pot-icon-bg: #ECFDF3;
+  --section-link: #014D15;
+  --tx-positive: #014D15;
+  --tx-negative: #DC2626;
+  --tx-icon-deposit-bg: #ECFDF3;
+  --tx-icon-withdraw-bg: #FEF2F2;
+}
+
+/* ===== DARK MODE (toggle) ===== */
+:root.dark {
   --surface-base: #0B0F0D;
   --surface-card: #14201A;
   --surface-card-hover: #1A2922;
@@ -68,54 +116,6 @@
   --tx-negative: #ff4d6d;
   --tx-icon-deposit-bg: rgba(74, 222, 128, 0.12);
   --tx-icon-withdraw-bg: rgba(255, 77, 109, 0.12);
-}
-
-/* ===== LIGHT MODE — from mockup v21 ===== */
-:root.light {
-  --surface-base: #FAFAFA;
-  --surface-card: #FFFFFF;
-  --surface-card-hover: #F8F8F8;
-  --surface-elevated: #FFFFFF;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --text-faint: #bbbbbb;
-  --border-subtle: #f0f0f0;
-  --border-default: #eeeeee;
-  --border-strong: #dddddd;
-  --accent: #014D15;
-  --accent-hover: #027420;
-  --accent-subtle: #f0faf2;
-  --accent-text: #014D15;
-  --danger: #e63950;
-  --success: #014D15;
-  --input-bg: #FFFFFF;
-  --input-border: #eeeeee;
-  --nav-bg: #FFFFFF;
-  --nav-border: #eeeeee;
-  --nav-text-active: #014D15;
-  --nav-text-inactive: #bbbbbb;
-  --balance-card-bg: #014D15;
-  --balance-card-border: #014D15;
-  --balance-card-text: #FFFFFF;
-  --balance-card-label: rgba(255, 255, 255, 0.6);
-  --balance-card-sub: rgba(255, 255, 255, 0.5);
-  --progress-track: #eeeeee;
-  --progress-fill: #014D15;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --qa-bg: #FFFFFF;
-  --qa-border: #eeeeee;
-  --qa-icon-bg: #f0faf2;
-  --qa-icon-color: #04FB46;
-  --qa-label: #666666;
-  --qa-primary-bg: #014D15;
-  --qa-primary-text: #FFFFFF;
-  --pot-icon-bg: #f0faf2;
-  --section-link: #014D15;
-  --tx-positive: #014D15;
-  --tx-negative: #e63950;
-  --tx-icon-deposit-bg: #f0faf2;
-  --tx-icon-withdraw-bg: #fff0f3;
 }
 
 * {

@@ -38,19 +38,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B0F0D",
+  themeColor: "#FAFAFA",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
 };
 
-// Default to dark mode (the approved "AFTER" design).
-// Users can toggle to light mode via the ThemeToggle.
+// Default to LIGHT mode (the approved primary design).
+// Users can toggle to dark mode via the ThemeToggle.
 const themeScript = `
   (function() {
     const stored = localStorage.getItem('theme');
-    const theme = stored || 'dark';
-    if (theme === 'light') document.documentElement.classList.add('light');
+    const theme = stored || 'light';
+    if (theme !== 'light') document.documentElement.classList.add('dark');
   })();
 `;
 
