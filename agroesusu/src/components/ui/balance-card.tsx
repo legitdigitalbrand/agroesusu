@@ -1,5 +1,4 @@
 import { formatNaira } from "@/lib/utils";
-import { NairaIcon } from "@/components/icons";
 
 interface BalanceCardProps {
   totalBalance: number;
@@ -11,51 +10,23 @@ interface BalanceCardProps {
 export function BalanceCard({ totalBalance, totalSaved, totalWithdrawn, activeGoals = 0 }: BalanceCardProps) {
   return (
     <div
-      className="rounded-2xl p-5 shadow-soft border"
+      className="mx-5 rounded-2xl p-6"
       style={{
-        background: "var(--surface-card)",
-        borderColor: "var(--border-default)",
+        background: "var(--balance-card-bg)",
+        border: "1px solid var(--balance-card-border)",
       }}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-            Total Savings
-          </p>
-          <p className="text-3xl font-semibold mt-1.5 tabular-nums" style={{ color: "var(--text-primary)" }}>
-            {formatNaira(totalBalance)}
-          </p>
-        </div>
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center"
-          style={{ background: "var(--accent-subtle)" }}
-        >
-          <NairaIcon className="w-5 h-5" style={{ color: "var(--accent)" }} />
-        </div>
-      </div>
-
-      <div
-        className="flex items-center gap-4 mt-4 pt-4 border-t"
-        style={{ borderColor: "var(--border-subtle)" }}
-      >
-        <div>
-          <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Saved</p>
-          <p className="text-sm font-medium tabular-nums mt-0.5" style={{ color: "var(--text-secondary)" }}>
-            {formatNaira(totalSaved)}
-          </p>
-        </div>
-        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-        <div>
-          <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Withdrawn</p>
-          <p className="text-sm font-medium tabular-nums mt-0.5" style={{ color: "var(--text-secondary)" }}>
-            {formatNaira(totalWithdrawn)}
-          </p>
-        </div>
-        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-        <div>
-          <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Active Pots</p>
-          <p className="text-sm font-medium mt-0.5" style={{ color: "var(--text-secondary)" }}>{activeGoals}</p>
-        </div>
+      <p className="text-sm font-medium" style={{ color: "var(--balance-card-label)" }}>
+        Total Savings
+      </p>
+      <p className="text-3xl font-bold mt-1.5 tabular-nums tracking-tight" style={{ color: "var(--balance-card-text)" }}>
+        {formatNaira(totalBalance)}
+      </p>
+      <div className="flex items-center gap-1.5 mt-2">
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+        <p className="text-xs" style={{ color: "var(--balance-card-sub)" }}>
+          {activeGoals > 0 ? `${activeGoals} active pot${activeGoals > 1 ? 's' : ''}` : 'Start saving today'}
+        </p>
       </div>
     </div>
   );

@@ -38,17 +38,18 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#001907",
+  themeColor: "#0B0F0D",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
 };
 
+// Default to dark mode (the approved "AFTER" design).
+// Users can toggle to light mode via the ThemeToggle.
 const themeScript = `
   (function() {
     const stored = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = stored || (prefersDark ? 'dark' : 'light');
+    const theme = stored || 'dark';
     if (theme === 'light') document.documentElement.classList.add('light');
   })();
 `;

@@ -23,10 +23,10 @@ export function BottomNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t"
       style={{
         background: "var(--nav-bg)",
-        borderColor: "var(--border-subtle)",
+        borderColor: "var(--nav-border)",
       }}
     >
-      <div className="flex items-center justify-around px-2 py-2 pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around px-2 py-2.5 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -34,19 +34,19 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg"
+              className="flex flex-col items-center gap-1 px-3 py-1.5"
             >
               <Icon
-                className="w-5 h-5"
+                className="w-[22px] h-[22px]"
                 style={{
-                  color: isActive ? "var(--accent)" : "rgba(255,255,255,0.35)",
+                  color: isActive ? "var(--nav-text-active)" : "var(--nav-text-inactive)",
                   strokeWidth: isActive ? 2.5 : 2,
                 }}
               />
               <span
                 className={cn("text-[10px]", isActive ? "font-semibold" : "font-medium")}
                 style={{
-                  color: isActive ? "var(--accent)" : "rgba(255,255,255,0.35)",
+                  color: isActive ? "var(--nav-text-active)" : "var(--nav-text-inactive)",
                 }}
               >
                 {item.label}

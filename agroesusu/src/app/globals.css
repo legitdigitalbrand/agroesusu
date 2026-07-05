@@ -22,52 +22,100 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* ===== DARK MODE (default) ===== */
+/* ===== DARK MODE (default) — "AFTER" from mockup v2 ===== */
 :root {
-  --surface-base: #001907;
-  --surface-card: #011f0a;
-  --surface-card-hover: #012d10;
-  --surface-elevated: #01360f;
-  --text-primary: #E6FFEC;
-  --text-secondary: #8BFDAA;
-  --text-muted: rgba(142, 253, 170, 0.4);
-  --text-faint: rgba(142, 253, 170, 0.25);
-  --border-subtle: rgba(4, 251, 70, 0.08);
-  --border-default: rgba(4, 251, 70, 0.12);
-  --border-strong: rgba(4, 251, 70, 0.2);
-  --accent: #04FB46;
-  --accent-hover: #31FC67;
-  --accent-subtle: rgba(4, 251, 70, 0.1);
+  --surface-base: #0B0F0D;
+  --surface-card: #14201A;
+  --surface-card-hover: #1A2922;
+  --surface-elevated: #1E2A24;
+  --text-primary: #FFFFFF;
+  --text-secondary: #F2F5F3;
+  --text-muted: #8A9990;
+  --text-faint: #6B7A70;
+  --border-subtle: #1A2520;
+  --border-default: #223028;
+  --border-strong: #2D3A33;
+  --accent: #4ADE80;
+  --accent-hover: #5BED90;
+  --accent-subtle: rgba(74, 222, 128, 0.12);
+  --accent-text: #4ADE80;
   --danger: #ff4d6d;
-  --success: #04FB46;
-  --input-bg: #011f0a;
-  --input-border: rgba(4, 251, 70, 0.15);
-  --nav-bg: #014D15;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --success: #4ADE80;
+  --input-bg: #14201A;
+  --input-border: #223028;
+  --nav-bg: #10150F;
+  --nav-border: #223028;
+  --nav-text-active: #4ADE80;
+  --nav-text-inactive: #5A655F;
+  --balance-card-bg: #14201A;
+  --balance-card-border: #223028;
+  --balance-card-text: #FFFFFF;
+  --balance-card-label: #8A9990;
+  --balance-card-sub: #6B7A70;
+  --progress-track: #223028;
+  --progress-fill: #4ADE80;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --qa-bg: #14201A;
+  --qa-border: #223028;
+  --qa-icon-bg: rgba(74, 222, 128, 0.12);
+  --qa-icon-color: #4ADE80;
+  --qa-label: #C7D1CB;
+  --qa-primary-bg: #4ADE80;
+  --qa-primary-text: #0B0F0D;
+  --pot-icon-bg: rgba(74, 222, 128, 0.12);
+  --section-link: #8A9990;
+  --tx-positive: #4ADE80;
+  --tx-negative: #ff4d6d;
+  --tx-icon-deposit-bg: rgba(74, 222, 128, 0.12);
+  --tx-icon-withdraw-bg: rgba(255, 77, 109, 0.12);
 }
 
-/* ===== LIGHT MODE ===== */
+/* ===== LIGHT MODE — from mockup v21 ===== */
 :root.light {
-  --surface-base: #ffffff;
-  --surface-card: #f8fafb;
-  --surface-card-hover: #f1f5f4;
-  --surface-elevated: #ffffff;
-  --text-primary: #0a1a0e;
-  --text-secondary: #4a5c50;
-  --text-muted: #8a9a90;
-  --text-faint: #b0c4b8;
-  --border-subtle: #eef2f0;
-  --border-default: #e2e8e5;
-  --border-strong: #d0d8d3;
-  --accent: #027420;
-  --accent-hover: #02A12D;
-  --accent-subtle: rgba(2, 116, 32, 0.08);
-  --danger: #e11d48;
-  --success: #027420;
-  --input-bg: #ffffff;
-  --input-border: #e2e8e5;
-  --nav-bg: #014D15;
+  --surface-base: #FAFAFA;
+  --surface-card: #FFFFFF;
+  --surface-card-hover: #F8F8F8;
+  --surface-elevated: #FFFFFF;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --text-faint: #bbbbbb;
+  --border-subtle: #f0f0f0;
+  --border-default: #eeeeee;
+  --border-strong: #dddddd;
+  --accent: #014D15;
+  --accent-hover: #027420;
+  --accent-subtle: #f0faf2;
+  --accent-text: #014D15;
+  --danger: #e63950;
+  --success: #014D15;
+  --input-bg: #FFFFFF;
+  --input-border: #eeeeee;
+  --nav-bg: #FFFFFF;
+  --nav-border: #eeeeee;
+  --nav-text-active: #014D15;
+  --nav-text-inactive: #bbbbbb;
+  --balance-card-bg: #014D15;
+  --balance-card-border: #014D15;
+  --balance-card-text: #FFFFFF;
+  --balance-card-label: rgba(255, 255, 255, 0.6);
+  --balance-card-sub: rgba(255, 255, 255, 0.5);
+  --progress-track: #eeeeee;
+  --progress-fill: #014D15;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --qa-bg: #FFFFFF;
+  --qa-border: #eeeeee;
+  --qa-icon-bg: #f0faf2;
+  --qa-icon-color: #04FB46;
+  --qa-label: #666666;
+  --qa-primary-bg: #014D15;
+  --qa-primary-text: #FFFFFF;
+  --pot-icon-bg: #f0faf2;
+  --section-link: #014D15;
+  --tx-positive: #014D15;
+  --tx-negative: #e63950;
+  --tx-icon-deposit-bg: #f0faf2;
+  --tx-icon-withdraw-bg: #fff0f3;
 }
 
 * {

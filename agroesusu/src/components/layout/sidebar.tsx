@@ -32,10 +32,11 @@ export function Sidebar({ user }: SidebarProps) {
       className="hidden lg:flex flex-col w-60 h-screen sticky top-0 border-r"
       style={{
         background: "var(--nav-bg)",
-        borderColor: "var(--border-subtle)",
+        borderColor: "var(--nav-border)",
       }}
     >
-      <div className="px-6 py-6 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+      {/* Logo */}
+      <div className="px-6 py-6 border-b" style={{ borderColor: "var(--nav-border)" }}>
         <Link href="/" className="flex items-center gap-2">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -43,12 +44,13 @@ export function Sidebar({ user }: SidebarProps) {
           >
             <span className="font-bold text-sm" style={{ color: "var(--nav-bg)" }}>A</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight" style={{ color: "#E6FFEC" }}>
+          <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
             AgroEsusu
           </span>
         </Link>
       </div>
 
+      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -60,7 +62,7 @@ export function Sidebar({ user }: SidebarProps) {
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
               style={{
                 background: isActive ? "var(--accent-subtle)" : "transparent",
-                color: isActive ? "var(--accent)" : "rgba(230,255,236,0.45)",
+                color: isActive ? "var(--nav-text-active)" : "var(--nav-text-inactive)",
               }}
             >
               <Icon className="w-[18px] h-[18px]" strokeWidth={isActive ? 2.5 : 2} />
@@ -70,7 +72,8 @@ export function Sidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      <div className="px-4 py-3 border-t flex items-center gap-3" style={{ borderColor: "var(--border-subtle)" }}>
+      {/* Footer */}
+      <div className="px-4 py-3 border-t flex items-center gap-3" style={{ borderColor: "var(--nav-border)" }}>
         <ThemeToggle />
         <div className="flex-1 flex items-center gap-3">
           <div
@@ -80,10 +83,10 @@ export function Sidebar({ user }: SidebarProps) {
             <span className="font-medium text-sm" style={{ color: "var(--accent)" }}>{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: "#E6FFEC" }}>
+            <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
               {user?.full_name || "User"}
             </p>
-            <p className="text-xs capitalize" style={{ color: "rgba(230,255,236,0.3)" }}>
+            <p className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>
               {user?.tier || "basic"} tier
             </p>
           </div>

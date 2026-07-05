@@ -84,6 +84,39 @@ export function ArrowUpRightIcon(props: IconProps) {
   );
 }
 
+// Deposit icon — down arrow (matches mockup)
+export function DepositIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 5v14M5 12l7 7 7-7" />
+    </svg>
+  );
+}
+
+// Withdraw icon — up arrow (matches mockup)
+export function WithdrawIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  );
+}
+
+// Pot/New Goal icon — card/pot shape (matches mockup)
+export function PotIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="M3 10h18M8 15h4" />
+    </svg>
+  );
+}
+
+// Group icon — alias for Users
+export function GroupIcon(props: IconProps) {
+  return <UsersIcon {...props} />;
+}
+
 export function GiftIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
@@ -129,7 +162,7 @@ export function MoonIcon(props: IconProps) {
 export function LogoutIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 !-2h4M16 17l5-5-5-5M21 12H9" />
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
     </svg>
   );
 }
