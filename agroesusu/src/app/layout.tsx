@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { createClient } from "@/lib/supabase/server";
 
@@ -81,6 +82,7 @@ export default async function RootLayout({
         <div className="flex min-h-screen" style={{ background: "var(--surface-base)" }}>
           <Sidebar user={profile} />
           <main className="flex-1 pb-20 lg:pb-0">
+            <MobileHeader />
             {children}
           </main>
         </div>
