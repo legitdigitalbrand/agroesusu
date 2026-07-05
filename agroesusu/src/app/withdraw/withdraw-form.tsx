@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { CheckIcon } from '@/components/icons';
 
 export default function WithdrawForm({ accounts, userId }: { accounts: any[]; userId: string }) {
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -98,7 +99,9 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
   if (success) {
     return (
       <div className="rounded-xl p-8 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
-        <div className="text-4xl mb-3">✅</div>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "var(--accent-subtle)" }}>
+          <CheckIcon className="w-7 h-7" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
+        </div>
         <h2 className="text-lg font-semibold" style={{ color: "var(--accent)" }}>Withdrawal Processing</h2>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>₦{Number(amount).toLocaleString()} will be sent to your bank.</p>
         <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>Redirecting to dashboard...</p>
@@ -118,7 +121,7 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
         >
           {accounts.map((acc) => (
             <option key={acc.id} value={acc.id}>
-              {acc.icon} {acc.name} — ₦{Number(acc.current_amount).toLocaleString()}
+              {acc.name} — ₦{Number(acc.current_amount).toLocaleString()}
             </option>
           ))}
         </select>
@@ -155,7 +158,7 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
 
       <button type="submit" disabled={loading}
         className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-        style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
+        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
         {loading ? 'Processing...' : `Withdraw ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>
     </form>

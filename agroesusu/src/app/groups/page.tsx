@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { UsersIcon, PlusIcon, ChevronRightIcon } from '@/components/icons';
+import { UsersIcon, PlusIcon, ChevronRightIcon, CheckIcon } from '@/components/icons';
 
 export default async function GroupsPage() {
   const supabase = await createClient();
@@ -35,7 +35,7 @@ export default async function GroupsPage() {
         <Link
           href="/groups/new"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition"
-          style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
+          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
         >
           <PlusIcon className="w-4 h-4" />
           New Group
@@ -52,7 +52,7 @@ export default async function GroupsPage() {
             <Link
               href="/groups/new"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition"
-              style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
+              style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
             >
               <PlusIcon className="w-4 h-4" />
               Create a group
@@ -99,7 +99,10 @@ export default async function GroupsPage() {
                   <div className="flex items-center justify-between mt-3 text-xs">
                     <span style={{ color: "var(--text-muted)" }}>Your slot: #{m.slot_position}</span>
                     {m.has_received_payout && (
-                      <span className="font-medium" style={{ color: "var(--color-brand-gold)" }}>✓ Payout received</span>
+                      <span className="font-medium flex items-center gap-1" style={{ color: "var(--color-brand-gold)" }}>
+                        <CheckIcon className="w-3 h-3" strokeWidth={3} />
+                        Payout received
+                      </span>
                     )}
                   </div>
                 </Link>

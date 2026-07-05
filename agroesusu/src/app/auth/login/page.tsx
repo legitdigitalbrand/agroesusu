@@ -44,7 +44,7 @@ export default function LoginPage() {
               className="w-9 h-9 rounded-lg flex items-center justify-center"
               style={{ background: "var(--accent)" }}
             >
-              <span className="font-bold text-base" style={{ color: "var(--nav-bg)" }}>A</span>
+              <span className="font-bold text-base" style={{ color: "var(--qa-primary-text)" }}>A</span>
             </div>
             <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>AgroEsusu</h1>
           </div>
@@ -91,7 +91,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-            style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
+            style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

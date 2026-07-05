@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { DropletIcon, TargetIcon, WheatIcon, LockIcon } from '@/components/icons';
 
 const potTypes = [
-  { value: 'flex', label: 'Flex', icon: '💧', rate: 2, desc: 'Save and withdraw anytime' },
-  { value: 'goal', label: 'Goal', icon: '🎯', rate: 5, desc: 'Save towards a target amount' },
-  { value: 'seasonal', label: 'Seasonal', icon: '🌾', rate: 7, desc: 'Lock for planting season' },
-  { value: 'stash', label: 'Stash', icon: '🔒', rate: 3, desc: 'Long-term savings' },
+  { value: 'flex', label: 'Flex', Icon: DropletIcon, rate: 2, desc: 'Save and withdraw anytime' },
+  { value: 'goal', label: 'Goal', Icon: TargetIcon, rate: 5, desc: 'Save towards a target amount' },
+  { value: 'seasonal', label: 'Seasonal', Icon: WheatIcon, rate: 7, desc: 'Lock for planting season' },
+  { value: 'stash', label: 'Stash', Icon: LockIcon, rate: 3, desc: 'Long-term savings' },
 ];
 
 export default function CreatePotPage() {
@@ -43,7 +44,7 @@ export default function CreatePotPage() {
       interest_rate: selectedType.rate,
       lock_type: type === 'flex' ? 'none' : 'until_date',
       status: 'active',
-      icon: selectedType.icon,
+      icon: selectedType.value, // store type key, not emoji — rendered as SVG
       description,
     });
 
@@ -82,7 +83,9 @@ export default function CreatePotPage() {
                   boxShadow: type === pt.value ? "0 0 0 2px var(--accent-subtle)" : "none",
                 }}
               >
-                <div className="text-2xl mb-1">{pt.icon}</div>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style={{ background: "var(--pot-icon-bg)" }}>
+                  <pt.Icon style={{ width: 18, height: 18, color: "var(--qa-icon-color)" }} />
+                </div>
                 <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{pt.label}</div>
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>{pt.desc}</div>
                 <div className="text-xs font-medium mt-1" style={{ color: "var(--accent)" }}>{pt.rate}% interest</div>
@@ -128,7 +131,7 @@ export default function CreatePotPage() {
           </button>
           <button type="submit" disabled={loading}
             className="flex-1 py-3 rounded-lg font-semibold transition disabled:opacity-50"
-            style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
+            style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
             {loading ? 'Creating...' : 'Create Pot'}
           </button>
         </div>

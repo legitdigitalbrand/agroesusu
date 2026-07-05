@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTransaction } from "@/lib/paystack";
+import { verifyAndCreditDeposit } from "@/lib/deposit-credit";
 
 /**
- * Verify a Paystack transaction after redirect
- * Called when user returns from Paystack checkout
+ * Verify a Paystack transaction after the user is redirected back from
+ * checkout, AND credit the account server-side (admin client, bypasses RLS).
+ *
+ * This is intentionally the same crediting path as the webhook, guarded by
+ * an idempotency check on transaction status — whichever fires first
+ * (webhook or this redirect) credits the account; the other is a no-op.
+ * This is what makes deposits confirm reliably instead of hanging on
+ * "pending" when a webhook is slow or misses.
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -17,22 +23,20 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const verification = await verifyTransaction(reference);
+    const result = await verifyAndCreditDeposit(reference);
 
-    if (verification.data.status === "success") {
+    if (result.status === "success") {
       return NextResponse.json({
         status: "success",
-        amount: verification.data.amount / 100,
-        reference: verification.data.reference,
-        fees: verification.data.fees / 100,
-        channel: verification.data.channel,
-      });
-    } else {
-      return NextResponse.json({
-        status: verification.data.status,
-        reference: verification.data.reference,
+        amount: result.amount,
+        reference: result.reference,
       });
     }
+
+    return NextResponse.json({
+      status: result.status,
+      reference,
+    });
   } catch (error) {
     console.error("Verify error:", error);
     return NextResponse.json(

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { LockIcon } from '@/components/icons';
 
 export default function DepositForm({ accounts, userId }: { accounts: any[]; userId: string }) {
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -70,6 +71,11 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
     color: "var(--text-primary)",
   };
 
+  const selectedAccount = accounts.find(a => a.id === accountId);
+  const targetAmount = Number(selectedAccount?.target_amount || 0);
+  const currentAmount = Number(selectedAccount?.current_amount || 0);
+  const willExceedTarget = targetAmount > 0 && depositExceedsTarget(currentAmount, targetAmount, amount);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
@@ -82,7 +88,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
         >
           {accounts.map((acc) => (
             <option key={acc.id} value={acc.id}>
-              {acc.icon} {acc.name} — ₦{Number(acc.current_amount).toLocaleString()}
+              {acc.name} — ₦{Number(acc.current_amount).toLocaleString()}
             </option>
           ))}
         </select>
@@ -113,11 +119,17 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
             </button>
           ))}
         </div>
+        {willExceedTarget && (
+          <p className="text-xs mt-2" style={{ color: "var(--color-brand-gold)" }}>
+            This will take the pot past its ₦{targetAmount.toLocaleString()} target — that&apos;s fine, the extra just stays saved in the pot.
+          </p>
+        )}
       </div>
 
-      <div className="rounded-lg p-3 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
+      <div className="rounded-lg p-3 border flex items-start gap-2" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
+        <LockIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--accent)" }} />
         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-          🔒 You&apos;ll be redirected to Paystack to complete your payment securely. Card, USSD, and bank transfer supported.
+          You&apos;ll be redirected to Paystack to complete your payment securely. Card, USSD, and bank transfer supported.
         </p>
       </div>
 
@@ -132,10 +144,16 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
         type="submit"
         disabled={loading}
         className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-        style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
+        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
       >
         {loading ? 'Initializing payment...' : `Deposit ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>
     </form>
   );
+}
+
+function depositExceedsTarget(current: number, target: number, amountStr: string): boolean {
+  const amt = Number(amountStr);
+  if (!amt || !target) return false;
+  return current + amt > target;
 }

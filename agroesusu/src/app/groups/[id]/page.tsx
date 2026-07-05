@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { UsersIcon, ArrowLeftIcon } from '@/components/icons';
+import { UsersIcon, ArrowLeftIcon, CheckIcon } from '@/components/icons';
 import JoinButton from './join-button';
 
 export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -101,7 +101,10 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         )}
         {isMember && (
           <div className="mt-4 rounded-lg p-3 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
-            <p className="text-sm font-medium" style={{ color: "var(--accent)" }}>✓ You&apos;re a member of this group</p>
+            <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
+              <CheckIcon className="w-4 h-4" strokeWidth={2.5} />
+              You&apos;re a member of this group
+            </p>
           </div>
         )}
       </div>
@@ -141,7 +144,10 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
               </div>
               <div className="flex items-center gap-2">
                 {m.has_received_payout && (
-                  <span className="text-xs font-medium" style={{ color: "var(--color-brand-gold)" }}>✓ Paid out</span>
+                  <span className="text-xs font-medium flex items-center gap-1" style={{ color: "var(--color-brand-gold)" }}>
+                    <CheckIcon className="w-3 h-3" strokeWidth={3} />
+                    Paid out
+                  </span>
                 )}
                 {m.slot_position === group.current_cycle && !m.has_received_payout && (
                   <span className="text-xs px-2 py-1 rounded-full font-medium"

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { InfoIcon } from '@/components/icons';
 
 export default function CreateGroupPage() {
   const [name, setName] = useState('');
@@ -71,9 +72,10 @@ export default function CreateGroupPage() {
     <div className="p-4 lg:p-8 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Create an Esusu Group</h1>
 
-      <div className="rounded-lg p-3 mb-6 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
+      <div className="rounded-lg p-3 mb-6 border flex items-start gap-2" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
+        <InfoIcon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "var(--accent)" }} />
         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-          💡 <strong>How Esusu works:</strong> Members contribute a fixed amount each cycle.
+          <strong>How Esusu works:</strong> Members contribute a fixed amount each cycle.
           One member receives the total pool each cycle, rotating until everyone gets paid.
         </p>
       </div>
@@ -133,7 +135,7 @@ export default function CreateGroupPage() {
           </button>
           <button type="submit" disabled={loading}
             className="flex-1 py-3 rounded-lg font-semibold transition disabled:opacity-50"
-            style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
+            style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
             {loading ? 'Creating...' : 'Create Group'}
           </button>
         </div>

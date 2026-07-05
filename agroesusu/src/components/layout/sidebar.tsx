@@ -42,7 +42,7 @@ export function Sidebar({ user }: SidebarProps) {
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: "var(--accent)" }}
           >
-            <span className="font-bold text-sm" style={{ color: "var(--nav-bg)" }}>A</span>
+            <span className="font-bold text-sm" style={{ color: "var(--qa-primary-text)" }}>A</span>
           </div>
           <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
             AgroEsusu

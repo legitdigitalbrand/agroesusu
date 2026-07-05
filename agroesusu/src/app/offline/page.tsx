@@ -1,3 +1,5 @@
+import { CheckIcon } from "@/components/icons";
+
 export const metadata = {
   title: "Offline — AgroEsusu",
 };
@@ -20,15 +22,15 @@ export default function OfflinePage() {
           <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>What you can still do:</h2>
           <ul className="space-y-2 text-xs" style={{ color: "var(--text-muted)" }}>
             <li className="flex items-start gap-2">
-              <span style={{ color: "var(--accent)" }}>✓</span>
+              <CheckIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
               View your last loaded balance and pots
             </li>
             <li className="flex items-start gap-2">
-              <span style={{ color: "var(--accent)" }}>✓</span>
+              <CheckIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
               Browse cached transaction history
             </li>
             <li className="flex items-start gap-2">
-              <span style={{ color: "var(--accent)" }}>✓</span>
+              <CheckIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
               Check your group details
             </li>
           </ul>
@@ -40,7 +42,7 @@ export default function OfflinePage() {
         <button
           onClick={() => window.location.reload()}
           className="mt-6 w-full py-3 rounded-lg font-semibold transition"
-          style={{ background: "var(--accent)", color: "var(--nav-bg)" }}
+          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
         >
           Try Again
         </button>

@@ -2,9 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckIcon } from "@/components/icons";
+import { CheckIcon, AlertTriangleIcon } from "@/components/icons";
 import { Suspense, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -20,56 +19,14 @@ function SuccessContent() {
 
     async function verify() {
       try {
+        // Server-side route verifies with Paystack AND credits the account
+        // (idempotent — safe even if the webhook already did it).
         const res = await fetch(`/api/paystack/verify?reference=${reference}`);
         const data = await res.json();
 
         if (data.status === "success") {
           setDetails({ amount: data.amount, reference: data.reference });
           setStatus("success");
-
-          const supabase = createClient();
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data: tx } = await supabase
-              .from("transactions")
-              .select("status, account_id, amount")
-              .eq("payment_reference", reference)
-              .single();
-
-            if (tx && tx.status === "pending") {
-              const { data: account } = await supabase
-                .from("savings_accounts")
-                .select("current_amount")
-                .eq("id", tx.account_id)
-                .single();
-
-              if (account) {
-                const newBalance = Number(account.current_amount) + Number(tx.amount);
-                await supabase
-                  .from("savings_accounts")
-                  .update({ current_amount: newBalance })
-                  .eq("id", tx.account_id);
-              }
-
-              await supabase
-                .from("transactions")
-                .update({ status: "completed", completed_date: new Date().toISOString() })
-                .eq("payment_reference", reference);
-
-              const { data: profile } = await supabase
-                .from("profiles")
-                .select("total_saved")
-                .eq("id", user.id)
-                .single();
-
-              if (profile) {
-                await supabase
-                  .from("profiles")
-                  .update({ total_saved: Number(profile.total_saved) + Number(tx.amount) })
-                  .eq("id", user.id);
-              }
-            }
-          }
         } else {
           setStatus("failed");
         }
@@ -97,7 +54,7 @@ function SuccessContent() {
       <div className="max-w-md mx-auto px-6 py-20 text-center">
         <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
           style={{ background: "rgba(255,77,109,0.1)" }}>
-          <span className="text-2xl">⚠️</span>
+          <AlertTriangleIcon className="w-7 h-7" style={{ color: "var(--danger)" }} />
         </div>
         <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>Verification Failed</h1>
         <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
@@ -142,7 +99,7 @@ function SuccessContent() {
       </div>
 
       <Link href="/" className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition"
-        style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
+        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
         Back to Dashboard
       </Link>
     </div>

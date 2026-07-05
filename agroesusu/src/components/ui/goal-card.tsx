@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatNaira, progressPercent, daysUntil } from "@/lib/utils";
+import { DropletIcon, TargetIcon, WheatIcon, LockIcon, SeedlingIcon, TractorIcon, BarnIcon } from "@/components/icons";
 
 interface GoalCardProps {
   id: string;
@@ -13,28 +14,29 @@ interface GoalCardProps {
   variant?: "default" | "compact";
 }
 
-// Emoji map for common savings goals
-const POT_EMOJIS: Record<string, string> = {
-  seeds: "🌱",
-  fertilizer: "🌱",
-  tractor: "🚜",
-  equipment: "🚜",
-  farm: "🏠",
-  expansion: "🏠",
-  animals: "🐄",
-  feed: "🌾",
-  harvest: "🌾",
-  irrigation: "💧",
-  default: "🎯",
+// Map pot type (or icon key) to a Kuda-standard SVG icon component.
+const TYPE_ICON_MAP: Record<string, typeof TargetIcon> = {
+  flex: DropletIcon,
+  goal: TargetIcon,
+  seasonal: WheatIcon,
+  stash: LockIcon,
+  seeds: SeedlingIcon,
+  fertilizer: SeedlingIcon,
+  tractor: TractorIcon,
+  equipment: TractorIcon,
+  farm: BarnIcon,
+  expansion: BarnIcon,
+  default: TargetIcon,
 };
 
-function getPotEmoji(name: string, icon?: string): string {
-  if (icon && POT_EMOJIS[icon.toLowerCase()]) return POT_EMOJIS[icon.toLowerCase()];
+function getPotIcon(name: string, icon?: string, type?: string) {
+  const key = (icon || type || "").toLowerCase();
+  if (TYPE_ICON_MAP[key]) return TYPE_ICON_MAP[key];
   const lowerName = name.toLowerCase();
-  for (const key of Object.keys(POT_EMOJIS)) {
-    if (key !== "default" && lowerName.includes(key)) return POT_EMOJIS[key];
+  for (const k of Object.keys(TYPE_ICON_MAP)) {
+    if (k !== "default" && lowerName.includes(k)) return TYPE_ICON_MAP[k];
   }
-  return POT_EMOJIS.default;
+  return TYPE_ICON_MAP.default;
 }
 
 export function GoalCard({
@@ -51,7 +53,7 @@ export function GoalCard({
   const percent = progressPercent(currentAmount, targetAmount);
   const daysLeft = unlockDate ? daysUntil(unlockDate) : null;
   const isComplete = percent >= 100;
-  const emoji = getPotEmoji(name, icon);
+  const PotIconComp = getPotIcon(name, icon, type);
 
   if (variant === "compact") {
     return (
@@ -98,14 +100,14 @@ export function GoalCard({
           borderColor: "var(--border-default)",
         }}
       >
-        {/* Top row: emoji + name | amount */}
+        {/* Top row: icon + name | amount */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "var(--pot-icon-bg)" }}
             >
-              {emoji}
+              <PotIconComp style={{ width: 18, height: 18, color: "var(--qa-icon-color)" }} />
             </div>
             <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{name}</span>
           </div>

@@ -226,3 +226,92 @@ export function NairaIcon(props: IconProps) {
     </svg>
   );
 }
+
+// Pot type icons — Kuda-standard line art
+export function DropletIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 3s7 7.5 7 12a7 7 0 0 1-14 0c0-4.5 7-12 7-12z" />
+    </svg>
+  );
+}
+
+export function TargetIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function WheatIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 22V10" />
+      <path d="M12 10c-2 0-3.5-1.5-3.5-3.5S10 3 12 3s3.5 1.5 3.5 3.5S14 10 12 10z" />
+      <path d="M8.5 13c-1.5 0-2.5-1-2.5-2.5S7 8 8.5 8" />
+      <path d="M15.5 13c1.5 0 2.5-1 2.5-2.5S17 8 15.5 8" />
+      <path d="M9 17c-1.3 0-2.2-.9-2.2-2.2" />
+      <path d="M15 17c1.3 0 2.2-.9 2.2-2.2" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 3l7 3.5v5c0 4.5-3 8-7 9.5-4-1.5-7-5-7-9.5v-5L12 3z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
+export function SeedlingIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 21V13" />
+      <path d="M12 13C12 9 9 6 5 6c0 4 3 7 7 7z" />
+      <path d="M12 13c0-4 3-7 7-7 0 4-3 7-7 7z" />
+    </svg>
+  );
+}
+
+export function TractorIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="6.5" cy="17.5" r="2.5" />
+      <circle cx="17" cy="17.5" r="3.5" />
+      <path d="M4 17.5h1M9.5 17.5H14M14 17.5V9H7l-1.5 4M14 9h3l3 4.5v4" />
+    </svg>
+  );
+}
+
+export function BarnIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M3 11L12 4l9 7" />
+      <path d="M5 10v10h14V10" />
+      <path d="M10 20v-6h4v6" />
+    </svg>
+  );
+}
+
+export function AlertTriangleIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 3l10 18H2L12 3z" />
+      <path d="M12 10v4M12 17h.01" />
+    </svg>
+  );
+}
+
+export function InfoIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 8h.01" />
+    </svg>
+  );
+}

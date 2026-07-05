@@ -24,7 +24,7 @@ export default async function DepositPage() {
           <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>You need a savings pot first.</p>
           <a href="/save/new"
             className="inline-block px-4 py-2 rounded-lg text-sm font-semibold"
-            style={{ background: "var(--accent)", color: "var(--nav-bg)" }}>
+            style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
             Create a pot
           </a>
         </div>
