@@ -1,15 +1,21 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * Mobile-only top header with brand logo and theme toggle.
  * Visible on screens below lg breakpoint.
+ * Hidden on auth pages (they have their own centered layout).
  */
 export function MobileHeader() {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/auth")) return null;
+
   return (
     <header
-      className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b"
+      className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b backdrop-blur-md"
       style={{
         background: "var(--nav-bg)",
         borderColor: "var(--nav-border)",

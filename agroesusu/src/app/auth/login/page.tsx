@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -35,7 +36,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--surface-base)" }}>
+    <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: "var(--surface-base)" }}>
+      <div className="absolute top-4 right-4 z-50"><ThemeToggle /></div>
       <div
         className="rounded-2xl p-8 w-full max-w-md shadow-soft border"
         style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
