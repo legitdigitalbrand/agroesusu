@@ -4,7 +4,7 @@ import { BalanceCard } from '@/components/ui/balance-card';
 import { GoalCard } from '@/components/ui/goal-card';
 import { TransactionRow } from '@/components/ui/transaction-row';
 import Link from 'next/link';
-import { DepositIcon, WithdrawIcon, PotIcon, GroupIcon } from '@/components/icons';
+import { DepositIcon, WithdrawIcon, PotIcon, GroupIcon, ShieldCheckIcon, CopyIcon } from '@/components/icons';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -28,6 +28,9 @@ export default async function DashboardPage() {
   const activeGoals = accounts?.filter(a => a.status === 'active') || [];
   const totalSaved = profile?.total_saved || 0;
   const totalWithdrawn = profile?.total_withdrawn || 0;
+  const kycStatus = profile?.kyc_status || 'unverified';
+  const dvaAccountNumber = profile?.paystack_dva_account_number || null;
+  const dvaBankName = profile?.paystack_dva_bank_name || null;
 
   // Greeting based on time
   const hour = new Date().getHours();
@@ -50,6 +53,48 @@ export default async function DashboardPage() {
           {initials}
         </Link>
       </div>
+
+      {/* DVA Card — show if user has a dedicated account number */}
+      {dvaAccountNumber && (
+        <div className="px-5 mb-4">
+          <div className="rounded-2xl p-4 border" style={{ background: "var(--balance-card-bg)", borderColor: "var(--border-default)" }}>
+            <p className="text-xs font-medium" style={{ color: "var(--balance-card-label)" }}>Your Account Number</p>
+            <div className="flex items-center justify-between mt-2">
+              <div>
+                <p className="text-lg font-bold tabular-nums" style={{ color: "var(--balance-card-value)" }}>{dvaAccountNumber}</p>
+                <p className="text-xs" style={{ color: "var(--balance-card-label)" }}>{dvaBankName}</p>
+              </div>
+              <CopyButton text={dvaAccountNumber} />
+            </div>
+            <p className="text-xs mt-2" style={{ color: "var(--balance-card-label)" }}>
+              Transfer to this account to fund your savings instantly
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Banner — show if not verified */}
+      {kycStatus !== 'verified' && (
+        <div className="px-5 mb-4">
+          <Link href="/profile/verify" className="block">
+            <div className="rounded-xl p-4 border flex items-center gap-3 transition-colors"
+              style={{ background: "var(--surface-card)", borderColor: kycStatus === 'pending_review' ? "rgba(245,184,0,0.3)" : "var(--border-default)" }}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: kycStatus === 'pending_review' ? "rgba(245,184,0,0.12)" : "var(--accent-subtle)" }}>
+                <ShieldCheckIcon className="w-4.5 h-4.5" style={{ width: 18, height: 18, color: kycStatus === 'pending_review' ? "var(--color-brand-gold)" : "var(--accent)" }} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {kycStatus === 'pending_review' ? 'Identity Under Review' : 'Verify Your Identity'}
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {kycStatus === 'pending_review' ? 'We\'re reviewing your BVN' : 'Unlock withdrawals with BVN'}
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* Balance Card */}
       <BalanceCard
@@ -163,5 +208,21 @@ export default async function DashboardPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        navigator.clipboard?.writeText(text);
+      }}
+      className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition"
+      style={{ background: "rgba(255,255,255,0.15)", color: "var(--balance-card-value)" }}
+    >
+      <CopyIcon className="w-3.5 h-3.5" />
+      Copy
+    </button>
   );
 }

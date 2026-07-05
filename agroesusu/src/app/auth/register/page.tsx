@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
@@ -14,6 +14,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const supabase = createClient();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -56,7 +58,7 @@ export default function RegisterPage() {
           phone,
         });
       }
-      router.push('/');
+      router.push(redirectTo);
       router.refresh();
     }
   };

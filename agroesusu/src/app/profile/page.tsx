@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import LogoutButton from './logout-button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ShieldCheckIcon, CheckIcon, AlertTriangleIcon } from '@/components/icons';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -9,21 +11,20 @@ export default async function ProfilePage() {
 
   if (!user) redirect('/auth/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  const [{ data: profile }, { data: accounts }, { count: groupCount }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('savings_accounts').select('*').eq('user_id', user.id),
+    supabase.from('group_members').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+  ]);
 
-  const { data: accounts } = await supabase
-    .from('savings_accounts')
-    .select('*')
-    .eq('user_id', user.id);
+  const kycStatus = profile?.kyc_status || 'unverified';
 
-  const { count: groupCount } = await supabase
-    .from('group_members')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
+  const kycBadge = {
+    verified: { label: 'Verified', color: 'var(--accent)', bg: 'var(--accent-subtle)', Icon: CheckIcon },
+    pending_review: { label: 'Under Review', color: 'var(--color-brand-gold)', bg: 'rgba(245,184,0,0.12)', Icon: AlertTriangleIcon },
+    unverified: { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon },
+    pending: { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon },
+  }[kycStatus] || { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon };
 
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
@@ -42,6 +43,30 @@ export default async function ProfilePage() {
         </div>
         <ThemeToggle />
       </div>
+
+      {/* Identity Verification Card */}
+      <Link
+        href="/profile/verify"
+        className="block rounded-xl p-4 mb-6 border transition-colors"
+        style={{ background: "var(--surface-card)", borderColor: kycStatus === 'verified' ? "var(--accent)" : "var(--border-default)" }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: kycBadge.bg }}>
+            <kycBadge.Icon className="w-5 h-5" style={{ color: kycBadge.color }} />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Identity Verification</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {kycStatus === 'verified' ? 'BVN verified — withdrawals enabled' :
+               kycStatus === 'pending_review' ? 'Your BVN is being reviewed' :
+               'Verify your BVN to unlock withdrawals'}
+            </p>
+          </div>
+          <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: kycBadge.bg, color: kycBadge.color }}>
+            {kycBadge.label}
+          </span>
+        </div>
+      </Link>
 
       {/* Profile Card */}
       <div
@@ -75,10 +100,6 @@ export default async function ProfilePage() {
             <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{profile?.phone || 'Not set'}</p>
           </div>
           <div>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>KYC Status</p>
-            <p className="text-sm font-medium capitalize" style={{ color: "var(--text-secondary)" }}>{profile?.kyc_status || 'pending'}</p>
-          </div>
-          <div>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Credit Score</p>
             <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{profile?.credit_score || 300}</p>
           </div>
@@ -86,6 +107,12 @@ export default async function ProfilePage() {
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Account Status</p>
             <p className="text-sm font-medium capitalize" style={{ color: "var(--accent)" }}>{profile?.account_status || 'active'}</p>
           </div>
+          {profile?.bvn_last_4 && (
+            <div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>BVN</p>
+              <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>****{profile.bvn_last_4}</p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InfoIcon } from '@/components/icons';
 
+function generateToken(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
+  for (let i = 0; i < 8; i++) {
+    token += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return token;
+}
+
 export default function CreateGroupPage() {
   const [name, setName] = useState('');
   const [contributionAmount, setContributionAmount] = useState('');
@@ -27,6 +36,8 @@ export default function CreateGroupPage() {
       return;
     }
 
+    const inviteToken = generateToken();
+
     const { data: group, error: groupError } = await supabase.from('savings_groups').insert({
       name,
       admin_id: user.id,
@@ -36,6 +47,7 @@ export default function CreateGroupPage() {
       total_cycles: Number(maxMembers),
       status: 'recruiting',
       description,
+      invite_token: inviteToken,
     }).select().single();
 
     if (groupError) {
@@ -58,7 +70,7 @@ export default function CreateGroupPage() {
       return;
     }
 
-    router.push('/groups');
+    router.push(`/groups/${group.id}?invite=${inviteToken}`);
     router.refresh();
   };
 
@@ -77,6 +89,7 @@ export default function CreateGroupPage() {
         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
           <strong>How Esusu works:</strong> Members contribute a fixed amount each cycle.
           One member receives the total pool each cycle, rotating until everyone gets paid.
+          After creating, you&apos;ll get a shareable link to invite members.
         </p>
       </div>
 

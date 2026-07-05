@@ -7,9 +7,13 @@ import { verifyTransaction } from "@/lib/paystack";
  * (from the webhook AND from the browser redirect) — the completed-status
  * check prevents double-crediting.
  *
+ * Handles two deposit paths:
+ * 1. Card/USSD checkout — metadata contains user_id + account_id
+ * 2. DVA bank transfer — no metadata; we look up the user by Paystack
+ *    customer code and credit their default Flex pot
+ *
  * Uses the ADMIN (service-role) Supabase client because this runs outside
- * a user session (Paystack webhooks have no cookies, and even the browser
- * redirect path treats the server as the source of truth) — RLS would
+ * a user session (Paystack webhooks have no cookies) — RLS would
  * otherwise silently block these writes, which is what caused deposits to
  * get stuck on "pending".
  */
@@ -24,11 +28,63 @@ export async function verifyAndCreditDeposit(reference: string) {
   const metadata = verification.data.metadata || {};
   const amountInNaira = verification.data.amount / 100;
   const feesInNaira = (verification.data.fees || 0) / 100;
-  const userId = metadata.user_id;
-  const accountId = metadata.account_id;
+  let userId = metadata.user_id;
+  let accountId = metadata.account_id;
+
+  // DVA deposits: no metadata — find user by Paystack customer code
+  if (!userId) {
+    const customerCode = verification.data.customer?.customer_code;
+    if (customerCode) {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("paystack_customer_code", customerCode)
+        .single();
+
+      if (profile) {
+        userId = profile.id;
+
+        // Find or create a default Flex pot for DVA deposits
+        const { data: flexPot } = await admin
+          .from("savings_accounts")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("type", "flex")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .single();
+
+        if (flexPot) {
+          accountId = flexPot.id;
+        } else {
+          // Create a default Flex pot if none exists
+          const { data: newPot } = await admin
+            .from("savings_accounts")
+            .insert({
+              user_id: userId,
+              type: "flex",
+              name: "Default Savings",
+              target_amount: 0,
+              current_amount: 0,
+              interest_rate: 2,
+              lock_type: "none",
+              status: "active",
+              icon: "flex",
+              description: "Auto-created for bank transfer deposits",
+            })
+            .select()
+            .single();
+
+          if (newPot) {
+            accountId = newPot.id;
+          }
+        }
+      }
+    }
+  }
 
   if (!userId || !accountId) {
-    console.error("Deposit credit: missing metadata for reference", reference);
+    console.error("Deposit credit: could not resolve user/account for reference", reference);
     return { status: "success", credited: false, amount: amountInNaira, reference };
   }
 
@@ -41,6 +97,21 @@ export async function verifyAndCreditDeposit(reference: string) {
 
   if (existingTx?.status === "completed") {
     return { status: "success", credited: false, amount: amountInNaira, reference, alreadyCompleted: true };
+  }
+
+  // If no transaction record exists (DVA deposit without prior init), create one
+  if (!existingTx) {
+    await admin.from("transactions").insert({
+      user_id: userId,
+      account_id: accountId,
+      type: "deposit",
+      amount: amountInNaira,
+      payment_method: "bank_transfer",
+      payment_reference: reference,
+      status: "pending",
+      description: "Bank transfer deposit",
+      fee_amount: 0,
+    });
   }
 
   await admin

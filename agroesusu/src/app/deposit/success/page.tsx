@@ -3,13 +3,14 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckIcon, AlertTriangleIcon } from "@/components/icons";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get("reference");
-  const [status, setStatus] = useState<"verifying" | "success" | "failed">("verifying");
+  const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
   const [details, setDetails] = useState<{ amount?: number; reference?: string }>({});
+  const pollCount = useRef(0);
 
   useEffect(() => {
     if (!reference) {
@@ -19,19 +20,27 @@ function SuccessContent() {
 
     async function verify() {
       try {
-        // Server-side route verifies with Paystack AND credits the account
-        // (idempotent — safe even if the webhook already did it).
         const res = await fetch(`/api/paystack/verify?reference=${reference}`);
         const data = await res.json();
+        pollCount.current++;
 
         if (data.status === "success") {
           setDetails({ amount: data.amount, reference: data.reference });
           setStatus("success");
+        } else if (pollCount.current >= 10) {
+          // After ~30 seconds of polling, show "processing" instead of "failed"
+          // The webhook will still credit the account when it arrives
+          setStatus("processing");
         } else {
-          setStatus("failed");
+          // Wait 3 seconds and retry
+          setTimeout(verify, 3000);
         }
       } catch {
-        setStatus("failed");
+        if (pollCount.current >= 10) {
+          setStatus("processing");
+        } else {
+          setTimeout(verify, 3000);
+        }
       }
     }
 
@@ -45,6 +54,28 @@ function SuccessContent() {
           style={{ borderColor: "var(--border-default)", borderTopColor: "var(--accent)" }} />
         <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Verifying your deposit...</p>
         <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Please don&apos;t close this page</p>
+      </div>
+    );
+  }
+
+  if (status === "processing") {
+    return (
+      <div className="max-w-md mx-auto px-6 py-20 text-center">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{ background: "var(--accent-subtle)" }}>
+          <CheckIcon className="w-7 h-7" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
+        </div>
+        <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>Payment Received</h1>
+        <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
+          We&apos;ve received your payment and are processing it. Your savings will be credited shortly.
+        </p>
+        <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>
+          Reference: {reference}
+        </p>
+        <Link href="/" className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition"
+          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+          Back to Dashboard
+        </Link>
       </div>
     );
   }

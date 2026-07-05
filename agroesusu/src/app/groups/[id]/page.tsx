@@ -3,13 +3,21 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { UsersIcon, ArrowLeftIcon, CheckIcon } from '@/components/icons';
 import JoinButton from './join-button';
+import ShareGroupButton from './share-button';
 
-export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function GroupDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ invite?: string }> }) {
   const { id } = await params;
+  const { invite } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect('/auth/login');
+  if (!user) {
+    // If they came via an invite link, redirect to register with the return path
+    const redirectPath = invite
+      ? `/auth/register?redirect=${encodeURIComponent(`/groups/${id}?invite=${invite}`)}`
+      : `/auth/login?redirect=${encodeURIComponent(`/groups/${id}`)}`;
+    redirect(redirectPath);
+  }
 
   const [
     { data: group },
@@ -39,7 +47,9 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   }
 
   const isMember = members?.some((m: any) => m.user_id === user.id);
+  const isAdmin = group.admin_id === user.id;
   const isFull = group.member_count >= group.max_members;
+  const validInvite = invite && group.invite_token && invite === group.invite_token;
 
   const totalContributed = contributions
     ?.filter((c: any) => c.status === 'verified')
@@ -96,15 +106,39 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
+        {/* Invite banner for invite link visitors */}
+        {validInvite && !isMember && !isFull && group.status === 'recruiting' && (
+          <div className="mt-4 rounded-lg p-3 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--accent)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--accent)" }}>
+              You&apos;ve been invited to join this group!
+            </p>
+          </div>
+        )}
+
+        {/* Join button */}
         {!isMember && !isFull && group.status === 'recruiting' && (
           <div className="mt-4"><JoinButton groupId={group.id} /></div>
         )}
+
+        {/* Member badge */}
         {isMember && (
-          <div className="mt-4 rounded-lg p-3 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
-            <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
-              <CheckIcon className="w-4 h-4" strokeWidth={2.5} />
-              You&apos;re a member of this group
-            </p>
+          <div className="mt-4 rounded-lg p-3 border flex items-center gap-1.5" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
+            <CheckIcon className="w-4 h-4" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
+            <p className="text-sm font-medium" style={{ color: "var(--accent)" }}>You&apos;re a member of this group</p>
+          </div>
+        )}
+
+        {/* Admin share tools */}
+        {isAdmin && group.status === 'recruiting' && group.invite_token && (
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+            <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Invite members</p>
+            <ShareGroupButton
+              groupName={group.name}
+              contributionAmount={Number(group.contribution_amount)}
+              frequency={group.frequency}
+              inviteToken={group.invite_token}
+              groupId={group.id}
+            />
           </div>
         )}
       </div>
