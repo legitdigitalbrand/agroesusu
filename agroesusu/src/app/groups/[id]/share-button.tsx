@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WhatsAppIcon, CopyIcon, CheckIcon, ShareIcon } from '@/components/icons';
 
 export default function ShareGroupButton({
@@ -17,6 +17,11 @@ export default function ShareGroupButton({
   groupId: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [canNativeShare, setCanNativeShare] = useState(false);
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  }, []);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://agroesusu.vercel.app';
   const inviteUrl = `${baseUrl}/groups/${groupId}?invite=${inviteToken}`;
@@ -31,7 +36,7 @@ export default function ShareGroupButton({
   };
 
   const handleNativeShare = async () => {
-    if (navigator.share) {
+    if (canNativeShare) {
       try {
         await navigator.share({
           title: `Join ${groupName} on AgroEsusu`,
@@ -39,7 +44,7 @@ export default function ShareGroupButton({
           url: inviteUrl,
         });
       } catch {
-        // User cancelled — no action needed
+        // User cancelled
       }
     } else {
       handleCopy();
@@ -47,7 +52,7 @@ export default function ShareGroupButton({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <a
         href={whatsappUrl}
         target="_blank"
@@ -68,7 +73,7 @@ export default function ShareGroupButton({
         {copied ? 'Copied!' : 'Copy Link'}
       </button>
 
-      {typeof navigator !== 'undefined' && navigator.share && (
+      {canNativeShare && (
         <button
           onClick={handleNativeShare}
           className="inline-flex items-center justify-center w-10 h-10 rounded-lg border transition"

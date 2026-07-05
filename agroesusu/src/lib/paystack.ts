@@ -39,6 +39,8 @@ interface VerifyTxnResponse {
     currency: string;
     customer: {
       email: string;
+      customer_code?: string;
+      id?: number;
     };
     metadata: {
       user_id?: string;

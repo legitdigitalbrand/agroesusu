@@ -17,14 +17,15 @@ export default async function ProfilePage() {
     supabase.from('group_members').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
   ]);
 
-  const kycStatus = profile?.kyc_status || 'unverified';
+  const kycStatus: string = (profile?.kyc_status as string) || 'unverified';
 
-  const kycBadge = {
+  const kycBadges: Record<string, { label: string; color: string; bg: string; Icon: typeof ShieldCheckIcon }> = {
     verified: { label: 'Verified', color: 'var(--accent)', bg: 'var(--accent-subtle)', Icon: CheckIcon },
     pending_review: { label: 'Under Review', color: 'var(--color-brand-gold)', bg: 'rgba(245,184,0,0.12)', Icon: AlertTriangleIcon },
     unverified: { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon },
     pending: { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon },
-  }[kycStatus] || { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon };
+  };
+  const kycBadge = kycBadges[kycStatus] || { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon as typeof ShieldCheckIcon };
 
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
