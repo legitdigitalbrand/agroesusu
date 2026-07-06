@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const publicRoutes = ['/auth/login', '/auth/register', '/auth/callback', '/api/paystack/webhook'];
+  const publicRoutes = ['/auth/login', '/auth/register', '/auth/callback', '/api/paystack/webhook', '/api/paystack/dva/create', '/api/kyc/verify-bvn'];
   const isPublicRoute = publicRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );
