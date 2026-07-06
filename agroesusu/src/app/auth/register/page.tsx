@@ -139,7 +139,10 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
           Already have an account?{' '}
-          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: "var(--accent)" }}>
+          <Link
+            href={searchParams.get('redirect') ? `/auth/login?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : '/auth/login'}
+            className="font-semibold hover:underline" style={{ color: "var(--accent)" }}
+          >
             Sign in
           </Link>
         </p>

@@ -103,7 +103,10 @@ export default function LoginPage() {
 
         <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
           No account?{' '}
-          <Link href="/auth/register" className="font-semibold hover:underline" style={{ color: "var(--accent)" }}>
+          <Link
+            href={searchParams.get('redirect') ? `/auth/register?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : '/auth/register'}
+            className="font-semibold hover:underline" style={{ color: "var(--accent)" }}
+          >
             Create one
           </Link>
         </p>
