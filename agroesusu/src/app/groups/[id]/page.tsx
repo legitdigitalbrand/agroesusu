@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { UsersIcon, ArrowLeftIcon, CheckIcon } from '@/components/icons';
 import JoinButton from './join-button';
 import ShareGroupButton from './share-button';
+import EmergencyFundPanel from './emergency-fund-panel';
+import RatingPanel from './rating-panel';
+import { TrophyIcon } from '@/components/icons';
 
 export default async function GroupDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ invite?: string }> }) {
   const { id } = await params;
@@ -37,6 +40,16 @@ export default async function GroupDetailPage({ params, searchParams }: { params
       .order('created_at', { ascending: false }),
   ]);
 
+  const isEmergencyGroup = group?.type === 'emergency';
+
+  const { data: emergencyRequests } = isEmergencyGroup
+    ? await supabase
+        .from('emergency_fund_requests')
+        .select(`*, profiles!emergency_fund_requests_requester_id_fkey(full_name), votes:emergency_fund_votes(voter_id, approve)`)
+        .eq('group_id', id)
+        .order('created_at', { ascending: false })
+    : { data: [] };
+
   if (!group) {
     return (
       <div className="p-8 max-w-3xl mx-auto text-center">
@@ -51,9 +64,11 @@ export default async function GroupDetailPage({ params, searchParams }: { params
   const isFull = group.member_count >= group.max_members;
   const validInvite = invite && group.invite_token && invite === group.invite_token;
 
-  const totalContributed = contributions
-    ?.filter((c: any) => c.status === 'verified')
-    .reduce((sum: number, c: any) => sum + Number(c.amount), 0) || 0;
+  const totalContributed = isEmergencyGroup
+    ? Number(group.total_pool || 0)
+    : contributions
+        ?.filter((c: any) => c.status === 'verified')
+        .reduce((sum: number, c: any) => sum + Number(c.amount), 0) || 0;
 
   const currentCycleContribs = contributions?.filter(
     (c: any) => c.cycle_number === group.current_cycle && c.status === 'verified'
@@ -194,6 +209,89 @@ export default async function GroupDetailPage({ params, searchParams }: { params
           ))}
         </div>
       </div>
+
+      {group.status === 'completed' && (
+        <div className="rounded-xl p-6 mb-6 border" style={{ background: "var(--accent-subtle)", borderColor: "var(--accent)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <TrophyIcon className="w-5 h-5" style={{ color: "var(--accent)" }} />
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Cycle Completion Report</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Total Saved</p>
+              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>₦{totalContributed.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>On-Time Rate</p>
+              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                {contributions && contributions.length > 0
+                  ? Math.round((contributions.filter((c: any) => c.status === 'verified').length / contributions.length) * 100)
+                  : 0}%
+              </p>
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Members</p>
+              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{group.member_count}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEmergencyGroup ? (
+        <EmergencyFundPanel
+          groupId={group.id}
+          poolTotal={Number(group.total_pool || 0)}
+          requests={(emergencyRequests || []).map((r: any) => ({
+            ...r,
+            profiles: r.profiles,
+          }))}
+          userId={user.id}
+          isMember={!!isMember}
+        />
+      ) : (
+        members && members.length > 1 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrophyIcon className="w-5 h-5" style={{ color: "var(--accent)" }} />
+              <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Leaderboard</h2>
+            </div>
+            <div className="rounded-xl border divide-y" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+              {[...members]
+                .sort((a: any, b: any) => (b.reliability_rating || 0) - (a.reliability_rating || 0))
+                .map((m: any, i: number) => (
+                  <div key={m.id} className="flex items-center justify-between p-4" style={{ borderColor: "var(--border-subtle)" }}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold w-5" style={{ color: i === 0 ? "var(--color-brand-gold)" : "var(--text-faint)" }}>
+                        {i + 1}
+                      </span>
+                      <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{m.profiles?.full_name || 'Unknown'}</p>
+                      {m.reliability_rating >= 100 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                          Perfect record
+                        </span>
+                      )}
+                      {m.reliability_rating >= 80 && m.reliability_rating < 100 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(245,184,0,0.12)", color: "var(--color-brand-gold)" }}>
+                          Reliable
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{m.reliability_rating || 100}</p>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )
+      )}
+
+      {isMember && members && members.length > 1 && (
+        <RatingPanel
+          groupId={group.id}
+          members={members
+            .filter((m: any) => m.user_id !== user.id)
+            .map((m: any) => ({ user_id: m.user_id, full_name: m.profiles?.full_name || 'Member' }))}
+        />
+      )}
 
       <div>
         <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Recent Contributions</h2>

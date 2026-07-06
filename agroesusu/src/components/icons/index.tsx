@@ -343,3 +343,15 @@ export function WhatsAppIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function TrophyIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M8 4h8v6a4 4 0 0 1-8 0V4z" />
+      <path d="M8 5H5a2 2 0 0 0 0 4h1.5M16 5h3a2 2 0 0 1 0 4h-1.5" />
+      <path d="M12 14v3" />
+      <path d="M9 21h6" />
+      <path d="M9.5 17h5l.5 4H9l.5-4z" />
+    </svg>
+  );
+}
