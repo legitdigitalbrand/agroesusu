@@ -15,6 +15,7 @@ function generateToken(): string {
 }
 
 export default function CreateGroupPage() {
+  const [groupType, setGroupType] = useState<'esusu' | 'emergency'>('esusu');
   const [name, setName] = useState('');
   const [contributionAmount, setContributionAmount] = useState('');
   const [frequency, setFrequency] = useState('weekly');
@@ -41,10 +42,11 @@ export default function CreateGroupPage() {
     const { data: group, error: groupError } = await supabase.from('savings_groups').insert({
       name,
       admin_id: user.id,
+      type: groupType,
       contribution_amount: Number(contributionAmount),
       frequency,
       max_members: Number(maxMembers),
-      total_cycles: Number(maxMembers),
+      total_cycles: groupType === 'emergency' ? 0 : Number(maxMembers),
       status: 'recruiting',
       description,
       invite_token: inviteToken,
@@ -82,14 +84,36 @@ export default function CreateGroupPage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Create an Esusu Group</h1>
+      <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Create a Group</h1>
+
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <button type="button" onClick={() => setGroupType('esusu')}
+          className="p-4 rounded-xl border text-left transition"
+          style={{
+            background: groupType === 'esusu' ? "var(--accent-subtle)" : "var(--surface-card)",
+            borderColor: groupType === 'esusu' ? "var(--accent)" : "var(--border-default)",
+          }}>
+          <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>Esusu Cycle</div>
+          <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Rotating payout — everyone contributes, one member gets the pool each cycle</div>
+        </button>
+        <button type="button" onClick={() => setGroupType('emergency')}
+          className="p-4 rounded-xl border text-left transition"
+          style={{
+            background: groupType === 'emergency' ? "var(--accent-subtle)" : "var(--surface-card)",
+            borderColor: groupType === 'emergency' ? "var(--accent)" : "var(--border-default)",
+          }}>
+          <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>Emergency Fund</div>
+          <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Shared safety-net pool — members request funds, group votes to approve</div>
+        </button>
+      </div>
 
       <div className="rounded-lg p-3 mb-6 border flex items-start gap-2" style={{ background: "var(--accent-subtle)", borderColor: "var(--border-default)" }}>
         <InfoIcon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "var(--accent)" }} />
         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-          <strong>How Esusu works:</strong> Members contribute a fixed amount each cycle.
-          One member receives the total pool each cycle, rotating until everyone gets paid.
-          After creating, you&apos;ll get a shareable link to invite members.
+          {groupType === 'esusu'
+            ? <><strong>How Esusu works:</strong> Members contribute a fixed amount each cycle. One member receives the total pool each cycle, rotating until everyone gets paid.</>
+            : <><strong>How Emergency Funds work:</strong> Members contribute regularly to a shared pool. Anyone can request funds for an emergency, and the group votes to approve or deny.</>}
+          {' '}After creating, you&apos;ll get a shareable link to invite members.
         </p>
       </div>
 

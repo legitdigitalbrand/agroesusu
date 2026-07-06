@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION protect_savings_balance()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.current_amount IS DISTINCT FROM OLD.current_amount
-     AND auth.role() != 'service_role' THEN
+     AND auth.role() IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'current_amount can only be changed by a verified server-side transaction';
   END IF;
   RETURN NEW;
@@ -35,7 +35,7 @@ BEGIN
       OR NEW.total_withdrawn IS DISTINCT FROM OLD.total_withdrawn
       OR NEW.credit_score IS DISTINCT FROM OLD.credit_score
       OR NEW.kyc_status IS DISTINCT FROM OLD.kyc_status)
-     AND auth.role() != 'service_role' THEN
+     AND auth.role() IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'This field can only be changed by a verified server-side process';
   END IF;
   RETURN NEW;
