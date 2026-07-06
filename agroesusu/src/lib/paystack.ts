@@ -13,8 +13,11 @@ interface InitializeTxnParams {
   callback_url: string;
   metadata?: {
     user_id: string;
-    account_id: string;
-    account_name: string;
+    account_id?: string;
+    account_name?: string;
+    group_id?: string;
+    cycle_number?: number;
+    contribution_id?: string;
   };
 }
 

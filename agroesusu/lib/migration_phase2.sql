@@ -127,3 +127,13 @@ DROP POLICY IF EXISTS "ratings_select_all" ON member_ratings;
 CREATE POLICY "ratings_select_all" ON member_ratings FOR SELECT USING (true);
 DROP POLICY IF EXISTS "ratings_insert_own" ON member_ratings;
 CREATE POLICY "ratings_insert_own" ON member_ratings FOR INSERT WITH CHECK (auth.uid() = rater_id);
+
+-- ============================================
+-- 6. GROUP CONTRIBUTIONS (real payments) + ESUSU PAYOUT CLAIMS
+-- ============================================
+-- Group payouts (esusu cycle payout to the current recipient's bank account)
+-- reuse the transactions table with account_id = NULL (money leaves the
+-- group pool, not a personal savings pot).
+ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_type_check;
+ALTER TABLE transactions ADD CONSTRAINT transactions_type_check
+  CHECK (type IN ('deposit', 'withdrawal', 'interest', 'group_contribution', 'round_up', 'group_payout'));

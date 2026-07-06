@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAndCreditDeposit } from "@/lib/deposit-credit";
+import { verifyAndCreditGroupContribution } from "@/lib/group-contribution-credit";
 
 /**
  * Verify a Paystack transaction after the user is redirected back from
@@ -10,6 +11,9 @@ import { verifyAndCreditDeposit } from "@/lib/deposit-credit";
  * (webhook or this redirect) credits the account; the other is a no-op.
  * This is what makes deposits confirm reliably instead of hanging on
  * "pending" when a webhook is slow or misses.
+ *
+ * References are prefixed (AGC_DEP for deposits, AGC_GRP for group
+ * contributions) so we route to the right crediting function.
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -23,7 +27,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await verifyAndCreditDeposit(reference);
+    const result = reference.startsWith("AGC_GRP")
+      ? await verifyAndCreditGroupContribution(reference)
+      : await verifyAndCreditDeposit(reference);
 
     if (result.status === "success") {
       return NextResponse.json({

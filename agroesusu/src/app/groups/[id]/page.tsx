@@ -6,6 +6,8 @@ import JoinButton from './join-button';
 import ShareGroupButton from './share-button';
 import EmergencyFundPanel from './emergency-fund-panel';
 import RatingPanel from './rating-panel';
+import ContributePanel from './contribute-panel';
+import ClaimPayoutPanel from './claim-payout-panel';
 import { TrophyIcon } from '@/components/icons';
 
 export default async function GroupDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ invite?: string }> }) {
@@ -73,6 +75,15 @@ export default async function GroupDetailPage({ params, searchParams }: { params
   const currentCycleContribs = contributions?.filter(
     (c: any) => c.cycle_number === group.current_cycle && c.status === 'verified'
   ) || [];
+
+  const myContributionThisCycle = contributions?.find(
+    (c: any) => c.user_id === user.id && c.cycle_number === group.current_cycle && c.status !== 'rejected'
+  );
+
+  const myMembership = members?.find((m: any) => m.user_id === user.id);
+  const isCurrentRecipient =
+    !isEmergencyGroup && myMembership?.slot_position === group.current_cycle && !myMembership?.has_received_payout;
+  const cycleFullyFunded = currentCycleContribs.length >= (group.member_count || 0);
 
   return (
     <div className="p-4 lg:p-8 max-w-3xl mx-auto">
@@ -157,6 +168,34 @@ export default async function GroupDetailPage({ params, searchParams }: { params
           </div>
         )}
       </div>
+
+      {isMember && group.status === 'active' && !isEmergencyGroup && isCurrentRecipient && cycleFullyFunded && (
+        <div className="mb-6">
+          <ClaimPayoutPanel groupId={group.id} payoutAmount={Number(group.total_pool)} />
+        </div>
+      )}
+
+      {isMember && group.status === 'active' && !isEmergencyGroup && !isCurrentRecipient && (
+        <div className="mb-6">
+          <ContributePanel
+            groupId={group.id}
+            contributionAmount={Number(group.contribution_amount)}
+            frequency={group.frequency}
+            alreadyContributed={!!myContributionThisCycle}
+          />
+        </div>
+      )}
+
+      {isMember && group.status === 'active' && isEmergencyGroup && (
+        <div className="mb-6">
+          <ContributePanel
+            groupId={group.id}
+            contributionAmount={Number(group.contribution_amount)}
+            frequency={group.frequency}
+            alreadyContributed={false}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="rounded-xl p-5 border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
