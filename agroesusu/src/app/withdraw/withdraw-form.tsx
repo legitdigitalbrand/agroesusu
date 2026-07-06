@@ -1,93 +1,121 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { CheckIcon } from '@/components/icons';
+
+interface Bank {
+  name: string;
+  code: string;
+  slug: string;
+}
 
 export default function WithdrawForm({ accounts, userId }: { accounts: any[]; userId: string }) {
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   const [amount, setAmount] = useState('');
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [bankCode, setBankCode] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [resolvedName, setResolvedName] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const selectedAccount = accounts.find(a => a.id === accountId);
   const availableBalance = Number(selectedAccount?.current_amount || 0);
 
+  const isSoftLockedEarly =
+    selectedAccount?.lock_type === 'soft' &&
+    selectedAccount?.unlock_date &&
+    new Date(selectedAccount.unlock_date) > new Date();
+
+  const isHardLocked =
+    (selectedAccount?.lock_type === 'hard' || selectedAccount?.lock_type === 'until_date') &&
+    selectedAccount?.unlock_date &&
+    new Date(selectedAccount.unlock_date) > new Date();
+
+  useEffect(() => {
+    fetch('/api/withdraw/banks')
+      .then((r) => r.json())
+      .then((data) => setBanks(data.banks || []))
+      .catch(() => setBanks([]));
+  }, []);
+
+  // Resolve account name whenever a full 10-digit account number + bank are set
+  useEffect(() => {
+    setResolvedName('');
+    setResolveError('');
+    if (accountNumber.length === 10 && bankCode) {
+      setResolving(true);
+      fetch('/api/withdraw/resolve-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_number: accountNumber, bank_code: bankCode }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.account_name) setResolvedName(data.account_name);
+          else setResolveError(data.error || 'Could not verify account');
+        })
+        .catch(() => setResolveError('Could not verify account'))
+        .finally(() => setResolving(false));
+    }
+  }, [accountNumber, bankCode]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     const withdrawAmount = Number(amount);
     if (!withdrawAmount || withdrawAmount < 100) {
       setError('Minimum withdrawal is ₦100');
-      setLoading(false);
       return;
     }
-
     if (withdrawAmount > availableBalance) {
       setError('Insufficient balance in this pot');
-      setLoading(false);
+      return;
+    }
+    if (isHardLocked) {
+      setError(`This pot is locked until ${new Date(selectedAccount.unlock_date).toLocaleDateString()}`);
+      return;
+    }
+    if (!bankCode || accountNumber.length !== 10) {
+      setError('Enter a valid 10-digit account number and select your bank');
+      return;
+    }
+    if (!resolvedName) {
+      setError('We could not verify this account. Double-check the number and bank.');
       return;
     }
 
-    if (selectedAccount?.lock_type !== 'none' && selectedAccount?.unlock_date) {
-      const unlockDate = new Date(selectedAccount.unlock_date);
-      if (unlockDate > new Date()) {
-        setError(`This pot is locked until ${unlockDate.toLocaleDateString()}`);
-        setLoading(false);
-        return;
-      }
-    }
+    setLoading(true);
 
-    const { error: txError } = await supabase.from('transactions').insert({
-      user_id: userId,
-      account_id: accountId,
-      type: 'withdrawal',
-      amount: withdrawAmount,
-      payment_method: 'bank_transfer',
-      status: 'pending',
-      description: 'Withdrawal request',
-      payment_reference: `WDR_${Date.now()}`,
+    const res = await fetch('/api/withdraw/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_id: accountId,
+        amount: withdrawAmount,
+        bank_code: bankCode,
+        account_number: accountNumber,
+        account_name: resolvedName,
+      }),
     });
 
-    if (txError) {
-      setError(txError.message);
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || 'Something went wrong');
       setLoading(false);
       return;
-    }
-
-    const newBalance = availableBalance - withdrawAmount;
-    await supabase.from('savings_accounts')
-      .update({ current_amount: newBalance })
-      .eq('id', accountId);
-
-    await supabase.from('transactions')
-      .update({ status: 'completed', completed_date: new Date().toISOString() })
-      .eq('account_id', accountId)
-      .eq('type', 'withdrawal')
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('total_withdrawn')
-      .eq('id', userId)
-      .single();
-
-    if (profile) {
-      await supabase.from('profiles')
-        .update({ total_withdrawn: Number(profile.total_withdrawn) + withdrawAmount })
-        .eq('id', userId);
     }
 
     setSuccess(true);
     setLoading(false);
-    setTimeout(() => router.push('/'), 2000);
+    setTimeout(() => router.push('/'), 2500);
   };
 
   const inputStyle = {
@@ -103,7 +131,7 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
           <CheckIcon className="w-7 h-7" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
         </div>
         <h2 className="text-lg font-semibold" style={{ color: "var(--accent)" }}>Withdrawal Processing</h2>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>₦{Number(amount).toLocaleString()} will be sent to your bank.</p>
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>₦{Number(amount).toLocaleString()} is on its way to {resolvedName}.</p>
         <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>Redirecting to dashboard...</p>
       </div>
     );
@@ -119,47 +147,93 @@ export default function WithdrawForm({ accounts, userId }: { accounts: any[]; us
           className="w-full px-4 py-3 rounded-lg border outline-none transition"
           style={inputStyle}
         >
-          {accounts.map((acc) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.name} — ₦{Number(acc.current_amount).toLocaleString()}
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name} — ₦{Number(a.current_amount).toLocaleString()}
             </option>
+          ))}
+        </select>
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+          Available: ₦{availableBalance.toLocaleString()}
+        </p>
+      </div>
+
+      {isHardLocked && (
+        <div className="text-sm p-3 rounded-lg border" style={{ background: "rgba(245,184,0,0.1)", color: "var(--color-brand-gold)", borderColor: "rgba(245,184,0,0.2)" }}>
+          This pot is locked until {new Date(selectedAccount.unlock_date).toLocaleDateString()}. You can&apos;t withdraw until then.
+        </div>
+      )}
+
+      {isSoftLockedEarly && (
+        <div className="text-sm p-3 rounded-lg border" style={{ background: "rgba(245,184,0,0.1)", color: "var(--color-brand-gold)", borderColor: "rgba(245,184,0,0.2)" }}>
+          Withdrawing before {new Date(selectedAccount.unlock_date).toLocaleDateString()} forfeits your accrued interest on this pot.
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Amount</label>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0.00"
+          className="w-full px-4 py-3 rounded-lg border outline-none transition"
+          style={inputStyle}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Bank</label>
+        <select
+          value={bankCode}
+          onChange={(e) => setBankCode(e.target.value)}
+          className="w-full px-4 py-3 rounded-lg border outline-none transition"
+          style={inputStyle}
+        >
+          <option value="">Select your bank</option>
+          {banks.map((b) => (
+            <option key={b.code} value={b.code}>{b.name}</option>
           ))}
         </select>
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Amount (₦)</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Account Number</label>
         <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          required
-          min="100"
-          max={availableBalance}
-          placeholder="5000"
-          className="w-full px-4 py-3 rounded-lg border outline-none transition text-lg"
+          type="text"
+          inputMode="numeric"
+          maxLength={10}
+          value={accountNumber}
+          onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
+          placeholder="0123456789"
+          className="w-full px-4 py-3 rounded-lg border outline-none transition"
           style={inputStyle}
         />
-        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Available: ₦{availableBalance.toLocaleString()}</p>
-        {availableBalance > 0 && (
-          <button type="button" onClick={() => setAmount(String(availableBalance))}
-            className="text-xs font-medium mt-1 hover:underline" style={{ color: "var(--accent)" }}>
-            Withdraw all
-          </button>
+        {resolving && <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Verifying account...</p>}
+        {resolvedName && (
+          <p className="text-xs mt-1 font-medium" style={{ color: "var(--accent)" }}>✓ {resolvedName}</p>
+        )}
+        {resolveError && (
+          <p className="text-xs mt-1" style={{ color: "var(--danger)" }}>{resolveError}</p>
         )}
       </div>
 
       {error && (
-        <div className="text-sm p-3 rounded-lg border"
-          style={{ background: "rgba(255,77,109,0.1)", color: "var(--danger)", borderColor: "rgba(255,77,109,0.2)" }}>
+        <div
+          className="text-sm p-3 rounded-lg border"
+          style={{ background: "rgba(255,77,109,0.1)", color: "var(--danger)", borderColor: "rgba(255,77,109,0.2)" }}
+        >
           {error}
         </div>
       )}
 
-      <button type="submit" disabled={loading}
+      <button
+        type="submit"
+        disabled={loading || isHardLocked || !resolvedName}
         className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
-        {loading ? 'Processing...' : `Withdraw ₦${amount ? Number(amount).toLocaleString() : '0'}`}
+        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+      >
+        {loading ? 'Processing...' : 'Withdraw'}
       </button>
     </form>
   );

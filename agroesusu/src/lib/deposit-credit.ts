@@ -151,6 +151,12 @@ export async function verifyAndCreditDeposit(reference: string) {
       .eq("id", userId);
   }
 
+  // Round-up automation: if the user has a Stash pot with round-up enabled,
+  // credit it with the spare change from this deposit (rounded up to the
+  // nearest ₦100). This is a bookkeeping allocation, not a second real
+  // charge — the round-up "comes from" this same completed deposit.
+  await applyRoundUp(admin, userId, accountId, amountInNaira, reference);
+
   await admin.from("notifications").insert({
     user_id: userId,
     type: "deposit",
@@ -162,4 +168,45 @@ export async function verifyAndCreditDeposit(reference: string) {
   });
 
   return { status: "success", credited: true, amount: amountInNaira, reference };
+}
+
+async function applyRoundUp(
+  admin: ReturnType<typeof import("@/lib/supabase/server").createAdminClient>,
+  userId: string,
+  sourceAccountId: string,
+  depositAmount: number,
+  sourceReference: string
+) {
+  const roundUpAmount = Math.ceil(depositAmount / 100) * 100 - depositAmount;
+  if (roundUpAmount <= 0) return;
+
+  const { data: stashPot } = await admin
+    .from("savings_accounts")
+    .select("id, current_amount")
+    .eq("user_id", userId)
+    .eq("type", "stash")
+    .eq("round_up_enabled", true)
+    .neq("id", sourceAccountId)
+    .limit(1)
+    .single();
+
+  if (!stashPot) return;
+
+  await admin
+    .from("savings_accounts")
+    .update({ current_amount: Number(stashPot.current_amount) + roundUpAmount })
+    .eq("id", stashPot.id);
+
+  await admin.from("transactions").insert({
+    user_id: userId,
+    account_id: stashPot.id,
+    type: "round_up",
+    amount: roundUpAmount,
+    payment_method: "system",
+    payment_reference: `${sourceReference}_ROUNDUP`,
+    status: "completed",
+    description: `Round-up from deposit ${sourceReference}`,
+    fee_amount: 0,
+    completed_date: new Date().toISOString(),
+  });
 }
