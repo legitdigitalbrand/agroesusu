@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { UsersIcon, PlusIcon, ChevronRightIcon, CheckIcon } from '@/components/icons';
+import { PageHero, PageBody } from '@/components/ui/page-hero';
+import { formatNaira } from '@/lib/utils';
 
 export default async function GroupsPage() {
   const supabase = await createClient();
@@ -25,23 +27,38 @@ export default async function GroupsPage() {
       .limit(5),
   ]);
 
-  return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Esusu Groups</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Save together, grow together</p>
-        </div>
-        <Link
-          href="/groups/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition"
-          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
-        >
-          <PlusIcon className="w-4 h-4" />
-          New Group
-        </Link>
-      </div>
+  const myGroupTotalPool = (memberships || []).reduce((sum: number, m: any) => sum + Number(m.savings_groups?.total_pool || 0), 0);
 
+  return (
+    <div>
+      <PageHero>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-xs font-semibold tracking-wide" style={{ color: "var(--hero-pill-bg)" }}>ESUSU GROUPS</p>
+            <h1 className="text-xl font-bold mt-0.5" style={{ color: "#FFFFFF" }}>Save together, grow together</h1>
+          </div>
+          <Link
+            href="/groups/new"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0"
+            style={{ background: "var(--hero-pill-bg)", color: "var(--hero-pill-text)" }}
+          >
+            <PlusIcon className="w-4 h-4" />
+            New Group
+          </Link>
+        </div>
+        <div className="flex items-center gap-8">
+          <div>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Combined group pool</p>
+            <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(myGroupTotalPool)}</p>
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Groups joined</p>
+            <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{memberships?.length || 0}</p>
+          </div>
+        </div>
+      </PageHero>
+
+      <PageBody>
       <div className="mb-8">
         <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>My Groups</h2>
 
@@ -147,6 +164,7 @@ export default async function GroupsPage() {
           </div>
         </div>
       )}
+      </PageBody>
     </div>
   );
 }

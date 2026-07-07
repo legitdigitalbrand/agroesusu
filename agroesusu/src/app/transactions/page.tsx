@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { TransactionRow } from '@/components/ui/transaction-row';
+import { PageHero, PageBody } from '@/components/ui/page-hero';
+import { formatNaira } from '@/lib/utils';
 
 export default async function TransactionsPage() {
   const supabase = await createClient();
@@ -15,28 +17,51 @@ export default async function TransactionsPage() {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  return (
-    <div className="p-4 lg:p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Transaction History</h1>
+  const verified = (transactions || []).filter((t: any) => t.status === 'completed' || t.status === 'verified' || t.status === 'success');
+  const totalIn = verified
+    .filter((t: any) => ['deposit', 'group_payout'].includes(t.type))
+    .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+  const totalOut = verified
+    .filter((t: any) => ['withdrawal', 'group_contribution'].includes(t.type))
+    .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
 
-      {!transactions || transactions.length === 0 ? (
-        <div className="rounded-xl p-12 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
-          <p style={{ color: "var(--text-muted)" }}>No transactions yet.</p>
+  return (
+    <div>
+      <PageHero maxWidth="max-w-3xl">
+        <p className="text-xs font-semibold tracking-wide mb-0.5" style={{ color: "var(--hero-pill-bg)" }}>ACTIVITY</p>
+        <h1 className="text-xl font-bold mb-6" style={{ color: "#FFFFFF" }}>Transaction History</h1>
+        <div className="flex items-center gap-8">
+          <div>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Money in</p>
+            <p className="text-2xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(totalIn)}</p>
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Money out</p>
+            <p className="text-2xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(totalOut)}</p>
+          </div>
         </div>
-      ) : (
-        <div className="rounded-xl border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
-          {transactions.map((tx) => (
-            <TransactionRow
-              key={tx.id}
-              type={tx.type}
-              amount={Number(tx.amount)}
-              description={tx.description || ''}
-              date={tx.created_at}
-              status={tx.status}
-            />
-          ))}
-        </div>
-      )}
+      </PageHero>
+
+      <PageBody maxWidth="max-w-3xl">
+        {!transactions || transactions.length === 0 ? (
+          <div className="rounded-xl p-12 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+            <p style={{ color: "var(--text-muted)" }}>No transactions yet.</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border px-4" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+            {transactions.map((tx) => (
+              <TransactionRow
+                key={tx.id}
+                type={tx.type}
+                amount={Number(tx.amount)}
+                description={tx.description || ''}
+                date={tx.created_at}
+                status={tx.status}
+              />
+            ))}
+          </div>
+        )}
+      </PageBody>
     </div>
   );
 }
