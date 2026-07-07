@@ -85,7 +85,7 @@ export function Sidebar({ user }: SidebarProps) {
             <p className="text-sm font-medium truncate" style={{ color: "#FFFFFF" }}>
               {user?.full_name || "User"}
             </p>
-            <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.75)" }}>
               {user?.tier || "basic"} tier
             </p>
           </div>

@@ -62,7 +62,7 @@ export default async function DashboardPage() {
                 {initials}
               </div>
               <div>
-                <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>{greeting}</p>
+                <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>{greeting}</p>
                 <p className="text-base font-bold" style={{ color: "#FFFFFF" }}>{firstName}</p>
               </div>
             </div>
@@ -142,15 +142,15 @@ export default async function DashboardPage() {
         {dvaAccountNumber && (
           <div className="mb-4 lg:max-w-md">
             <div className="rounded-2xl p-4 border" style={{ background: "var(--hero-bg)", borderColor: "var(--border-default)" }}>
-              <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>Your Account Number</p>
+              <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>Your Account Number</p>
               <div className="flex items-center justify-between mt-2">
                 <div>
                   <p className="text-lg font-bold tabular-nums" style={{ color: "#FFFFFF" }}>{dvaAccountNumber}</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{dvaBankName}</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>{dvaBankName}</p>
                 </div>
                 <CopyButton text={dvaAccountNumber} />
               </div>
-              <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.65)" }}>
+              <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.85)" }}>
                 Transfer to this account to fund your savings instantly
               </p>
             </div>

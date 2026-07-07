@@ -43,7 +43,7 @@ export default async function ProfilePage() {
           </div>
           <div className="min-w-0">
             <h2 className="text-lg font-bold truncate" style={{ color: "#FFFFFF" }}>{profile?.full_name || 'User'}</h2>
-            <p className="text-sm truncate" style={{ color: "rgba(255,255,255,0.6)" }}>{profile?.email}</p>
+            <p className="text-sm truncate" style={{ color: "rgba(255,255,255,0.85)" }}>{profile?.email}</p>
             <span
               className="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize"
               style={{ background: "var(--hero-pill-bg)", color: "var(--hero-pill-text)" }}

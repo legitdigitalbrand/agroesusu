@@ -32,11 +32,11 @@ export default async function TransactionsPage() {
         <h1 className="text-xl font-bold mb-6" style={{ color: "#FFFFFF" }}>Transaction History</h1>
         <div className="flex items-center gap-8">
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Money in</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Money in</p>
             <p className="text-2xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(totalIn)}</p>
           </div>
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Money out</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Money out</p>
             <p className="text-2xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(totalOut)}</p>
           </div>
         </div>

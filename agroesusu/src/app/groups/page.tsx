@@ -48,11 +48,11 @@ export default async function GroupsPage() {
         </div>
         <div className="flex items-center gap-8">
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Combined group pool</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Combined group pool</p>
             <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(myGroupTotalPool)}</p>
           </div>
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Groups joined</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Groups joined</p>
             <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{memberships?.length || 0}</p>
           </div>
         </div>
