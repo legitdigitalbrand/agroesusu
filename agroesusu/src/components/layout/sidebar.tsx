@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { HomeIcon, PiggyIcon, UsersIcon, ReceiptIcon, UserIcon } from "@/components/icons";
+import { createClient } from "@/lib/supabase/client";
+import { HomeIcon, PiggyIcon, UsersIcon, ReceiptIcon, UserIcon, LogoutIcon } from "@/components/icons";
 
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
@@ -19,12 +20,20 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   if (pathname.startsWith("/auth")) return null;
 
   const initials = user?.full_name
     ? user.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : "??";
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  };
 
   return (
     <aside
@@ -71,25 +80,37 @@ export function Sidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t flex items-center gap-3" style={{ borderColor: "var(--nav-border)" }}>
-        <ThemeToggle />
-        <div className="flex-1 flex items-center gap-3">
+      {/* Footer — identity row + a clearly clickable Sign Out action */}
+      <div className="px-3 py-3 border-t" style={{ borderColor: "var(--nav-border)" }}>
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 px-3 py-2 rounded-xl mb-1 transition-colors hover:bg-white/5"
+        >
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
             style={{ background: "var(--hero-pill-bg)" }}
           >
-            <span className="font-medium text-sm" style={{ color: "var(--hero-pill-text)" }}>{initials}</span>
+            <span className="font-bold text-sm" style={{ color: "var(--hero-pill-text)" }}>{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: "#FFFFFF" }}>
+            <p className="text-sm font-semibold truncate" style={{ color: "#FFFFFF" }}>
               {user?.full_name || "User"}
             </p>
-            <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.75)" }}>
+            <p className="text-xs capitalize" style={{ color: "var(--nav-text-inactive)" }}>
               {user?.tier || "basic"} tier
             </p>
           </div>
-        </div>
+          <ThemeToggle />
+        </Link>
+
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          style={{ color: "#FF8A8A" }}
+        >
+          <LogoutIcon className="w-[18px] h-[18px]" strokeWidth={2} />
+          Sign Out
+        </button>
       </div>
     </aside>
   );

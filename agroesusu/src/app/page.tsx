@@ -66,12 +66,10 @@ export default async function DashboardPage() {
                 <p className="text-base font-bold" style={{ color: "#FFFFFF" }}>{firstName}</p>
               </div>
             </div>
-            <Link href="/profile" className="w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: "var(--hero-pill-bg)" }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--hero-pill-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
-                <path d="M12 3a5 5 0 0 0-5 5v3.2c0 .7-.3 1.4-.8 1.9L5 15h14l-1.2-1.9c-.5-.5-.8-1.2-.8-1.9V8a5 5 0 0 0-5-5z" />
-                <path d="M10 18a2 2 0 0 0 4 0" />
-              </svg>
+            <Link href="/profile" className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+              style={{ background: "var(--hero-pill-bg)", color: "var(--hero-pill-text)" }}
+              aria-label="View profile">
+              {initials}
             </Link>
           </div>
 
