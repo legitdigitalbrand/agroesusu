@@ -39,11 +39,11 @@ export function Sidebar({ user }: SidebarProps) {
         <Link href="/" className="flex items-center gap-2">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "var(--accent)" }}
+            style={{ background: "var(--hero-pill-bg)" }}
           >
-            <span className="font-bold text-sm" style={{ color: "var(--qa-primary-text)" }}>A</span>
+            <span className="font-bold text-sm" style={{ color: "var(--hero-pill-text)" }}>A</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+          <span className="text-lg font-semibold tracking-tight" style={{ color: "#FFFFFF" }}>
             AgroEsusu
           </span>
         </Link>
@@ -58,9 +58,9 @@ export function Sidebar({ user }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
               style={{
-                background: isActive ? "var(--accent-subtle)" : "transparent",
+                background: isActive ? "var(--nav-active-bg)" : "transparent",
                 color: isActive ? "var(--nav-text-active)" : "var(--nav-text-inactive)",
               }}
             >
@@ -77,15 +77,15 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="flex-1 flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: "var(--accent-subtle)" }}
+            style={{ background: "var(--hero-pill-bg)" }}
           >
-            <span className="font-medium text-sm" style={{ color: "var(--accent)" }}>{initials}</span>
+            <span className="font-medium text-sm" style={{ color: "var(--hero-pill-text)" }}>{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
+            <p className="text-sm font-medium truncate" style={{ color: "#FFFFFF" }}>
               {user?.full_name || "User"}
             </p>
-            <p className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>
+            <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.5)" }}>
               {user?.tier || "basic"} tier
             </p>
           </div>

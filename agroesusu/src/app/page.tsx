@@ -50,8 +50,8 @@ export default async function DashboardPage() {
     <div className="max-w-md lg:max-w-6xl mx-auto">
       {/* ===== HERO CARD — dark green, full-bleed on mobile, rounded on desktop ===== */}
       <div
-        className="pt-12 lg:pt-10 lg:mt-6 pb-8 px-5 lg:px-8 lg:rounded-3xl lg:mx-8"
-        style={{ background: "var(--hero-bg)" }}
+        className="pt-12 lg:pt-10 lg:mt-6 pb-10 px-5 lg:px-8 lg:rounded-3xl lg:mx-8"
+        style={{ background: "var(--hero-gradient)" }}
       >
         <div className="max-w-md lg:max-w-none mx-auto lg:mx-0">
           {/* header row */}
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ===== WHITE CONTENT AREA — overlaps the hero card slightly ===== */}
-      <div className="relative -mt-5 lg:mt-0 rounded-t-3xl lg:rounded-none px-5 lg:px-8 pt-6"
+      <div className="relative -mt-8 lg:mt-0 rounded-t-[2.5rem] lg:rounded-none px-5 lg:px-8 pt-7"
         style={{ background: "var(--surface-base)" }}>
 
         {/* DVA Card */}

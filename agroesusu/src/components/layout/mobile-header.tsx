@@ -24,11 +24,11 @@ export function MobileHeader() {
       <div className="flex items-center gap-2">
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: "var(--accent)" }}
+          style={{ background: "var(--hero-pill-bg)" }}
         >
-          <span className="font-bold text-xs" style={{ color: "var(--nav-bg)" }}>A</span>
+          <span className="font-bold text-xs" style={{ color: "var(--hero-pill-text)" }}>A</span>
         </div>
-        <span className="text-base font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+        <span className="text-base font-semibold tracking-tight" style={{ color: "#FFFFFF" }}>
           AgroEsusu
         </span>
       </div>
