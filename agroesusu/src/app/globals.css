@@ -68,6 +68,24 @@
   --tx-negative: #DC2626;
   --tx-icon-deposit-bg: #ECFDF3;
   --tx-icon-withdraw-bg: #FEF2F2;
+  --hero-bg: #014D15;
+  --hero-pill-bg: #04FB46;
+  --hero-pill-text: #001907;
+  --hero-pill-secondary-bg: rgba(255,255,255,0.14);
+  --hero-pill-secondary-text: #FFFFFF;
+  --hero-chip-bg: rgba(255,255,255,0.10);
+  --hero-chip-active-bg: #04FB46;
+  --hero-chip-active-text: #001907;
+  --hero-chip-text: rgba(255,255,255,0.8);
+  --hero-chip-border: rgba(255,255,255,0.18);
+  --action-green: #014D15;
+  --action-red: #DC2626;
+  --action-gold: #f5b800;
+  --action-blue: #2563EB;
+  --action-green-subtle: #ECFDF3;
+  --action-red-subtle: #FEF2F2;
+  --action-gold-subtle: #FEF9E7;
+  --action-blue-subtle: #EFF6FF;
 }
 
 /* ===== DARK MODE (toggle) ===== */
@@ -116,6 +134,24 @@
   --tx-negative: #ff4d6d;
   --tx-icon-deposit-bg: rgba(74, 222, 128, 0.12);
   --tx-icon-withdraw-bg: rgba(255, 77, 109, 0.12);
+  --hero-bg: #014D15;
+  --hero-pill-bg: #4ADE80;
+  --hero-pill-text: #0B0F0D;
+  --hero-pill-secondary-bg: rgba(255,255,255,0.10);
+  --hero-pill-secondary-text: #FFFFFF;
+  --hero-chip-bg: rgba(255,255,255,0.08);
+  --hero-chip-active-bg: #4ADE80;
+  --hero-chip-active-text: #0B0F0D;
+  --hero-chip-text: rgba(255,255,255,0.7);
+  --hero-chip-border: rgba(255,255,255,0.16);
+  --action-green: #4ADE80;
+  --action-red: #ff4d6d;
+  --action-gold: #f5b800;
+  --action-blue: #60A5FA;
+  --action-green-subtle: rgba(74, 222, 128, 0.12);
+  --action-red-subtle: rgba(255, 77, 109, 0.12);
+  --action-gold-subtle: rgba(245, 184, 0, 0.12);
+  --action-blue-subtle: rgba(96, 165, 250, 0.12);
 }
 
 * {
