@@ -10,7 +10,6 @@ interface GoalCardProps {
   currentAmount: number;
   unlockDate?: string;
   icon?: string;
-  interestRate?: number;
   variant?: "default" | "compact";
 }
 
@@ -47,7 +46,6 @@ export function GoalCard({
   currentAmount,
   unlockDate,
   icon,
-  interestRate,
   variant = "default",
 }: GoalCardProps) {
   const percent = progressPercent(currentAmount, targetAmount);
@@ -144,8 +142,6 @@ export function GoalCard({
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               {daysLeft} {daysLeft === 1 ? "month" : "months"} left
             </span>
-          ) : interestRate && interestRate > 0 ? (
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{interestRate}% interest</span>
           ) : null}
         </div>
       </div>

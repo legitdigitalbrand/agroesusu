@@ -5,6 +5,7 @@ import {
   initiateTransfer,
   generateReference,
 } from "@/lib/paystack";
+import { calcGroupPayoutFee } from "@/lib/fees";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -80,6 +81,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nothing to pay out" }, { status: 400 });
     }
 
+    // Facilitation fee (the automated "esusu collector" fee) — kept by the
+    // platform, recipient gets the pool minus this.
+    const fee = calcGroupPayoutFee(payoutAmount);
+    const netPayout = payoutAmount - fee;
+
     const reference = generateReference("AGC_PAY");
 
     let recipientCode: string;
@@ -117,18 +123,18 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       account_id: null,
       type: "group_payout",
-      amount: payoutAmount,
+      amount: netPayout,
       payment_method: "bank_transfer",
       payment_reference: reference,
       status: "processing",
-      description: `Cycle ${group.current_cycle} payout from ${group.name}`,
-      fee_amount: 0,
+      description: `Cycle ${group.current_cycle} payout from ${group.name} — ₦${fee.toLocaleString()} facilitation fee applied`,
+      fee_amount: fee,
       paystack_response: JSON.stringify({ recipient_code: recipientCode, bank_code, account_number, group_id }),
     });
 
     try {
       await initiateTransfer({
-        amount: payoutAmount,
+        amount: netPayout,
         recipient_code: recipientCode,
         reference,
         reason: `AgroEsusu cycle payout — ${group.name}`,
@@ -155,7 +161,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ status: "processing", reference, amount: payoutAmount });
+    return NextResponse.json({ status: "processing", reference, amount: netPayout, fee });
   } catch (error: any) {
     console.error("Payout claim error:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

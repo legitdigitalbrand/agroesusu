@@ -166,7 +166,7 @@ export default function WithdrawForm({ accounts }: { accounts: any[]; userId: st
 
       {isSoftLockedEarly && (
         <div className="text-sm p-3 rounded-lg border" style={{ background: "rgba(245,184,0,0.1)", color: "var(--color-brand-gold)", borderColor: "rgba(245,184,0,0.2)" }}>
-          Withdrawing before {new Date(selectedAccount.unlock_date).toLocaleDateString()} forfeits your accrued interest on this pot.
+          This pot has a soft lock until {new Date(selectedAccount.unlock_date).toLocaleDateString()}. You can still withdraw, but it defeats the purpose of the goal — consider waiting.
         </div>
       )}
 
@@ -180,6 +180,9 @@ export default function WithdrawForm({ accounts }: { accounts: any[]; userId: st
           className="w-full px-4 py-3 rounded-lg border outline-none transition"
           style={inputStyle}
         />
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+          A ₦50 withdrawal fee applies — {amount && Number(amount) > 0 ? `₦${(Number(amount) + 50).toLocaleString()} will be deducted from this pot` : "deducted from this pot on top of the amount above"}.
+        </p>
       </div>
 
       <div>

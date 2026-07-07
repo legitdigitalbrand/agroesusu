@@ -22,10 +22,10 @@ export default async function SavePage() {
   const activeCount = accounts?.filter(a => a.status === 'active').length || 0;
 
   const potTypes = [
-    { Icon: DropletIcon, name: 'Flex', desc: 'Save anytime, withdraw anytime. 2% interest.' },
-    { Icon: TargetIcon, name: 'Goal', desc: 'Target a specific amount. 5% interest.' },
-    { Icon: WheatIcon, name: 'Seasonal', desc: 'Lock for planting season. 7% interest.' },
-    { Icon: LockIcon, name: 'Stash', desc: 'Long-term lock. 3% interest.' },
+    { Icon: DropletIcon, name: 'Flex', desc: 'Save anytime, withdraw anytime.' },
+    { Icon: TargetIcon, name: 'Goal', desc: 'Target a specific amount and track progress.' },
+    { Icon: WheatIcon, name: 'Seasonal', desc: 'Lock for planting season.' },
+    { Icon: LockIcon, name: 'Stash', desc: 'Long-term lock for bigger goals.' },
   ];
 
   return (
@@ -79,7 +79,6 @@ export default async function SavePage() {
                 currentAmount={Number(account.current_amount || 0)}
                 targetAmount={Number(account.target_amount || 0)}
                 icon={account.icon}
-                interestRate={Number(account.interest_rate || 0)}
               />
             ))}
           </div>

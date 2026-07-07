@@ -5,6 +5,7 @@ import {
   initiateTransfer,
   generateReference,
 } from "@/lib/paystack";
+import { WITHDRAWAL_FEE_NGN } from "@/lib/fees";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -63,9 +64,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Savings pot not found" }, { status: 404 });
     }
 
-    if (withdrawAmount > Number(account.current_amount)) {
+    const fee = WITHDRAWAL_FEE_NGN;
+    const totalDebit = withdrawAmount + fee;
+
+    if (totalDebit > Number(account.current_amount)) {
       return NextResponse.json(
-        { error: "Insufficient balance in this pot" },
+        { error: `Insufficient balance — this withdrawal needs ₦${totalDebit.toLocaleString()} (₦${withdrawAmount.toLocaleString()} + ₦${fee} fee)` },
         { status: 400 }
       );
     }
@@ -81,14 +85,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let forfeitedInterest = 0;
-    let newBalance = Number(account.current_amount) - withdrawAmount;
-
-    // Soft lock: early withdrawal allowed, but forfeits accrued interest on
-    // the whole pot as a discipline mechanism.
-    if (account.lock_type === "soft" && account.unlock_date && new Date(account.unlock_date) > new Date()) {
-      forfeitedInterest = Number(account.current_amount) * (Number(account.interest_rate) / 100) * 0.1;
-    }
+    // Deduct the withdrawal amount PLUS our flat fee from the pot balance.
+    // The fee is our revenue — kept in the platform, never sent to the bank.
+    const newBalance = Number(account.current_amount) - totalDebit;
 
     const reference = generateReference("AGC_WDR");
 
@@ -132,10 +131,8 @@ export async function POST(request: NextRequest) {
       payment_method: "bank_transfer",
       payment_reference: reference,
       status: "processing",
-      description: `Withdrawal to ${account_name} (${bank_code} ****${account_number.slice(-4)})${
-        forfeitedInterest > 0 ? ` — forfeited ₦${forfeitedInterest.toFixed(2)} interest (early soft-lock withdrawal)` : ""
-      }`,
-      fee_amount: 0,
+      description: `Withdrawal to ${account_name} (${bank_code} ****${account_number.slice(-4)}) — ₦${fee} fee applied`,
+      fee_amount: fee,
       paystack_response: JSON.stringify({ recipient_code: recipientCode, bank_code, account_number }),
     });
 
@@ -166,7 +163,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       status: "processing",
       reference,
-      forfeitedInterest,
+      fee,
     });
   } catch (error: any) {
     console.error("Withdraw init error:", error);

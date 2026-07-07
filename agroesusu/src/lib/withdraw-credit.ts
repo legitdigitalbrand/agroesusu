@@ -64,7 +64,7 @@ export async function finalizeWithdrawal(
   if (account) {
     await admin
       .from("savings_accounts")
-      .update({ current_amount: Number(account.current_amount) + Number(tx.amount) })
+      .update({ current_amount: Number(account.current_amount) + Number(tx.amount) + Number(tx.fee_amount || 0) })
       .eq("id", tx.account_id);
   }
 

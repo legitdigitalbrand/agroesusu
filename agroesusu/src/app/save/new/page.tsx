@@ -93,7 +93,6 @@ export default function CreatePotPage() {
                 </div>
                 <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{pt.label}</div>
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>{pt.desc}</div>
-                <div className="text-xs font-medium mt-1" style={{ color: "var(--accent)" }}>{pt.rate}% interest</div>
               </button>
             ))}
           </div>
@@ -130,7 +129,7 @@ export default function CreatePotPage() {
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: 'none', label: 'No lock', desc: 'Withdraw anytime' },
-                    { value: 'soft', label: 'Soft lock', desc: 'Early withdrawal forfeits interest' },
+                    { value: 'soft', label: 'Soft lock', desc: 'Early withdrawal allowed but discouraged' },
                     { value: 'hard', label: 'Hard lock', desc: 'Locked until target date' },
                   ].map((lt) => (
                     <button key={lt.value} type="button" onClick={() => setLockType(lt.value as any)}

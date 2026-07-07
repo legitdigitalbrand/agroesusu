@@ -247,7 +247,6 @@ export default async function DashboardPage() {
                       currentAmount={Number(account.current_amount || 0)}
                       targetAmount={Number(account.target_amount || 0)}
                       icon={account.icon}
-                      interestRate={Number(account.interest_rate || 0)}
                       unlockDate={account.unlock_date}
                     />
                   ))}

@@ -64,7 +64,7 @@ export async function finalizeGroupPayout(
       await admin
         .from("savings_groups")
         .update({
-          total_pool: Number(group.total_pool) + Number(tx.amount),
+          total_pool: Number(group.total_pool) + Number(tx.amount) + Number(tx.fee_amount || 0),
           current_cycle: Math.max(1, group.current_cycle - 1),
           status: "active",
         })
