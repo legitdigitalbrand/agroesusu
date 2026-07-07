@@ -59,7 +59,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
       }
 
       window.location.href = data.authorization_url;
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
       setLoading(false);
     }

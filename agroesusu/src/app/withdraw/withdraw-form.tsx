@@ -10,7 +10,7 @@ interface Bank {
   slug: string;
 }
 
-export default function WithdrawForm({ accounts, userId }: { accounts: any[]; userId: string }) {
+export default function WithdrawForm({ accounts }: { accounts: any[]; userId: string }) {
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   const [amount, setAmount] = useState('');
   const [banks, setBanks] = useState<Bank[]>([]);

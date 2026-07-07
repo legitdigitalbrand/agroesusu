@@ -54,8 +54,6 @@ export async function POST(request: NextRequest) {
     const bvnData = data.data;
     const bvnFirstName = (bvnData.first_name || "").toLowerCase().trim();
     const bvnLastName = (bvnData.last_name || "").toLowerCase().trim();
-    const bvnFullName = `${bvnFirstName} ${bvnLastName}`.trim();
-
     // Get the user's registered name
     const { data: userProfile } = await admin
       .from("profiles")

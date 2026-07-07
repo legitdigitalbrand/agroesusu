@@ -113,6 +113,11 @@ export default function VerifyBVNForm({
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
             We verify your identity through your Bank Verification Number to keep the platform safe. Your BVN is never stored in full — only the last 4 digits and a secure hash.
           </p>
+          {fullName && (
+            <p className="text-xs mt-2" style={{ color: "var(--text-faint)" }}>
+              We&apos;ll check this BVN is registered to <span className="font-medium" style={{ color: "var(--text-muted)" }}>{fullName}</span>.
+            </p>
+          )}
         </div>
       </div>
 

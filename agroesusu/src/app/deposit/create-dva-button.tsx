@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CopyIcon, CheckIcon } from '@/components/icons';
 
-export default function CreateDVAButton({ userId, initialStatus }: { userId: string; initialStatus: string }) {
+export default function CreateDVAButton({ userId }: { userId: string; initialStatus: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [dva, setDva] = useState<{ account_number: string; bank_name: string } | null>(null);

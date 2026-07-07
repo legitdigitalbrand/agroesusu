@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { UsersIcon, ArrowLeftIcon, CheckIcon } from '@/components/icons';
+import { ArrowLeftIcon, CheckIcon } from '@/components/icons';
 import JoinButton from './join-button';
 import ShareGroupButton from './share-button';
 import EmergencyFundPanel from './emergency-fund-panel';

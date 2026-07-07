@@ -7,7 +7,7 @@ interface BalanceCardProps {
   activeGoals?: number;
 }
 
-export function BalanceCard({ totalBalance, totalSaved, totalWithdrawn, activeGoals = 0 }: BalanceCardProps) {
+export function BalanceCard({ totalBalance, activeGoals = 0 }: BalanceCardProps) {
   return (
     <div
       className="mx-5 rounded-2xl p-6"

@@ -26,7 +26,6 @@ export default async function DashboardPage() {
 
   const totalBalance = accounts?.reduce((sum, acc) => sum + Number(acc.current_amount || 0), 0) || 0;
   const activeGoals = accounts?.filter(a => a.status === 'active') || [];
-  const totalSaved = profile?.total_saved || 0;
   const kycStatus = profile?.kyc_status || 'unverified';
   const dvaAccountNumber = profile?.paystack_dva_account_number || null;
   const dvaBankName = profile?.paystack_dva_bank_name || null;
