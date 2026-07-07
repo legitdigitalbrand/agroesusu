@@ -47,8 +47,11 @@ export default async function DashboardPage() {
   const activePotType = accounts?.[0]?.type || 'flex';
 
   return (
-    <div className="max-w-md lg:max-w-6xl mx-auto">
-      {/* ===== HERO CARD — dark green, full-bleed on mobile, rounded on desktop ===== */}
+    <div className="lg:max-w-6xl lg:mx-auto">
+      {/* ===== HERO CARD — dark green, full-bleed edge-to-edge below the lg
+           breakpoint (any width, not just true phone widths — the old
+           max-w-md mobile cap left visible white gutters whenever the
+           viewport was wider than 448px but still under 1024px). ===== */}
       <div
         className="pt-12 lg:pt-10 lg:mt-6 pb-10 px-5 lg:px-8 lg:rounded-3xl lg:mx-8"
         style={{ background: "var(--hero-gradient)" }}

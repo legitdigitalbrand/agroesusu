@@ -44,6 +44,42 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
+    // Paystack's BVN lookup requires account-level activation we don't have
+    // yet (401/403, or a message saying the route/feature isn't available).
+    // Don't dead-end the user on an infra gap that isn't their fault —
+    // accept the BVN for manual review instead of hard-failing.
+    const isFeatureUnavailable =
+      response.status === 401 ||
+      response.status === 403 ||
+      /not available|not enabled|not permitted|unauthorized/i.test(data.message || "");
+
+    if (isFeatureUnavailable) {
+      console.error("BVN lookup unavailable (Paystack feature not activated):", data);
+      await admin
+        .from("profiles")
+        .update({
+          bvn_last_4: bvnLast4,
+          bvn_hash: bvnHash,
+          kyc_status: "pending_review",
+        })
+        .eq("id", userId);
+
+      await admin.from("notifications").insert({
+        user_id: userId,
+        type: "kyc",
+        channel: "in_app",
+        title: "Identity Under Review",
+        content: "We've received your BVN. Automated verification isn't live yet, so our team will confirm it manually and unlock withdrawals shortly.",
+        status: "unread",
+        metadata: { kyc_status: "pending_review" },
+      });
+
+      return NextResponse.json({
+        status: "pending_review",
+        message: "Automated BVN verification isn't live yet — your BVN has been submitted for manual review. We'll unlock withdrawals as soon as it's confirmed.",
+      });
+    }
+
     if (!response.ok || !data.status) {
       console.error("BVN verification failed:", data);
       return NextResponse.json({
