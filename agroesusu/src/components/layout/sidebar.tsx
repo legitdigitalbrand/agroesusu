@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -21,6 +22,7 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   if (pathname.startsWith("/auth")) return null;
 
@@ -29,6 +31,10 @@ export function Sidebar({ user }: SidebarProps) {
     : "??";
 
   const handleSignOut = async () => {
+    // Flip to a visibly "working" state the instant the click happens —
+    // signOut() + the redirect involve a network round-trip, and with no
+    // feedback during that gap the button just looked broken/unresponsive.
+    setIsSigningOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/auth/login");
@@ -105,11 +111,12 @@ export function Sidebar({ user }: SidebarProps) {
 
         <button
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          disabled={isSigningOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           style={{ color: "var(--nav-danger)" }}
         >
           <LogoutIcon className="w-[18px] h-[18px]" strokeWidth={2} />
-          Sign Out
+          {isSigningOut ? "Signing out…" : "Sign Out"}
         </button>
       </div>
     </aside>

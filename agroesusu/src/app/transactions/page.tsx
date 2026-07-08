@@ -10,14 +10,29 @@ export default async function TransactionsPage() {
 
   if (!user) redirect('/auth/login');
 
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(50);
+  // Two separate queries on purpose:
+  // 1. `transactions` — the last 50 rows, full columns, for the list UI.
+  // 2. `totalsRows` — every row ever, but only the 2 columns (type, amount)
+  //    needed for the Money in / Money out headline figures.
+  // Computing the totals from query #1 alone was a correctness bug: once a
+  // user passed 50 transactions, the header totals silently stopped
+  // matching their real lifetime numbers. Querying narrow columns for #2
+  // keeps this cheap even as a user's full history grows.
+  const [{ data: transactions }, { data: totalsRows }] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabase
+      .from('transactions')
+      .select('type, amount, status')
+      .eq('user_id', user.id)
+      .in('status', ['completed', 'verified', 'success']),
+  ]);
 
-  const verified = (transactions || []).filter((t: any) => t.status === 'completed' || t.status === 'verified' || t.status === 'success');
+  const verified = totalsRows || [];
   const totalIn = verified
     .filter((t: any) => ['deposit', 'group_payout'].includes(t.type))
     .reduce((sum: number, t: any) => sum + Number(t.amount), 0);

@@ -79,15 +79,20 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* pill actions */}
-          <div className="flex items-center justify-center gap-3 mb-6">
+          {/* pill actions — grid on mobile so the two buttons always divide
+              the available width evenly (Tailwind's grid-cols-2 bakes in
+              minmax(0,1fr), so it can never overflow the viewport the way
+              a plain flex row with fixed px-8 padding could). Reverts to a
+              compact centered flex row of auto-width pills on desktop,
+              matching the original look there. */}
+          <div className="grid grid-cols-2 gap-3 mb-6 max-w-xs mx-auto lg:flex lg:items-center lg:justify-center lg:max-w-none lg:mx-0">
             <Link href="/deposit"
-              className="px-8 py-2.5 rounded-xl text-sm font-bold text-center"
+              className="px-4 lg:px-8 py-2.5 rounded-xl text-sm font-bold text-center whitespace-nowrap"
               style={{ background: "var(--hero-pill-bg)", color: "var(--hero-pill-text)" }}>
               Deposit
             </Link>
             <Link href="/withdraw"
-              className="px-8 py-2.5 rounded-xl text-sm font-bold text-center"
+              className="px-4 lg:px-8 py-2.5 rounded-xl text-sm font-bold text-center whitespace-nowrap"
               style={{ background: "var(--hero-pill-secondary-bg)", color: "var(--hero-pill-secondary-text)" }}>
               Withdraw
             </Link>

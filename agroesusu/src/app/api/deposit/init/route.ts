@@ -1,11 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeTransaction, generateReference } from "@/lib/paystack";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // This route previously trusted a client-supplied `user_id` with no auth
+  // check at all — anyone could call it with an arbitrary user_id/account_id
+  // and create pending transaction rows attributed to someone else's
+  // account. Every other money-movement route already re-derives the
+  // acting user from the session; this brings deposit-init in line.
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimit = await checkRateLimit(user.id, "deposit_init", {
+    maxAttempts: 10,
+    windowSeconds: 600,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please wait a few minutes and try again." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
-    const { amount, account_id, account_name, email, user_id } = body;
+    const { amount, account_id, account_name, email } = body;
 
     // Validate
     if (!amount || amount < 100) {
@@ -15,20 +41,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!email || !user_id || !account_id) {
+    if (!email || !account_id) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    // Confirm the pot actually belongs to the authenticated user before
+    // creating any transaction record against it.
+    const admin = createAdminClient();
+    const { data: account } = await admin
+      .from("savings_accounts")
+      .select("id")
+      .eq("id", account_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!account) {
+      return NextResponse.json({ error: "Savings pot not found" }, { status: 404 });
+    }
+
     const reference = generateReference("AGC_DEP");
     const origin = request.nextUrl.origin;
 
     // Create pending transaction in Supabase
-    const supabase = await createClient();
     const { error: txError } = await supabase.from("transactions").insert({
-      user_id,
+      user_id: user.id,
       account_id,
       type: "deposit",
       amount: Number(amount),
@@ -54,7 +93,7 @@ export async function POST(request: NextRequest) {
       reference,
       callback_url: `${origin}/deposit/success?reference=${reference}`,
       metadata: {
-        user_id,
+        user_id: user.id,
         account_id,
         account_name: account_name || "",
       },

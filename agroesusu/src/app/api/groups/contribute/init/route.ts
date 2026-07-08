@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeTransaction, generateReference } from "@/lib/paystack";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -10,6 +11,17 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimit = await checkRateLimit(user.id, "group_contribute_init", {
+    maxAttempts: 8,
+    windowSeconds: 600,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please wait a few minutes and try again." },
+      { status: 429 }
+    );
   }
 
   try {

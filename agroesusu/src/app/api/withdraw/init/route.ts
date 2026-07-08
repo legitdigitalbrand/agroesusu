@@ -6,6 +6,7 @@ import {
   generateReference,
 } from "@/lib/paystack";
 import { WITHDRAWAL_FEE_NGN } from "@/lib/fees";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -15,6 +16,17 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimit = await checkRateLimit(user.id, "withdraw_init", {
+    maxAttempts: 5,
+    windowSeconds: 600,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many withdrawal attempts. Please wait a few minutes and try again." },
+      { status: 429 }
+    );
   }
 
   try {
