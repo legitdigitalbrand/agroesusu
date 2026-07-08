@@ -48,7 +48,7 @@ export default async function TransactionsPage() {
             <p style={{ color: "var(--text-muted)" }}>No transactions yet.</p>
           </div>
         ) : (
-          <div className="rounded-xl border px-4" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+          <div className="rounded-xl border overflow-hidden" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
             {transactions.map((tx) => (
               <TransactionRow
                 key={tx.id}

@@ -88,14 +88,14 @@ export default async function GroupsPage() {
                   className="rounded-xl p-5 border transition block"
                   style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
                       <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                         {formatNaira(Number(group.contribution_amount))}/{group.frequency}
                       </p>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-full font-medium capitalize"
+                    <span className="text-xs px-2 py-1 rounded-full font-medium capitalize shrink-0"
                       style={{
                         background: group.status === 'active' ? "var(--accent-subtle)" : group.status === 'recruiting' ? "rgba(245,184,0,0.12)" : "var(--surface-elevated)",
                         color: group.status === 'active' ? "var(--accent)" : group.status === 'recruiting' ? "var(--color-brand-gold)" : "var(--text-muted)",
@@ -142,14 +142,14 @@ export default async function GroupsPage() {
                   className="rounded-xl p-5 border transition block"
                   style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
                       <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                         {formatNaira(Number(group.contribution_amount))}/{group.frequency}
                       </p>
                     </div>
-                    <ChevronRightIcon className="w-4 h-4" style={{ color: "var(--text-faint)" }} />
+                    <ChevronRightIcon className="w-4 h-4 shrink-0" style={{ color: "var(--text-faint)" }} />
                   </div>
                   <div className="flex items-center gap-2 text-xs mb-2" style={{ color: "var(--text-muted)" }}>
                     <UsersIcon className="w-3.5 h-3.5" />

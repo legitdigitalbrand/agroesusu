@@ -216,22 +216,22 @@ export default async function GroupDetailPage({ params, searchParams }: { params
         <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Members ({members?.length || 0})</h2>
         <div className="rounded-xl border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
           {members?.map((m: any, i: number) => (
-            <div key={m.id} className="flex items-center justify-between p-4" style={{ borderBottom: i < (members?.length || 0) - 1 ? "1px solid var(--border-subtle)" : "none" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "var(--accent-subtle)" }}>
+            <div key={m.id} className="flex items-center justify-between gap-2 p-4" style={{ borderBottom: i < (members?.length || 0) - 1 ? "1px solid var(--border-subtle)" : "none" }}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--accent-subtle)" }}>
                   <span className="font-medium text-sm" style={{ color: "var(--accent)" }}>
                     {(m.profiles?.full_name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                   </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: "var(--text-secondary)" }}>
                     {m.profiles?.full_name || 'Unknown'}
                     {m.user_id === group.admin_id && <span className="text-xs ml-2" style={{ color: "var(--accent)" }}>Admin</span>}
                   </p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>Slot #{m.slot_position}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {m.has_received_payout && (
                   <span className="text-xs font-medium flex items-center gap-1" style={{ color: "var(--color-brand-gold)" }}>
                     <CheckIcon className="w-3 h-3" strokeWidth={3} />

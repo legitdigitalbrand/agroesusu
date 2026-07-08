@@ -63,9 +63,9 @@ export function GoalCard({
             borderColor: "var(--border-default)",
           }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{name}</p>
-            <span className="text-xs font-semibold tabular-nums" style={{ color: "var(--accent)" }}>{percent}%</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-sm font-medium truncate min-w-0" style={{ color: "var(--text-primary)" }}>{name}</p>
+            <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "var(--accent)" }}>{percent}%</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--progress-track)" }}>
             <div
@@ -99,17 +99,17 @@ export function GoalCard({
         }}
       >
         {/* Top row: icon + name | amount */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "var(--pot-icon-bg)" }}
             >
               <PotIconComp style={{ width: 18, height: 18, color: "var(--qa-icon-color)" }} />
             </div>
-            <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{name}</span>
+            <span className="text-sm font-semibold truncate min-w-0" style={{ color: "var(--text-primary)" }}>{name}</span>
           </div>
-          <span className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+          <span className="text-sm font-bold tabular-nums shrink-0" style={{ color: "var(--text-primary)" }}>
             {formatNaira(currentAmount)}
           </span>
         </div>

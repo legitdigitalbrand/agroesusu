@@ -233,7 +233,7 @@ export default async function DashboardPage() {
                     <p className="text-sm" style={{ color: "var(--text-muted)" }}>No transactions yet. Make your first deposit!</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl lg:border overflow-hidden mb-8" style={{ borderColor: "var(--border-default)" }}>
+                  <div className="rounded-2xl border overflow-hidden mb-8" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
                     {transactions.map((tx) => (
                       <TransactionRow
                         key={tx.id}

@@ -35,9 +35,9 @@ export default function RatingPanel({ groupId, members }: { groupId: string; mem
       <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>Rate reliability based on this cycle&apos;s contributions and payouts.</p>
       <div className="rounded-xl border divide-y" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
         {members.map((m) => (
-          <div key={m.user_id} className="flex items-center justify-between p-4" style={{ borderColor: "var(--border-subtle)" }}>
-            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{m.full_name}</p>
-            <div className="flex items-center gap-1">
+          <div key={m.user_id} className="flex items-center justify-between gap-2 p-4" style={{ borderColor: "var(--border-subtle)" }}>
+            <p className="text-sm font-medium truncate min-w-0" style={{ color: "var(--text-secondary)" }}>{m.full_name}</p>
+            <div className="flex items-center gap-1 shrink-0">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}

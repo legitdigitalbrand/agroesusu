@@ -23,7 +23,7 @@ export function TransactionRow({ type, amount, description, date, status }: Tran
 
   return (
     <div
-      className="flex items-center gap-3 py-3 border-b last:border-b-0"
+      className="flex items-center gap-3 p-4 border-b last:border-b-0"
       style={{ borderColor: "var(--border-subtle)" }}
     >
       {/* Icon */}
