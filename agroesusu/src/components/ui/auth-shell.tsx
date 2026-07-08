@@ -39,7 +39,7 @@ export function AuthShell({
             <Link href="/" className="inline-flex items-center gap-2">
               <div
                 className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                style={{ background: 'var(--accent)' }}
+                style={{ background: 'var(--qa-primary-bg)' }}
               >
                 <span className="font-bold text-base" style={{ color: 'var(--qa-primary-text)' }}>A</span>
               </div>
