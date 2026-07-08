@@ -66,6 +66,7 @@
   --nav-text-active: #C6F135;
   --nav-text-inactive: rgba(255,255,255,0.55);
   --nav-active-bg: rgba(198,241,53,0.15);
+  --nav-danger: #F2A0A0;
 
   --hero-gradient: linear-gradient(135deg, #0F4A25, #0B3D1F);
   --hero-text: #FAFAF7;
@@ -162,6 +163,7 @@
   --nav-text-active: #C6F135;
   --nav-text-inactive: rgba(255,255,255,0.55);
   --nav-active-bg: rgba(198,241,53,0.16);
+  --nav-danger: #F2A0A0;
 
   --hero-gradient: linear-gradient(135deg, #0F4A25, #0B3D1F);
   --hero-text: #FAFAF7;

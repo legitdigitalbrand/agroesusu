@@ -172,7 +172,7 @@ export default function CreateGroupPage() {
           </button>
           <button type="submit" disabled={loading}
             className="flex-1 py-3 rounded-lg font-semibold transition disabled:opacity-50"
-            style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+            style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}>
             {loading ? 'Creating...' : 'Create Group'}
           </button>
         </div>

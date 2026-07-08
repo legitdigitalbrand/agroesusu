@@ -69,7 +69,7 @@ export default async function GroupsPage() {
             <Link
               href="/groups/new"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition"
-              style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+              style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
             >
               <PlusIcon className="w-4 h-4" />
               Create a group
@@ -110,7 +110,7 @@ export default async function GroupsPage() {
                   </div>
 
                   <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-elevated)" }}>
-                    <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "var(--accent)" }} />
+                    <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "var(--progress-fill)" }} />
                   </div>
 
                   <div className="flex items-center justify-between mt-3 text-xs">
@@ -156,7 +156,7 @@ export default async function GroupsPage() {
                     {group.member_count}/{group.max_members} members
                   </div>
                   <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-elevated)" }}>
-                    <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "var(--accent)" }} />
+                    <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "var(--progress-fill)" }} />
                   </div>
                 </Link>
               );

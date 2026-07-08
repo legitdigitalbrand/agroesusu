@@ -69,7 +69,7 @@ export default function ContributePanel({
           onClick={handleContribute}
           disabled={loading}
           className="px-4 py-2.5 rounded-lg text-sm font-semibold transition disabled:opacity-50"
-          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+          style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
         >
           {loading ? 'Redirecting...' : 'Contribute Now'}
         </button>

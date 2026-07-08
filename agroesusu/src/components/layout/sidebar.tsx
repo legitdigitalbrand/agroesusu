@@ -106,7 +106,7 @@ export function Sidebar({ user }: SidebarProps) {
         <button
           onClick={handleSignOut}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-          style={{ color: "#FF8A8A" }}
+          style={{ color: "var(--nav-danger)" }}
         >
           <LogoutIcon className="w-[18px] h-[18px]" strokeWidth={2} />
           Sign Out

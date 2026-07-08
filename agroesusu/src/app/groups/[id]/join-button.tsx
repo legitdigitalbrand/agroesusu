@@ -68,7 +68,7 @@ export default function JoinButton({ groupId }: { groupId: string }) {
           onClick={handleJoin}
           disabled={loading}
           className="px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
-          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+          style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
         >
           Try again
         </button>
@@ -81,7 +81,7 @@ export default function JoinButton({ groupId }: { groupId: string }) {
       onClick={handleJoin}
       disabled={loading}
       className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-      style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+      style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
     >
       {loading ? 'Joining...' : 'Join Group'}
     </button>

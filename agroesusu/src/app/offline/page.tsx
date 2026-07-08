@@ -42,7 +42,7 @@ export default function OfflinePage() {
         <button
           onClick={() => window.location.reload()}
           className="mt-6 w-full py-3 rounded-lg font-semibold transition"
-          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+          style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
         >
           Try Again
         </button>

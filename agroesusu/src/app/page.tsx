@@ -196,7 +196,7 @@ export default async function DashboardPage() {
                   </p>
                   <Link href="/save/new"
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-                    style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+                    style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}>
                     Create your first pot
                   </Link>
                 </div>

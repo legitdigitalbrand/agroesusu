@@ -64,7 +64,7 @@ function SuccessContent() {
         </div>
         <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>Payment Received</h1>
         <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>We&apos;re processing your contribution — it&apos;ll reflect in the group pool shortly.</p>
-        <Link href={backLink} className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition" style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+        <Link href={backLink} className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition" style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}>
           Back to Group
         </Link>
       </div>
@@ -95,7 +95,7 @@ function SuccessContent() {
       </div>
       <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>Contribution Successful</h1>
       <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>{formatNaira(Number(amount || 0))} added to the group pool</p>
-      <Link href={backLink} className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition" style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+      <Link href={backLink} className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition" style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}>
         Back to Group
       </Link>
     </div>

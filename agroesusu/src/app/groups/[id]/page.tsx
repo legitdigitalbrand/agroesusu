@@ -129,7 +129,7 @@ export default async function GroupDetailPage({ params, searchParams }: { params
             <span>{Math.round((group.member_count / group.max_members) * 100)}%</span>
           </div>
           <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-elevated)" }}>
-            <div className="h-full rounded-full" style={{ width: `${(group.member_count / group.max_members) * 100}%`, background: "var(--accent)" }} />
+            <div className="h-full rounded-full" style={{ width: `${(group.member_count / group.max_members) * 100}%`, background: "var(--progress-fill)" }} />
           </div>
         </div>
 

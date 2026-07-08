@@ -144,7 +144,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
         type="submit"
         disabled={loading}
         className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+        style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
       >
         {loading ? 'Initializing payment...' : `Deposit ₦${amount ? Number(amount).toLocaleString() : '0'}`}
       </button>

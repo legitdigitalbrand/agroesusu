@@ -234,7 +234,7 @@ export default function WithdrawForm({ accounts }: { accounts: any[]; userId: st
         type="submit"
         disabled={loading || isHardLocked || !resolvedName}
         className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+        style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
       >
         {loading ? 'Processing...' : 'Withdraw'}
       </button>

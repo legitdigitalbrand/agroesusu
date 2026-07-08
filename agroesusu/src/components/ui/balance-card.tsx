@@ -23,7 +23,7 @@ export function BalanceCard({ totalBalance, activeGoals = 0 }: BalanceCardProps)
         {formatNaira(totalBalance)}
       </p>
       <div className="flex items-center gap-1.5 mt-2">
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--hero-pill-bg)" }} />
         <p className="text-xs" style={{ color: "var(--balance-card-sub)" }}>
           {activeGoals > 0 ? `${activeGoals} active pot${activeGoals > 1 ? 's' : ''}` : 'Start saving today'}
         </p>

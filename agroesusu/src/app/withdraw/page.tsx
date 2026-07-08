@@ -49,7 +49,7 @@ export default async function WithdrawPage() {
               <Link
                 href="/profile/verify"
                 className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-lg text-sm font-semibold transition"
-                style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+                style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
               >
                 <ShieldCheckIcon className="w-4 h-4" />
                 {kycStatus === 'pending_review' ? 'Check Status' : 'Verify Now'}

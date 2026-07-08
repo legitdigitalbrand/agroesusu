@@ -8,8 +8,9 @@ import { ReactNode } from "react";
  * area below it.
  *
  * The gradient blends the SAME two brand greens used by the nav/sidebar
- * (#014D15 -> #001907) — no third off-hue shade — so the hero, chrome and
- * background all read as one continuous palette instead of clashing.
+ * (anchor-light -> anchor, see globals.css --hero-gradient) — no third
+ * off-hue shade — so the hero, chrome and background all read as one
+ * continuous palette instead of clashing.
  */
 export function PageHero({ children, maxWidth = "max-w-5xl" }: { children: ReactNode; maxWidth?: string }) {
   return (

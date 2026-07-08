@@ -73,7 +73,7 @@ function SuccessContent() {
           Reference: {reference}
         </p>
         <Link href="/" className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition"
-          style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+          style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}>
           Back to Dashboard
         </Link>
       </div>
@@ -130,7 +130,7 @@ function SuccessContent() {
       </div>
 
       <Link href="/" className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition"
-        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+        style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}>
         Back to Dashboard
       </Link>
     </div>

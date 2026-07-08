@@ -91,7 +91,7 @@ export default function EmergencyFundPanel({
           <button
             onClick={() => setShowForm(!showForm)}
             className="text-sm font-semibold px-3 py-1.5 rounded-lg transition"
-            style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
+            style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
           >
             {showForm ? 'Cancel' : 'Request Funds'}
           </button>
@@ -120,7 +120,7 @@ export default function EmergencyFundPanel({
           )}
           <button type="submit" disabled={loading}
             className="w-full py-2.5 rounded-lg font-semibold transition disabled:opacity-50"
-            style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
+            style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}>
             {loading ? 'Submitting...' : 'Submit Request'}
           </button>
         </form>
