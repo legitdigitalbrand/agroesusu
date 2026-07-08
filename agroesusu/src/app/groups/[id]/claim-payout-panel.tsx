@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatNaira } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface Bank {
@@ -84,7 +85,7 @@ export default function ClaimPayoutPanel({ groupId, payoutAmount }: { groupId: s
   if (success) {
     return (
       <div className="rounded-xl p-6 text-center border" style={{ background: "var(--accent-subtle)", borderColor: "var(--accent)" }}>
-        <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Payout processing — ₦{payoutAmount.toLocaleString()} is on its way to {resolvedName}</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Payout processing — {formatNaira(payoutAmount)} is on its way to {resolvedName}</p>
       </div>
     );
   }
@@ -94,7 +95,7 @@ export default function ClaimPayoutPanel({ groupId, payoutAmount }: { groupId: s
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>🎉 Your payout is ready!</p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>₦{payoutAmount.toLocaleString()} — everyone has contributed this cycle</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>{formatNaira(payoutAmount)} — everyone has contributed this cycle</p>
         </div>
         {!showForm && (
           <button onClick={() => setShowForm(true)}
@@ -131,7 +132,7 @@ export default function ClaimPayoutPanel({ groupId, payoutAmount }: { groupId: s
           <button onClick={handleClaim} disabled={loading || !resolvedName}
             className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
             style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
-            {loading ? 'Processing...' : `Send ₦${payoutAmount.toLocaleString()} to my bank`}
+            {loading ? 'Processing...' : `Send ${formatNaira(payoutAmount)} to my bank`}
           </button>
         </div>
       )}

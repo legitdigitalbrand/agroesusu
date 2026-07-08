@@ -71,19 +71,29 @@ export default function CreateDVAButton({ userId }: { userId: string; initialSta
     );
   }
 
+  // After a failed attempt, don't leave the user staring at a dead button —
+  // show a clear, honest status instead (this is almost always the DVA
+  // feature not being activated on our Paystack account yet, not something
+  // the user did wrong).
+  if (error) {
+    return (
+      <div className="rounded-lg p-4 border" style={{ background: "var(--pending-bg)", borderColor: "transparent" }}>
+        <p className="text-sm font-semibold" style={{ color: "var(--pending-text)" }}>Account number generation is temporarily unavailable</p>
+        <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+          We&apos;re still finishing setup with our banking partner. Please pay by card below instead — it&apos;s instant and works right now.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <button
-        onClick={handleCreate}
-        disabled={loading}
-        className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
-        style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}
-      >
-        {loading ? 'Creating your account...' : 'Get Account Number'}
-      </button>
-      {error && (
-        <p className="text-xs mt-2" style={{ color: "var(--danger)" }}>{error}</p>
-      )}
-    </div>
+    <button
+      onClick={handleCreate}
+      disabled={loading}
+      className="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50"
+      style={{ background: "var(--qa-primary-bg)", color: "var(--qa-primary-text)" }}
+    >
+      {loading ? 'Creating your account...' : 'Get Account Number'}
+    </button>
   );
 }

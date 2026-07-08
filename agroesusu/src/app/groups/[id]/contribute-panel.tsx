@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatNaira } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ContributePanel({
@@ -62,7 +63,7 @@ export default function ContributePanel({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Your Contribution</p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>₦{contributionAmount.toLocaleString()} per {frequency}</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{formatNaira(contributionAmount)} per {frequency}</p>
         </div>
         <button
           onClick={handleContribute}

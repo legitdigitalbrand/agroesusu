@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatNaira } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface FundRequest {
@@ -104,7 +105,7 @@ export default function EmergencyFundPanel({
             <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required
               max={poolTotal}
               className="w-full px-4 py-2.5 rounded-lg border outline-none transition" style={inputStyle} />
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Pool available: ₦{poolTotal.toLocaleString()}</p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Pool available: {formatNaira(poolTotal)}</p>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Reason</label>
@@ -140,7 +141,7 @@ export default function EmergencyFundPanel({
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                      {r.profiles?.full_name || 'Member'} — ₦{Number(r.amount).toLocaleString()}
+                      {r.profiles?.full_name || 'Member'} — {formatNaira(Number(r.amount))}
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{r.reason}</p>
                   </div>

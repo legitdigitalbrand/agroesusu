@@ -28,7 +28,7 @@ export function MobileHeader() {
         >
           <span className="font-bold text-xs" style={{ color: "var(--hero-pill-text)" }}>A</span>
         </div>
-        <span className="text-base font-semibold tracking-tight" style={{ color: "#FFFFFF" }}>
+        <span className="text-base font-semibold tracking-tight" style={{ color: "var(--hero-text)" }}>
           AgroEsusu
         </span>
       </div>

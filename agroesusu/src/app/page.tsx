@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { GoalCard } from '@/components/ui/goal-card';
 import { TransactionRow } from '@/components/ui/transaction-row';
 import Link from 'next/link';
-import { DepositIcon, WithdrawIcon, PotIcon, GroupIcon, ShieldCheckIcon, CopyIcon, ChevronRightIcon, PlusIcon, DropletIcon, TargetIcon } from '@/components/icons';
+import { DepositIcon, WithdrawIcon, PotIcon, GroupIcon, ShieldCheckIcon, CopyIcon, ChevronRightIcon } from '@/components/icons';
 import { formatNaira } from '@/lib/utils';
 
 export default async function DashboardPage() {
@@ -38,14 +38,6 @@ export default async function DashboardPage() {
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
     : '??';
 
-  // Pot type chips for the "Your Pots" strip inside the hero card
-  const potTypes = [
-    { key: 'flex', label: 'Flex', icon: DropletIcon },
-    { key: 'goal', label: 'Goal', icon: TargetIcon },
-    { key: 'stash', label: 'Stash', icon: PotIcon },
-  ];
-  const activePotType = accounts?.[0]?.type || 'flex';
-
   return (
     <div className="lg:max-w-6xl lg:mx-auto">
       {/* ===== HERO CARD — dark green, full-bleed edge-to-edge below the lg
@@ -61,12 +53,12 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
-                style={{ background: "rgba(255,255,255,0.14)", color: "#FFFFFF" }}>
+                style={{ background: "rgba(255,255,255,0.14)", color: "var(--hero-text)" }}>
                 {initials}
               </div>
               <div>
-                <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>{greeting}</p>
-                <p className="text-base font-bold" style={{ color: "#FFFFFF" }}>{firstName}</p>
+                <p className="text-xs font-medium" style={{ color: "var(--hero-text-muted)" }}>{greeting}</p>
+                <p className="text-base font-bold" style={{ color: "var(--hero-text)" }}>{firstName}</p>
               </div>
             </div>
             <Link href="/profile" className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
@@ -80,8 +72,8 @@ export default async function DashboardPage() {
           <div className="text-center mb-6">
             <p className="text-xs font-semibold tracking-wide" style={{ color: "var(--hero-pill-bg)" }}>YOUR SAVINGS BALANCE</p>
             <div className="flex items-center justify-center gap-2 mt-1.5">
-              <p className="text-4xl font-extrabold tracking-tight" style={{ color: "#FFFFFF" }}>{formatNaira(totalBalance)}</p>
-              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 17, height: 17 }}>
+              <p className="text-4xl font-extrabold tracking-tight" style={{ color: "var(--hero-text)" }}>{formatNaira(totalBalance)}</p>
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--hero-text-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 17, height: 17 }}>
                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" />
               </svg>
             </div>
@@ -101,37 +93,6 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          {/* nested "Your Pots" chip strip */}
-          <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>Your Pots</p>
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {potTypes.map((pt) => {
-                const isActive = pt.key === activePotType;
-                const Icon = pt.icon;
-                return (
-                  <Link
-                    key={pt.key}
-                    href="/save"
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold shrink-0 border"
-                    style={{
-                      background: isActive ? "var(--hero-chip-active-bg)" : "var(--hero-chip-bg)",
-                      color: isActive ? "var(--hero-chip-active-text)" : "var(--hero-chip-text)",
-                      borderColor: isActive ? "transparent" : "var(--hero-chip-border)",
-                    }}
-                  >
-                    <Icon style={{ width: 13, height: 13 }} />
-                    {pt.label}
-                  </Link>
-                );
-              })}
-              <Link href="/save/new"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold shrink-0 border"
-                style={{ color: "var(--hero-chip-text)", borderColor: "var(--hero-chip-border)" }}>
-                <PlusIcon style={{ width: 13, height: 13 }} />
-                New Pot
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -143,15 +104,15 @@ export default async function DashboardPage() {
         {dvaAccountNumber && (
           <div className="mb-4 lg:max-w-md">
             <div className="rounded-2xl p-4 border" style={{ background: "var(--hero-bg)", borderColor: "var(--border-default)" }}>
-              <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>Your Account Number</p>
+              <p className="text-xs font-medium" style={{ color: "var(--hero-text-muted)" }}>Your Account Number</p>
               <div className="flex items-center justify-between mt-2">
                 <div>
-                  <p className="text-lg font-bold tabular-nums" style={{ color: "#FFFFFF" }}>{dvaAccountNumber}</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>{dvaBankName}</p>
+                  <p className="text-lg font-bold tabular-nums" style={{ color: "var(--hero-text)" }}>{dvaAccountNumber}</p>
+                  <p className="text-xs" style={{ color: "var(--hero-text-muted)" }}>{dvaBankName}</p>
                 </div>
                 <CopyButton text={dvaAccountNumber} />
               </div>
-              <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.85)" }}>
+              <p className="text-xs mt-2" style={{ color: "var(--hero-text-muted)" }}>
                 Transfer to this account to fund your savings instantly
               </p>
             </div>
@@ -352,7 +313,7 @@ function CopyButton({ text }: { text: string }) {
         navigator.clipboard?.writeText(text);
       }}
       className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition"
-      style={{ background: "rgba(255,255,255,0.15)", color: "#FFFFFF" }}
+      style={{ background: "rgba(255,255,255,0.15)", color: "var(--hero-text)" }}
     >
       <CopyIcon className="w-3.5 h-3.5" />
       Copy

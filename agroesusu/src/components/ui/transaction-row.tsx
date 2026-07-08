@@ -8,8 +8,17 @@ interface TransactionRowProps {
   status?: string;
 }
 
+const MONEY_IN_TYPES = new Set(["deposit", "group_payout"]);
+const MONEY_OUT_TYPES = new Set(["withdrawal", "group_contribution"]);
+
 export function TransactionRow({ type, amount, description, date, status }: TransactionRowProps) {
-  const isDeposit = type === "deposit" || amount > 0;
+  // All amounts are stored positive in this schema, so direction must come
+  // from the transaction TYPE, never from the sign of the amount — a naive
+  // `amount > 0` check misclassified group contributions (money leaving the
+  // user, into a group pool) as deposits, since their stored amount is also
+  // positive. Only two directions actually exist; default unknown types to
+  // "in" is safer than silently mislabeling withdrawals as deposits.
+  const isDeposit = MONEY_IN_TYPES.has(type) || (!MONEY_OUT_TYPES.has(type) && amount > 0);
   const isPending = status === "pending";
 
   return (
@@ -54,7 +63,7 @@ export function TransactionRow({ type, amount, description, date, status }: Tran
           {isDeposit ? "+" : "−"}{formatNaira(Math.abs(amount))}
         </p>
         {isPending && (
-          <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Pending</p>
+          <span className="pending-pill mt-1">Pending</span>
         )}
       </div>
     </div>

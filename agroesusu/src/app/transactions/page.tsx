@@ -29,15 +29,15 @@ export default async function TransactionsPage() {
     <div>
       <PageHero maxWidth="max-w-3xl">
         <p className="text-xs font-semibold tracking-wide mb-0.5" style={{ color: "var(--hero-pill-bg)" }}>ACTIVITY</p>
-        <h1 className="text-xl font-bold mb-6" style={{ color: "#FFFFFF" }}>Transaction History</h1>
+        <h1 className="text-xl font-bold mb-6" style={{ color: "var(--hero-text)" }}>Transaction History</h1>
         <div className="flex items-center gap-8">
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Money in</p>
-            <p className="text-2xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(totalIn)}</p>
+            <p className="text-xs" style={{ color: "var(--hero-text-muted)" }}>Money in</p>
+            <p className="text-2xl font-extrabold mt-1" style={{ color: "var(--hero-text)" }}>{formatNaira(totalIn)}</p>
           </div>
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Money out</p>
-            <p className="text-2xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(totalOut)}</p>
+            <p className="text-xs" style={{ color: "var(--hero-text-muted)" }}>Money out</p>
+            <p className="text-2xl font-extrabold mt-1" style={{ color: "var(--hero-text)" }}>{formatNaira(totalOut)}</p>
           </div>
         </div>
       </PageHero>

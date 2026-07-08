@@ -52,7 +52,7 @@ export function Sidebar({ user }: SidebarProps) {
           >
             <span className="font-bold text-sm" style={{ color: "var(--hero-pill-text)" }}>A</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight" style={{ color: "#FFFFFF" }}>
+          <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--hero-text)" }}>
             AgroEsusu
           </span>
         </Link>
@@ -93,7 +93,7 @@ export function Sidebar({ user }: SidebarProps) {
             <span className="font-bold text-sm" style={{ color: "var(--hero-pill-text)" }}>{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate" style={{ color: "#FFFFFF" }}>
+            <p className="text-sm font-semibold truncate" style={{ color: "var(--hero-text)" }}>
               {user?.full_name || "User"}
             </p>
             <p className="text-xs capitalize" style={{ color: "var(--nav-text-inactive)" }}>

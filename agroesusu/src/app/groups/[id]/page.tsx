@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon, CheckIcon } from '@/components/icons';
+import { formatNaira } from '@/lib/utils';
 import JoinButton from './join-button';
 import ShareGroupButton from './share-button';
 import EmergencyFundPanel from './emergency-fund-panel';
@@ -109,7 +110,7 @@ export default async function GroupDetailPage({ params, searchParams }: { params
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Contribution</p>
-            <p className="font-semibold" style={{ color: "var(--text-secondary)" }}>₦{Number(group.contribution_amount).toLocaleString()}</p>
+            <p className="font-semibold" style={{ color: "var(--text-secondary)" }}>{formatNaira(Number(group.contribution_amount))}</p>
             <p className="text-xs" style={{ color: "var(--text-faint)" }}>per {group.frequency}</p>
           </div>
           <div>
@@ -200,7 +201,7 @@ export default async function GroupDetailPage({ params, searchParams }: { params
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="rounded-xl p-5 border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>Total Pool</p>
-          <p className="text-2xl font-bold mt-1" style={{ color: "var(--accent)" }}>₦{totalContributed.toLocaleString()}</p>
+          <p className="text-2xl font-bold mt-1" style={{ color: "var(--accent)" }}>{formatNaira(totalContributed)}</p>
         </div>
         <div className="rounded-xl p-5 border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>This Cycle</p>
@@ -258,7 +259,7 @@ export default async function GroupDetailPage({ params, searchParams }: { params
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>Total Saved</p>
-              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>₦{totalContributed.toLocaleString()}</p>
+              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{formatNaira(totalContributed)}</p>
             </div>
             <div>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>On-Time Rate</p>
@@ -341,16 +342,27 @@ export default async function GroupDetailPage({ params, searchParams }: { params
         ) : (
           <div className="rounded-xl border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
             {contributions.slice(0, 10).map((c: any, i: number) => (
-              <div key={c.id} className="flex items-center justify-between p-4" style={{ borderBottom: i < Math.min(contributions.length, 10) - 1 ? "1px solid var(--border-subtle)" : "none" }}>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{c.profiles?.full_name || 'Unknown'}</p>
+              <div key={c.id} className="flex items-center gap-3 p-4" style={{ borderBottom: i < Math.min(contributions.length, 10) - 1 ? "1px solid var(--border-subtle)" : "none" }}>
+                {/* Every contribution is money IN — same deposit treatment
+                    (down-arrow, success tint) used everywhere else amounts render. */}
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--tx-icon-deposit-bg)" }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--tx-positive)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+                    <path d="M12 5v14M5 12l7 7 7-7" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: "var(--text-secondary)" }}>{c.profiles?.full_name || 'Unknown'}</p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>Cycle {c.cycle_number}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>₦{Number(c.amount).toLocaleString()}</p>
-                  <span className="text-xs" style={{
-                    color: c.status === 'verified' ? "var(--accent)" : c.status === 'pending' ? "var(--color-brand-gold)" : "var(--danger)",
-                  }}>{c.status}</span>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold tabular-nums" style={{ color: "var(--tx-positive)" }}>+{formatNaira(Number(c.amount))}</p>
+                  {c.status === 'pending' ? (
+                    <span className="pending-pill mt-1">Pending</span>
+                  ) : c.status === 'failed' ? (
+                    <span className="text-xs font-medium" style={{ color: "var(--danger)" }}>Failed</span>
+                  ) : (
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>Verified</span>
+                  )}
                 </div>
               </div>
             ))}

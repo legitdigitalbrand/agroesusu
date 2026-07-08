@@ -35,7 +35,7 @@ export default async function GroupsPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-xs font-semibold tracking-wide" style={{ color: "var(--hero-pill-bg)" }}>ESUSU GROUPS</p>
-            <h1 className="text-xl font-bold mt-0.5" style={{ color: "#FFFFFF" }}>Save together, grow together</h1>
+            <h1 className="text-xl font-bold mt-0.5" style={{ color: "var(--hero-text)" }}>Save together, grow together</h1>
           </div>
           <Link
             href="/groups/new"
@@ -48,12 +48,12 @@ export default async function GroupsPage() {
         </div>
         <div className="flex items-center gap-8">
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Combined group pool</p>
-            <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(myGroupTotalPool)}</p>
+            <p className="text-xs" style={{ color: "var(--hero-text-muted)" }}>Combined group pool</p>
+            <p className="text-3xl font-extrabold mt-1" style={{ color: "var(--hero-text)" }}>{formatNaira(myGroupTotalPool)}</p>
           </div>
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Groups joined</p>
-            <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{memberships?.length || 0}</p>
+            <p className="text-xs" style={{ color: "var(--hero-text-muted)" }}>Groups joined</p>
+            <p className="text-3xl font-extrabold mt-1" style={{ color: "var(--hero-text)" }}>{memberships?.length || 0}</p>
           </div>
         </div>
       </PageHero>
@@ -92,7 +92,7 @@ export default async function GroupsPage() {
                     <div>
                       <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
                       <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                        ₦{Number(group.contribution_amount).toLocaleString()}/{group.frequency}
+                        {formatNaira(Number(group.contribution_amount))}/{group.frequency}
                       </p>
                     </div>
                     <span className="text-xs px-2 py-1 rounded-full font-medium capitalize"
@@ -146,7 +146,7 @@ export default async function GroupsPage() {
                     <div>
                       <h3 className="font-semibold" style={{ color: "var(--text-primary)" }}>{group.name}</h3>
                       <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                        ₦{Number(group.contribution_amount).toLocaleString()}/{group.frequency}
+                        {formatNaira(Number(group.contribution_amount))}/{group.frequency}
                       </p>
                     </div>
                     <ChevronRightIcon className="w-4 h-4" style={{ color: "var(--text-faint)" }} />

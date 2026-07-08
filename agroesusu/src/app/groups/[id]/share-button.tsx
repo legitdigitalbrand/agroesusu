@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatNaira } from '@/lib/utils';
 import { WhatsAppIcon, CopyIcon, CheckIcon, ShareIcon } from '@/components/icons';
 
 export default function ShareGroupButton({
@@ -26,7 +27,7 @@ export default function ShareGroupButton({
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://agroesusu.vercel.app';
   const inviteUrl = `${baseUrl}/groups/${groupId}?invite=${inviteToken}`;
 
-  const whatsappMessage = `I've created an AgroEsusu savings group: ${groupName}. We contribute ₦${contributionAmount.toLocaleString()} ${frequency}. Join here: ${inviteUrl}`;
+  const whatsappMessage = `I've created an AgroEsusu savings group: ${groupName}. We contribute ${formatNaira(contributionAmount)} ${frequency}. Join here: ${inviteUrl}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
 
   const handleCopy = () => {

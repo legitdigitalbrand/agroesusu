@@ -5,13 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Builds the ₦ string manually instead of relying on Intl's currency-symbol
+// resolution for NGN (style: "currency"), which is inconsistent across
+// Node/ICU builds — some environments silently fall back to printing the
+// "NGN" code instead of the ₦ glyph, and some drop the symbol entirely for
+// a zero value. Manually prepending the literal glyph to a plain grouped
+// number guarantees ₦ renders the same way at every amount, including 0.
 export function formatNaira(amount: number): string {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
+  const safe = Number.isFinite(amount) ? amount : 0;
+  const formatted = new Intl.NumberFormat("en-NG", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safe);
+  return `₦${formatted}`;
 }
 
 export function formatNumber(amount: number): string {

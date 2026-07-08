@@ -3,6 +3,7 @@
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import { CheckIcon, AlertTriangleIcon } from "@/components/icons";
+import { formatNaira } from "@/lib/utils";
 import { Suspense, useEffect, useState, useRef } from "react";
 
 function SuccessContent() {
@@ -93,7 +94,7 @@ function SuccessContent() {
         <CheckIcon className="w-8 h-8" style={{ color: "var(--accent)" }} strokeWidth={2.5} />
       </div>
       <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>Contribution Successful</h1>
-      <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>₦{amount?.toLocaleString()} added to the group pool</p>
+      <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>{formatNaira(Number(amount || 0))} added to the group pool</p>
       <Link href={backLink} className="block w-full rounded-xl py-3.5 font-semibold text-sm mt-6 transition" style={{ background: "var(--accent)", color: "var(--qa-primary-text)" }}>
         Back to Group
       </Link>

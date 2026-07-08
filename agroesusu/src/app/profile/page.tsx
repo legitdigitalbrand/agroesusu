@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import LogoutButton from './logout-button';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { ShieldCheckIcon, CheckIcon, AlertTriangleIcon } from '@/components/icons';
+import { formatNaira } from '@/lib/utils';
 import { PageHero, PageBody } from '@/components/ui/page-hero';
 
 export default async function ProfilePage() {
@@ -21,7 +21,7 @@ export default async function ProfilePage() {
   const kycStatus: string = (profile?.kyc_status as string) || 'unverified';
 
   const kycBadges: Record<string, { label: string; color: string; bg: string; Icon: typeof ShieldCheckIcon }> = {
-    verified: { label: 'Verified', color: 'var(--action-green)', bg: 'var(--action-green-subtle)', Icon: CheckIcon },
+    verified: { label: 'Verified', color: 'var(--success)', bg: 'rgba(59,143,59,0.10)', Icon: CheckIcon },
     pending_review: { label: 'Under Review', color: 'var(--action-gold)', bg: 'var(--action-gold-subtle)', Icon: AlertTriangleIcon },
     unverified: { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon },
     pending: { label: 'Not Verified', color: 'var(--text-muted)', bg: 'var(--surface-elevated)', Icon: ShieldCheckIcon },
@@ -33,17 +33,16 @@ export default async function ProfilePage() {
   return (
     <div>
       <PageHero maxWidth="max-w-2xl">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <p className="text-xs font-semibold tracking-wide" style={{ color: "var(--hero-pill-bg)" }}>PROFILE</p>
-          <ThemeToggle />
         </div>
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.14)" }}>
-            <span className="font-bold text-xl" style={{ color: "#FFFFFF" }}>{initials}</span>
+            <span className="font-bold text-xl" style={{ color: "var(--hero-text)" }}>{initials}</span>
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-bold truncate" style={{ color: "#FFFFFF" }}>{profile?.full_name || 'User'}</h2>
-            <p className="text-sm truncate" style={{ color: "rgba(255,255,255,0.85)" }}>{profile?.email}</p>
+            <h2 className="text-lg font-bold truncate" style={{ color: "var(--hero-text)" }}>{profile?.full_name || 'User'}</h2>
+            <p className="text-sm truncate" style={{ color: "var(--hero-text-muted)" }}>{profile?.email}</p>
             <span
               className="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize"
               style={{ background: "var(--hero-pill-bg)", color: "var(--hero-pill-text)" }}
@@ -66,7 +65,7 @@ export default async function ProfilePage() {
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Groups</p>
           </div>
           <div className="rounded-xl p-4 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
-            <p className="text-xl font-bold" style={{ color: "var(--action-gold)" }}>₦{Number(profile?.total_saved || 0).toLocaleString()}</p>
+            <p className="text-xl font-bold" style={{ color: "var(--success)" }}>{formatNaira(Number(profile?.total_saved || 0))}</p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Total Saved</p>
           </div>
         </div>
@@ -75,7 +74,7 @@ export default async function ProfilePage() {
         <Link
           href="/profile/verify"
           className="block rounded-xl p-4 mb-4 border transition-colors"
-          style={{ background: "var(--surface-card)", borderColor: kycStatus === 'verified' ? "var(--action-green)" : "var(--border-default)" }}
+          style={{ background: "var(--surface-card)", borderColor: kycStatus === 'verified' ? "var(--success)" : "var(--border-default)" }}
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: kycBadge.bg }}>

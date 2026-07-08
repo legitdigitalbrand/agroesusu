@@ -34,18 +34,18 @@ export default async function SavePage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-xs font-semibold tracking-wide" style={{ color: "var(--hero-pill-bg)" }}>SAVINGS</p>
-            <h1 className="text-xl font-bold mt-0.5" style={{ color: "#FFFFFF" }}>Your Pots</h1>
+            <h1 className="text-xl font-bold mt-0.5" style={{ color: "var(--hero-text)" }}>Your Pots</h1>
           </div>
           <CreatePotButton />
         </div>
         <div className="flex items-center gap-8">
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Total saved</p>
-            <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{formatNaira(totalSaved)}</p>
+            <p className="text-xs" style={{ color: "var(--hero-text-muted)" }}>Total saved</p>
+            <p className="text-3xl font-extrabold mt-1" style={{ color: "var(--hero-text)" }}>{formatNaira(totalSaved)}</p>
           </div>
           <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>Active pots</p>
-            <p className="text-3xl font-extrabold mt-1" style={{ color: "#FFFFFF" }}>{activeCount}</p>
+            <p className="text-xs" style={{ color: "var(--hero-text-muted)" }}>Active pots</p>
+            <p className="text-3xl font-extrabold mt-1" style={{ color: "var(--hero-text)" }}>{activeCount}</p>
           </div>
         </div>
       </PageHero>

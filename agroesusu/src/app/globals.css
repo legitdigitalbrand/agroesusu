@@ -1,161 +1,225 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand Green Palette */
-  --color-brand-50: #E6FFEC;
-  --color-brand-100: #B9FECB;
-  --color-brand-200: #8BFDAA;
-  --color-brand-300: #5EFD88;
-  --color-brand-400: #31FC67;
-  --color-brand-500: #04FB46;
-  --color-brand-600: #03CE39;
-  --color-brand-700: #02A12D;
-  --color-brand-800: #027420;
-  --color-brand-900: #014D15;
-  --color-brand-950: #001907;
+  /* ===== New brand system (per design-system spec) ===== */
+  --color-anchor: #0B3D1F;        /* deep forest green — sidebar, hero, headers */
+  --color-anchor-light: #0F4A25;  /* paired with anchor in gradients */
+  --color-lime: #C6F135;          /* electric lime accent — CTAs, active states, progress fills */
+  --color-lime-ink: #1F2A05;      /* text/icon color ON TOP of lime fill — never white/black */
 
-  --color-brand-gold: #f5b800;
-  --color-brand-gold-light: #fef3c7;
+  --color-canvas: #FAFAF7;        /* warm off-white app background — never pure #FFF */
+  --color-surface: #FFFFFF;       /* card backgrounds */
+  --color-hairline: #E7E7DE;      /* hairline borders on cards */
+
+  --color-ink: #2B2A24;           /* primary text */
+  --color-ink-secondary: #5C5C52;
+  --color-ink-muted: #8A8A7E;
+
+  --color-ok: #3B8F3B;            /* success — deposits, positive states, goal reached */
+  --color-bad: #C1392B;           /* danger — withdrawals, errors, destructive */
+  --color-warn: #C9891F;          /* warning — pending states */
+
+  --color-brand-gold: #C9891F;
+  --color-brand-gold-light: #f5e6c8;
 
   /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-/* ===== LIGHT MODE (default — primary design) ===== */
+/* ===== LIGHT MODE (default — primary design) =====
+   All hex values below are direct instances of the tokens in @theme above —
+   this is the one place they're spelled out so component code never needs
+   a hardcoded hex. */
 :root {
-  --surface-base: #FFFFFF;
-  --surface-card: #FFFFFF;
-  --surface-card-hover: #F5F7F6;
+  --surface-base: #FAFAF7;       /* canvas */
+  --surface-card: #FFFFFF;       /* surface */
+  --surface-card-hover: #F3F3EC;
   --surface-elevated: #FFFFFF;
-  --text-primary: #0B0F0D;
-  --text-secondary: #374151;
-  --text-muted: #6B7280;
-  --text-faint: #9CA3AF;
-  --border-subtle: #F0F2F1;
-  --border-default: #E5E7EB;
-  --border-strong: #D1D5DB;
-  --accent: #014D15;
-  --accent-hover: #027420;
-  --accent-subtle: #ECFDF3;
-  --accent-text: #014D15;
-  --danger: #DC2626;
-  --success: #014D15;
+  --text-primary: #2B2A24;       /* ink */
+  --text-secondary: #5C5C52;     /* ink-secondary */
+  --text-muted: #8A8A7E;         /* ink-muted */
+  --text-faint: #B0B0A2;
+  --border-subtle: #F0F0E8;
+  --border-default: #E7E7DE;     /* hairline */
+  --border-strong: #D6D6C8;
+
+  /* "Accent" here means the safe, always-legible brand color used for
+     links/icons/focus rings/borders throughout ordinary content — this is
+     the ANCHOR green, not the lime. Lime is reserved separately below for
+     CTA fills / active states / progress, per the design spec's contrast
+     rule (lime must never carry body text). */
+  --accent: #0B3D1F;
+  --accent-hover: #0F4A25;
+  --accent-subtle: rgba(11, 61, 31, 0.08);
+  --accent-text: #0B3D1F;
+
+  --danger: #C1392B;
+  --success: #3B8F3B;
+  --warning: #C9891F;
+
   --input-bg: #FFFFFF;
-  --input-border: #D1D5DB;
-  --nav-bg: #014D15;
+  --input-border: #D6D6C8;
+
+  --nav-bg: #0B3D1F;
   --nav-border: rgba(255,255,255,0.08);
-  --nav-text-active: #04FB46;
-  --nav-text-inactive: rgba(255,255,255,0.68);
-  --nav-active-bg: rgba(4,251,70,0.16);
-  --hero-gradient: #014D15;
-  --balance-card-bg: #014D15;
-  --balance-card-border: #014D15;
-  --balance-card-text: #FFFFFF;
-  --balance-card-label: rgba(255, 255, 255, 0.65);
-  --balance-card-sub: rgba(255, 255, 255, 0.55);
-  --progress-track: #E5E7EB;
-  --progress-fill: #014D15;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --nav-text-active: #C6F135;
+  --nav-text-inactive: rgba(255,255,255,0.55);
+  --nav-active-bg: rgba(198,241,53,0.15);
+
+  --hero-gradient: linear-gradient(135deg, #0F4A25, #0B3D1F);
+  --hero-text: #FAFAF7;
+  --hero-text-muted: rgba(250,250,247,0.72);
+  --hero-text-faint: rgba(250,250,247,0.55);
+
+  --balance-card-bg: linear-gradient(135deg, #0F4A25, #0B3D1F);
+  --balance-card-border: #0B3D1F;
+  --balance-card-text: #FAFAF7;
+  --balance-card-value: #FAFAF7;
+  --balance-card-label: rgba(250,250,247,0.7);
+  --balance-card-sub: rgba(250,250,247,0.55);
+
+  --progress-track: #E7E7DE;
+  --progress-fill: #C6F135;
+  --shadow: 0 1px 3px rgba(43, 42, 36, 0.08), 0 1px 2px rgba(43, 42, 36, 0.04);
+
   --qa-bg: #FFFFFF;
-  --qa-border: #E5E7EB;
-  --qa-icon-bg: #ECFDF3;
-  --qa-icon-color: #014D15;
-  --qa-label: #374151;
-  --qa-primary-bg: #014D15;
-  --qa-primary-text: #FFFFFF;
-  --pot-icon-bg: #ECFDF3;
-  --section-link: #014D15;
-  --tx-positive: #014D15;
-  --tx-negative: #DC2626;
-  --tx-icon-deposit-bg: #ECFDF3;
-  --tx-icon-withdraw-bg: #FEF2F2;
-  --hero-bg: #014D15;
-  --hero-pill-bg: #04FB46;
-  --hero-pill-text: #001907;
+  --qa-border: #E7E7DE;
+  --qa-icon-bg: rgba(11, 61, 31, 0.08);
+  --qa-icon-color: #0B3D1F;
+  --qa-label: #5C5C52;
+  /* Primary CTA fill — lime, per spec, always paired with the dark
+     lime-ink text color (never white text on lime). */
+  --qa-primary-bg: #C6F135;
+  --qa-primary-text: #1F2A05;
+
+  --pot-icon-bg: rgba(11, 61, 31, 0.08);
+  --section-link: #0B3D1F;
+  --tx-positive: #3B8F3B;
+  --tx-negative: #C1392B;
+  --tx-icon-deposit-bg: rgba(59, 143, 59, 0.12);
+  --tx-icon-withdraw-bg: rgba(193, 57, 43, 0.10);
+
+  --hero-bg: #0B3D1F;
+  --hero-pill-bg: #C6F135;
+  --hero-pill-text: #1F2A05;
   --hero-pill-secondary-bg: rgba(255,255,255,0.14);
-  --hero-pill-secondary-text: #FFFFFF;
+  --hero-pill-secondary-text: #FAFAF7;
   --hero-chip-bg: rgba(255,255,255,0.10);
-  --hero-chip-active-bg: #04FB46;
-  --hero-chip-active-text: #001907;
-  --hero-chip-text: rgba(255,255,255,0.8);
+  --hero-chip-active-bg: #C6F135;
+  --hero-chip-active-text: #1F2A05;
+  --hero-chip-text: rgba(250,250,247,0.8);
   --hero-chip-border: rgba(255,255,255,0.18);
-  --action-green: #014D15;
-  --action-red: #DC2626;
-  --action-gold: #f5b800;
-  --action-blue: #2563EB;
-  --action-green-subtle: #ECFDF3;
-  --action-red-subtle: #FEF2F2;
-  --action-gold-subtle: #FEF9E7;
-  --action-blue-subtle: #EFF6FF;
+
+  /* Quick-action icons: unified to ONE brand color (anchor) so all four
+     actions carry equal visual weight — no single action reads as more
+     important/dangerous than another via color alone. */
+  --action-green: #0B3D1F;
+  --action-red: #0B3D1F;
+  --action-gold: #0B3D1F;
+  --action-blue: #0B3D1F;
+  --action-green-subtle: rgba(11, 61, 31, 0.08);
+  --action-red-subtle: rgba(11, 61, 31, 0.08);
+  --action-gold-subtle: rgba(11, 61, 31, 0.08);
+  --action-blue-subtle: rgba(11, 61, 31, 0.08);
+
+  --pending-bg: rgba(201, 137, 31, 0.14);
+  --pending-text: #C9891F;
+
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
 }
 
 /* ===== DARK MODE (toggle) ===== */
 :root.dark {
-  --surface-base: #0B0F0D;
-  --surface-card: #14201A;
-  --surface-card-hover: #1A2922;
-  --surface-elevated: #1E2A24;
-  --text-primary: #FFFFFF;
-  --text-secondary: #F2F5F3;
-  --text-muted: #8A9990;
-  --text-faint: #6B7A70;
-  --border-subtle: #1A2520;
-  --border-default: #223028;
-  --border-strong: #2D3A33;
-  --accent: #4ADE80;
-  --accent-hover: #5BED90;
-  --accent-subtle: rgba(74, 222, 128, 0.12);
-  --accent-text: #4ADE80;
-  --danger: #ff4d6d;
-  --success: #4ADE80;
-  --input-bg: #14201A;
-  --input-border: #223028;
-  --nav-bg: #014D15;
+  --surface-base: #14170F;
+  --surface-card: #1B1F16;
+  --surface-card-hover: #22271B;
+  --surface-elevated: #262B1F;
+  --text-primary: #F2F2EA;
+  --text-secondary: #C9C9BC;
+  --text-muted: #93938A;
+  --text-faint: #6B6B62;
+  --border-subtle: #20241A;
+  --border-default: #2B3024;
+  --border-strong: #383E30;
+
+  --accent: #8FE05A;
+  --accent-hover: #A3ED70;
+  --accent-subtle: rgba(143, 224, 90, 0.12);
+  --accent-text: #8FE05A;
+
+  --danger: #E9707A;
+  --success: #8FE05A;
+  --warning: #E0AE55;
+
+  --input-bg: #1B1F16;
+  --input-border: #2B3024;
+
+  --nav-bg: #0B3D1F;
   --nav-border: rgba(255,255,255,0.08);
-  --nav-text-active: #4ADE80;
-  --nav-text-inactive: rgba(255,255,255,0.68);
-  --nav-active-bg: rgba(74,222,128,0.16);
-  --hero-gradient: #014D15;
-  --balance-card-bg: #14201A;
-  --balance-card-border: #223028;
-  --balance-card-text: #FFFFFF;
-  --balance-card-label: #8A9990;
-  --balance-card-sub: #6B7A70;
-  --progress-track: #223028;
-  --progress-fill: #4ADE80;
+  --nav-text-active: #C6F135;
+  --nav-text-inactive: rgba(255,255,255,0.55);
+  --nav-active-bg: rgba(198,241,53,0.16);
+
+  --hero-gradient: linear-gradient(135deg, #0F4A25, #0B3D1F);
+  --hero-text: #FAFAF7;
+  --hero-text-muted: rgba(250,250,247,0.72);
+  --hero-text-faint: rgba(250,250,247,0.55);
+
+  --balance-card-bg: linear-gradient(135deg, #163B22, #0B3D1F);
+  --balance-card-border: #2B3024;
+  --balance-card-text: #FAFAF7;
+  --balance-card-value: #FAFAF7;
+  --balance-card-label: rgba(250,250,247,0.7);
+  --balance-card-sub: rgba(250,250,247,0.55);
+
+  --progress-track: #2B3024;
+  --progress-fill: #C6F135;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --qa-bg: #14201A;
-  --qa-border: #223028;
-  --qa-icon-bg: rgba(74, 222, 128, 0.12);
-  --qa-icon-color: #4ADE80;
-  --qa-label: #C7D1CB;
-  --qa-primary-bg: #4ADE80;
-  --qa-primary-text: #0B0F0D;
-  --pot-icon-bg: rgba(74, 222, 128, 0.12);
-  --section-link: #8A9990;
-  --tx-positive: #4ADE80;
-  --tx-negative: #ff4d6d;
-  --tx-icon-deposit-bg: rgba(74, 222, 128, 0.12);
-  --tx-icon-withdraw-bg: rgba(255, 77, 109, 0.12);
-  --hero-bg: #014D15;
-  --hero-pill-bg: #4ADE80;
-  --hero-pill-text: #0B0F0D;
+
+  --qa-bg: #1B1F16;
+  --qa-border: #2B3024;
+  --qa-icon-bg: rgba(143, 224, 90, 0.12);
+  --qa-icon-color: #8FE05A;
+  --qa-label: #C9C9BC;
+  --qa-primary-bg: #C6F135;
+  --qa-primary-text: #1F2A05;
+
+  --pot-icon-bg: rgba(143, 224, 90, 0.12);
+  --section-link: #8FE05A;
+  --tx-positive: #8FE05A;
+  --tx-negative: #E9707A;
+  --tx-icon-deposit-bg: rgba(143, 224, 90, 0.14);
+  --tx-icon-withdraw-bg: rgba(233, 112, 122, 0.14);
+
+  --hero-bg: #0B3D1F;
+  --hero-pill-bg: #C6F135;
+  --hero-pill-text: #1F2A05;
   --hero-pill-secondary-bg: rgba(255,255,255,0.10);
-  --hero-pill-secondary-text: #FFFFFF;
+  --hero-pill-secondary-text: #FAFAF7;
   --hero-chip-bg: rgba(255,255,255,0.08);
-  --hero-chip-active-bg: #4ADE80;
-  --hero-chip-active-text: #0B0F0D;
-  --hero-chip-text: rgba(255,255,255,0.7);
+  --hero-chip-active-bg: #C6F135;
+  --hero-chip-active-text: #1F2A05;
+  --hero-chip-text: rgba(250,250,247,0.7);
   --hero-chip-border: rgba(255,255,255,0.16);
-  --action-green: #4ADE80;
-  --action-red: #ff4d6d;
-  --action-gold: #f5b800;
-  --action-blue: #60A5FA;
-  --action-green-subtle: rgba(74, 222, 128, 0.12);
-  --action-red-subtle: rgba(255, 77, 109, 0.12);
-  --action-gold-subtle: rgba(245, 184, 0, 0.12);
-  --action-blue-subtle: rgba(96, 165, 250, 0.12);
+
+  --action-green: #8FE05A;
+  --action-red: #8FE05A;
+  --action-gold: #8FE05A;
+  --action-blue: #8FE05A;
+  --action-green-subtle: rgba(143, 224, 90, 0.12);
+  --action-red-subtle: rgba(143, 224, 90, 0.12);
+  --action-gold-subtle: rgba(143, 224, 90, 0.12);
+  --action-blue-subtle: rgba(143, 224, 90, 0.12);
+
+  --pending-bg: rgba(224, 174, 85, 0.16);
+  --pending-text: #E0AE55;
+
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
 }
 
 * {
@@ -169,6 +233,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* Currency glyph safety net — some system font stacks drop U+20A6 (₦).
+   Force a fallback chain known to carry the glyph before generic sans. */
+.naira, .tabular-nums {
+  font-feature-settings: "tnum" 1;
 }
 
 /* Scrollbar */
@@ -247,3 +317,18 @@ select option {
 .border-accent { border-color: var(--accent); }
 
 .shadow-soft { box-shadow: var(--shadow); }
+
+/* Pending status pill — used anywhere a transaction/contribution/payout
+   needs a visible "still processing" state, per design-system spec
+   (previously just small muted text, easy to miss). */
+.pending-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--pending-bg);
+  color: var(--pending-text);
+}
