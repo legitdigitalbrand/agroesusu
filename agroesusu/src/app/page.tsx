@@ -96,8 +96,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ===== WHITE CONTENT AREA — overlaps the hero card slightly ===== */}
-      <div className="relative -mt-8 lg:mt-0 rounded-t-[2.5rem] lg:rounded-none px-5 lg:px-8 pt-7"
+      {/* ===== CONTENT SECTION — clean, full-width, stacked below the hero.
+           No negative margin, no rounded top cutting into the hero above. ===== */}
+      <div className="px-5 lg:px-8 pt-7"
         style={{ background: "var(--surface-base)" }}>
 
         {/* DVA Card */}
