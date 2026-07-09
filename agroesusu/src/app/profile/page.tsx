@@ -55,7 +55,7 @@ export default async function ProfilePage() {
 
       <PageBody maxWidth="max-w-2xl">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-6">
           <div className="rounded-xl p-4 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
             <p className="text-xl font-bold" style={{ color: "var(--action-green)" }}>{accounts?.length || 0}</p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Savings Pots</p>

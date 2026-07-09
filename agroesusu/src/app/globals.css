@@ -229,7 +229,10 @@
 }
 
 html, body {
-  overflow-x: hidden;
+  /* clip (not hidden) — clip prevents horizontal scroll without creating a
+     new stacking context the way 'hidden' does. This is a SAFETY NET only —
+     real overflow must be fixed at source, not masked here. */
+  overflow-x: clip;
   max-width: 100%;
 }
 

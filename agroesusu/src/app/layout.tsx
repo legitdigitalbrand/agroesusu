@@ -81,7 +81,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div className="flex min-h-screen" style={{ background: "var(--surface-base)" }}>
           <Sidebar user={profile} />
-          <main className="flex-1 pb-20 lg:pb-0">
+          <main className="flex-1 min-w-0 pb-20 lg:pb-0">
             <MobileHeader />
             {children}
           </main>

@@ -19,7 +19,7 @@ import { ReactNode } from "react";
  */
 export function PageHero({ children, maxWidth = "max-w-5xl" }: { children: ReactNode; maxWidth?: string }) {
   return (
-    <div className="pt-12 lg:pt-10 pb-8 px-5 lg:px-8" style={{ background: "var(--hero-gradient)" }}>
+    <div className="pt-12 lg:pt-10 pb-8 px-4 sm:px-5 lg:px-8" style={{ background: "var(--hero-gradient)" }}>
       <div className={`${maxWidth} mx-auto`}>{children}</div>
     </div>
   );
@@ -27,7 +27,7 @@ export function PageHero({ children, maxWidth = "max-w-5xl" }: { children: React
 
 export function PageBody({ children, maxWidth = "max-w-5xl" }: { children: ReactNode; maxWidth?: string }) {
   return (
-    <div className="pt-7 px-4 lg:px-8 pb-8" style={{ background: "var(--surface-base)" }}>
+    <div className="pt-7 px-4 sm:px-5 lg:px-8 pb-8" style={{ background: "var(--surface-base)" }}>
       <div className={`${maxWidth} mx-auto`}>{children}</div>
     </div>
   );

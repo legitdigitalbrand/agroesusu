@@ -107,7 +107,7 @@ export default async function GroupDetailPage({ params, searchParams }: { params
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-3 gap-3 mt-4">
           <div>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Contribution</p>
             <p className="font-semibold" style={{ color: "var(--text-secondary)" }}>{formatNaira(Number(group.contribution_amount))}</p>
@@ -256,7 +256,7 @@ export default async function GroupDetailPage({ params, searchParams }: { params
             <TrophyIcon className="w-5 h-5" style={{ color: "var(--accent)" }} />
             <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Cycle Completion Report</h2>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>Total Saved</p>
               <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{formatNaira(totalContributed)}</p>

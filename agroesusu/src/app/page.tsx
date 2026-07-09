@@ -45,7 +45,7 @@ export default async function DashboardPage() {
            max-w-md mobile cap left visible white gutters whenever the
            viewport was wider than 448px but still under 1024px). ===== */}
       <div
-        className="pt-12 lg:pt-10 lg:mt-6 pb-10 px-5 lg:px-8 lg:rounded-3xl lg:mx-8"
+        className="pt-12 lg:pt-10 lg:mt-6 pb-10 px-4 sm:px-5 lg:px-8 lg:rounded-3xl lg:mx-8"
         style={{ background: "var(--hero-gradient)" }}
       >
         <div className="max-w-md lg:max-w-none mx-auto lg:mx-0">
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
 
       {/* ===== CONTENT SECTION — clean, full-width, stacked below the hero.
            No negative margin, no rounded top cutting into the hero above. ===== */}
-      <div className="px-5 lg:px-8 pt-7"
+      <div className="px-4 sm:px-5 lg:px-8 pt-7"
         style={{ background: "var(--surface-base)" }}>
 
         {/* DVA Card */}
@@ -152,7 +152,7 @@ export default async function DashboardPage() {
         <div className="lg:grid lg:grid-cols-3 lg:gap-8 lg:items-start">
           <div className="lg:col-span-2">
             {/* Quick actions — outlined circles, distinct color per action */}
-            <div className="grid grid-cols-4 gap-2 mb-6">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 mb-6">
               <Link href="/deposit" className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center border-2"
                   style={{ borderColor: "var(--action-green)" }}>

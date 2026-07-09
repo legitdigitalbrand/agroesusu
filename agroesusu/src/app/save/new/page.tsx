@@ -126,7 +126,7 @@ export default function CreatePotPage() {
             {targetDate && (
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-secondary)" }}>Lock Type</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     { value: 'none', label: 'No lock', desc: 'Withdraw anytime' },
                     { value: 'soft', label: 'Soft lock', desc: 'Early withdrawal allowed but discouraged' },

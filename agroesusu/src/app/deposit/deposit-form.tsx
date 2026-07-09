@@ -106,7 +106,7 @@ export default function DepositForm({ accounts, userId }: { accounts: any[]; use
           className="w-full px-4 py-3 rounded-lg border outline-none transition text-lg"
           style={inputStyle}
         />
-        <div className="grid grid-cols-4 gap-2 mt-2">
+        <div className="grid grid-cols-4 gap-1.5 mt-2">
           {[1000, 5000, 10000, 50000].map((preset) => (
             <button
               key={preset}
