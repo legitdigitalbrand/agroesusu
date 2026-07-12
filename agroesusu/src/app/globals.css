@@ -4,8 +4,8 @@
   /* ===== New brand system (per design-system spec) ===== */
   --color-anchor: #0B3D1F;        /* deep forest green — sidebar, hero, headers */
   --color-anchor-light: #0F4A25;  /* paired with anchor in gradients */
-  --color-lime: #C6F135;          /* electric lime accent — CTAs, active states, progress fills */
-  --color-lime-ink: #1F2A05;      /* text/icon color ON TOP of lime fill — never white/black */
+  --color-lime: #F97316;          /* orange accent — CTAs, active states, progress fills */
+  --color-lime-ink: #431407;      /* text/icon color ON TOP of orange fill — never white/black */
 
   --color-canvas: #FAFAF7;        /* warm off-white app background — never pure #FFF */
   --color-surface: #FFFFFF;       /* card backgrounds */
@@ -63,9 +63,9 @@
 
   --nav-bg: #0B3D1F;
   --nav-border: rgba(255,255,255,0.08);
-  --nav-text-active: #C6F135;
+  --nav-text-active: #F97316;
   --nav-text-inactive: rgba(255,255,255,0.55);
-  --nav-active-bg: rgba(198,241,53,0.15);
+  --nav-active-bg: rgba(249,115,22,0.18);
   --nav-danger: #F2A0A0;
 
   --hero-gradient: linear-gradient(135deg, #0F4A25, #0B3D1F);
@@ -81,7 +81,7 @@
   --balance-card-sub: rgba(250,250,247,0.55);
 
   --progress-track: #E7E7DE;
-  --progress-fill: #C6F135;
+  --progress-fill: #F97316;
   --shadow: 0 1px 3px rgba(43, 42, 36, 0.08), 0 1px 2px rgba(43, 42, 36, 0.04);
 
   --qa-bg: #FFFFFF;
@@ -89,10 +89,9 @@
   --qa-icon-bg: rgba(11, 61, 31, 0.08);
   --qa-icon-color: #0B3D1F;
   --qa-label: #5C5C52;
-  /* Primary CTA fill — lime, per spec, always paired with the dark
-     lime-ink text color (never white text on lime). */
-  --qa-primary-bg: #C6F135;
-  --qa-primary-text: #1F2A05;
+  /* Primary CTA fill — orange, per spec. White text on orange passes WCAG AA. */
+  --qa-primary-bg: #F97316;
+  --qa-primary-text: #FFFFFF;
 
   --pot-icon-bg: rgba(11, 61, 31, 0.08);
   --section-link: #0B3D1F;
@@ -102,13 +101,13 @@
   --tx-icon-withdraw-bg: rgba(193, 57, 43, 0.10);
 
   --hero-bg: #0B3D1F;
-  --hero-pill-bg: #C6F135;
-  --hero-pill-text: #1F2A05;
+  --hero-pill-bg: #F97316;
+  --hero-pill-text: #FFFFFF;
   --hero-pill-secondary-bg: rgba(255,255,255,0.14);
   --hero-pill-secondary-text: #FAFAF7;
   --hero-chip-bg: rgba(255,255,255,0.10);
-  --hero-chip-active-bg: #C6F135;
-  --hero-chip-active-text: #1F2A05;
+  --hero-chip-active-bg: #F97316;
+  --hero-chip-active-text: #FFFFFF;
   --hero-chip-text: rgba(250,250,247,0.8);
   --hero-chip-border: rgba(255,255,255,0.18);
 
@@ -160,9 +159,9 @@
 
   --nav-bg: #0B3D1F;
   --nav-border: rgba(255,255,255,0.08);
-  --nav-text-active: #C6F135;
+  --nav-text-active: #FB923C;
   --nav-text-inactive: rgba(255,255,255,0.55);
-  --nav-active-bg: rgba(198,241,53,0.16);
+  --nav-active-bg: rgba(251,146,60,0.20);
   --nav-danger: #F2A0A0;
 
   --hero-gradient: linear-gradient(135deg, #0F4A25, #0B3D1F);
@@ -178,7 +177,7 @@
   --balance-card-sub: rgba(250,250,247,0.55);
 
   --progress-track: #2B3024;
-  --progress-fill: #C6F135;
+  --progress-fill: #F97316;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 
   --qa-bg: #1B1F16;
@@ -186,8 +185,8 @@
   --qa-icon-bg: rgba(143, 224, 90, 0.12);
   --qa-icon-color: #8FE05A;
   --qa-label: #C9C9BC;
-  --qa-primary-bg: #C6F135;
-  --qa-primary-text: #1F2A05;
+  --qa-primary-bg: #F97316;
+  --qa-primary-text: #FFFFFF;
 
   --pot-icon-bg: rgba(143, 224, 90, 0.12);
   --section-link: #8FE05A;
@@ -197,13 +196,13 @@
   --tx-icon-withdraw-bg: rgba(233, 112, 122, 0.14);
 
   --hero-bg: #0B3D1F;
-  --hero-pill-bg: #C6F135;
-  --hero-pill-text: #1F2A05;
+  --hero-pill-bg: #F97316;
+  --hero-pill-text: #FFFFFF;
   --hero-pill-secondary-bg: rgba(255,255,255,0.10);
   --hero-pill-secondary-text: #FAFAF7;
   --hero-chip-bg: rgba(255,255,255,0.08);
-  --hero-chip-active-bg: #C6F135;
-  --hero-chip-active-text: #1F2A05;
+  --hero-chip-active-bg: #F97316;
+  --hero-chip-active-text: #FFFFFF;
   --hero-chip-text: rgba(250,250,247,0.7);
   --hero-chip-border: rgba(255,255,255,0.16);
 

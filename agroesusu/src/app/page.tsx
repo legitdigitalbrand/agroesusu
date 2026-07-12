@@ -45,7 +45,7 @@ export default async function DashboardPage() {
            max-w-md mobile cap left visible white gutters whenever the
            viewport was wider than 448px but still under 1024px). ===== */}
       <div
-        className="pt-12 lg:pt-10 lg:mt-6 pb-10 px-4 sm:px-5 lg:px-8 lg:rounded-3xl lg:mx-8"
+        className="pt-12 lg:pt-10 lg:mt-6 pb-10 px-4 sm:px-5 lg:px-8 rounded-b-3xl lg:rounded-3xl lg:mx-8"
         style={{ background: "var(--hero-gradient)" }}
       >
         <div className="max-w-md lg:max-w-none mx-auto lg:mx-0">

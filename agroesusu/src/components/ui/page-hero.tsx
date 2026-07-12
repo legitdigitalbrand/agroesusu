@@ -19,7 +19,7 @@ import { ReactNode } from "react";
  */
 export function PageHero({ children, maxWidth = "max-w-5xl" }: { children: ReactNode; maxWidth?: string }) {
   return (
-    <div className="pt-12 lg:pt-10 pb-8 px-4 sm:px-5 lg:px-8" style={{ background: "var(--hero-gradient)" }}>
+    <div className="pt-12 lg:pt-10 pb-10 px-4 sm:px-5 lg:px-8 rounded-b-3xl" style={{ background: "var(--hero-gradient)" }}>
       <div className={`${maxWidth} mx-auto`}>{children}</div>
     </div>
   );

@@ -15,7 +15,7 @@ export function MobileHeader() {
 
   return (
     <header
-      className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b backdrop-blur-md"
+      className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 backdrop-blur-sm"
       style={{
         background: "var(--nav-bg)",
         borderColor: "var(--nav-border)",
