@@ -20,6 +20,9 @@ export default function CreatePotPage() {
   const [lockType, setLockType] = useState<'none' | 'soft' | 'hard'>('none');
   const [description, setDescription] = useState('');
   const [roundUpEnabled, setRoundUpEnabled] = useState(false);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const [autoSaveAmount, setAutoSaveAmount] = useState('');
+  const [autoSaveFrequency, setAutoSaveFrequency] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -38,7 +41,7 @@ export default function CreatePotPage() {
 
     const selectedType = potTypes.find(p => p.value === type)!;
 
-    const { error: insertError } = await supabase.from('savings_accounts').insert({
+    const { data, error: insertError } = await supabase.from('savings_accounts').insert({
       user_id: user.id,
       type,
       name,
@@ -51,15 +54,38 @@ export default function CreatePotPage() {
       icon: selectedType.value, // store type key, not emoji — rendered as SVG
       description,
       round_up_enabled: type === 'stash' ? roundUpEnabled : false,
-    });
+    }).select().single();
 
     if (insertError) {
       setError(insertError.message);
       setLoading(false);
-    } else {
-      router.push('/save');
-      router.refresh();
+      return;
     }
+
+    // If auto-save is enabled, kick off the Paystack card tokenization
+    if (autoSaveEnabled && autoSaveAmount && data) {
+      const res = await fetch('/api/autosave/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_id: data.id,
+          amount: Number(autoSaveAmount),
+          frequency: autoSaveFrequency,
+        }),
+      });
+      const json = await res.json();
+      if (json.url) {
+        window.location.href = json.url;
+        return;
+      } else {
+        setError(json.error || 'Auto-save setup failed — pot was created, you can set up auto-save later.');
+        setLoading(false);
+        return;
+      }
+    }
+
+    router.push('/save');
+    router.refresh();
   };
 
   const inputStyle = {
@@ -165,6 +191,60 @@ export default function CreatePotPage() {
             </div>
           </label>
         )}
+
+        {/* ── Auto-Save toggle ── */}
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border-default)" }}>
+          <label className="flex items-center justify-between gap-3 p-4 cursor-pointer"
+            style={{ background: "var(--surface-card)" }}>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Auto-Save</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                We charge your card automatically — daily, weekly, or monthly.
+              </p>
+            </div>
+            {/* Toggle switch */}
+            <button type="button" role="switch" aria-checked={autoSaveEnabled}
+              onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+              className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200"
+              style={{ background: autoSaveEnabled ? "var(--qa-primary-bg)" : "var(--border-strong)" }}>
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${autoSaveEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </label>
+
+          {autoSaveEnabled && (
+            <div className="px-4 pb-4 space-y-3" style={{ background: "var(--surface-card)", borderTop: "1px solid var(--border-subtle)" }}>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
+                  Amount per charge (₦)
+                </label>
+                <input type="number" value={autoSaveAmount} onChange={(e) => setAutoSaveAmount(e.target.value)}
+                  placeholder="e.g. 5000" min="100"
+                  className="w-full px-4 py-3 rounded-lg border outline-none transition text-sm"
+                  style={{ background: "var(--input-bg)", borderColor: "var(--input-border)", color: "var(--text-primary)" }} />
+                <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>Minimum ₦100 per charge</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-secondary)" }}>Frequency</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['daily', 'weekly', 'monthly'] as const).map((f) => (
+                    <button key={f} type="button" onClick={() => setAutoSaveFrequency(f)}
+                      className="py-2 rounded-lg border text-xs font-semibold capitalize transition"
+                      style={{
+                        background: autoSaveFrequency === f ? "var(--accent-subtle)" : "var(--surface-base)",
+                        borderColor: autoSaveFrequency === f ? "var(--accent)" : "var(--border-default)",
+                        color: autoSaveFrequency === f ? "var(--accent-text)" : "var(--text-secondary)",
+                      }}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[11px] rounded-lg p-2.5" style={{ background: "var(--accent-subtle)", color: "var(--accent-text)" }}>
+                After creating this pot, you'll complete a one-time card setup. Your first charge happens immediately, then repeats on your chosen schedule.
+              </p>
+            </div>
+          )}
+        </div>
 
         {error && (
           <div className="text-sm p-3 rounded-lg border"

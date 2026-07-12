@@ -207,3 +207,37 @@ export function generateReference(prefix: string = "AGC"): string {
     .padStart(6, "0");
   return `${prefix}_${timestamp}_${random}`;
 }
+
+/**
+ * Charge a previously saved card authorization (for auto-save recurring charges).
+ * The authorization_code comes from a prior successful transaction's
+ * data.authorization.authorization_code field.
+ */
+export async function chargeAuthorization(params: {
+  authorization_code: string;
+  email: string;
+  amount: number; // in Naira — converted to kobo internally
+  reference: string;
+  metadata?: Record<string, unknown>;
+}): Promise<{ status: boolean; data: { status: string; reference: string; amount: number } }> {
+  const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/charge_authorization`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SECRET_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      authorization_code: params.authorization_code,
+      email: params.email,
+      amount: Math.round(params.amount * 100), // kobo
+      reference: params.reference,
+      metadata: params.metadata,
+    }),
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || "Paystack charge_authorization failed");
+  }
+  return json;
+}

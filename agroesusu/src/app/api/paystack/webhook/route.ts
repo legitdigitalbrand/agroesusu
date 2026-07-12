@@ -31,6 +31,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Auto-save: capture card authorization from the setup charge
+    if (event === "charge.success" && reference.startsWith("AGC_AUT")) {
+      const authCode = data?.authorization?.authorization_code;
+      const email = data?.customer?.email;
+      const planId = data?.metadata?.auto_save_plan_id;
+
+      if (authCode && email && planId) {
+        const admin = (await import("@/lib/supabase/server")).createAdminClient();
+        // Credit the first instalment to the savings pot
+        const meta = data?.metadata || {};
+        const accountId = meta.account_id;
+        const userId = meta.user_id;
+        const amountNaira = (data?.amount || 0) / 100;
+
+        if (accountId && userId && amountNaira > 0) {
+          const { data: acct } = await admin
+            .from("savings_accounts")
+            .select("current_amount")
+            .eq("id", accountId)
+            .single();
+
+          if (acct) {
+            await admin
+              .from("savings_accounts")
+              .update({ current_amount: (acct.current_amount || 0) + amountNaira })
+              .eq("id", accountId);
+          }
+
+          await admin.from("transactions").insert({
+            user_id: userId,
+            account_id: accountId,
+            type: "deposit",
+            amount: amountNaira,
+            reference,
+            status: "completed",
+            description: "Auto-save setup (first charge)",
+            paystack_fee: (data?.fees || 0) / 100,
+          });
+        }
+
+        // Activate the plan and store the authorization
+        await admin
+          .from("auto_save_plans")
+          .update({
+            status: "active",
+            authorization_code: authCode,
+            email,
+            last_charged_at: new Date().toISOString(),
+            total_charged: amountNaira,
+            charge_count: 1,
+          })
+          .eq("id", planId);
+
+        console.log(`✅ Auto-save plan ${planId} activated with authorization`);
+      }
+    }
+
     if (event === "transfer.success" || event === "transfer.failed" || event === "transfer.reversed") {
       const outcome = event === "transfer.success" ? "success" : event === "transfer.failed" ? "failed" : "reversed";
       if (reference.startsWith("AGC_PAY")) {
