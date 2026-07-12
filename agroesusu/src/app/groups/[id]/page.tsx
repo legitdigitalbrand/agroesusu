@@ -29,6 +29,7 @@ export default async function GroupDetailPage({ params, searchParams }: { params
     { data: group },
     { data: members },
     { data: contributions },
+    { data: directDebitPlan },
   ] = await Promise.all([
     supabase.from('savings_groups').select('*').eq('id', id).single(),
     supabase
@@ -41,6 +42,12 @@ export default async function GroupDetailPage({ params, searchParams }: { params
       .select(`*, profiles!group_contributions_user_id_fkey(full_name)`)
       .eq('group_id', id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('group_direct_debit_plans')
+      .select('id, status')
+      .eq('group_id', id)
+      .eq('user_id', user.id)
+      .maybeSingle(),
   ]);
 
   const isEmergencyGroup = group?.type === 'emergency';
@@ -183,6 +190,8 @@ export default async function GroupDetailPage({ params, searchParams }: { params
             contributionAmount={Number(group.contribution_amount)}
             frequency={group.frequency}
             alreadyContributed={!!myContributionThisCycle}
+            hasActiveDirectDebit={directDebitPlan?.status === 'active'}
+            directDebitPlanId={directDebitPlan?.id}
           />
         </div>
       )}

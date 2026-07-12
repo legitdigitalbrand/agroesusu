@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAndCreditDeposit } from "@/lib/deposit-credit";
+import { activateGroupDirectDebit } from "@/lib/group-direct-debit-credit";
 import { verifyAndCreditGroupContribution } from "@/lib/group-contribution-credit";
 import { finalizeWithdrawal } from "@/lib/withdraw-credit";
 import { finalizeGroupPayout } from "@/lib/group-payout-credit";
@@ -22,11 +23,16 @@ export async function POST(request: NextRequest) {
     const reference: string = data?.reference || "";
 
     if (event === "charge.success") {
-      const result = reference.startsWith("AGC_GRP")
-        ? await verifyAndCreditGroupContribution(reference)
-        : await verifyAndCreditDeposit(reference);
-
-      if (result.credited) {
+      let result;
+      if (reference.startsWith("AGC_GDD")) {
+        // Group direct debit setup: activate plan + credit first contribution
+        result = await activateGroupDirectDebit(reference, data);
+      } else if (reference.startsWith("AGC_GRP")) {
+        result = await verifyAndCreditGroupContribution(reference);
+      } else {
+        result = await verifyAndCreditDeposit(reference);
+      }
+      if (result?.credited) {
         console.log(`✅ Payment confirmed via webhook: ${reference} — ₦${result.amount}`);
       }
     }

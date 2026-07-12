@@ -1,4 +1,4 @@
-name: Auto-Save Backup Cron
+name: Auto-Save & Group DD Backup Cron
 
 # Fires at 05:10 UTC daily (10 min after Vercel's primary cron at 05:00).
 # This is a SAFETY NET only — if Vercel Cron fires successfully, the charge
@@ -6,12 +6,12 @@ name: Auto-Save Backup Cron
 # second run (next_charge_at will already be in the future).
 on:
   schedule:
-    - cron: '10 5 * * *'
+    - cron: '15 5 * * *'
   workflow_dispatch:        # also allow manual trigger from GitHub UI
 
 jobs:
   charge:
-    name: Charge due auto-save plans
+    name: Charge due auto-save & group DD plans
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -30,6 +30,22 @@ jobs:
               print(f'ERROR: {data[\"error\"]}')
               sys.exit(1)
           print(f'✅ Processed {data.get(\"total\",0)} plans — {data.get(\"charged\",0)} charged, {data.get(\"failed\",0)} failed')
+          "
+
+      - name: Ping group direct debit charge
+        run: |
+          echo "Triggering group DD charge at $(date -u)"
+          RESPONSE=$(curl -sf -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://agroesusu.vercel.app/api/cron/group-dd-charge)
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          if 'error' in data:
+              print(f'ERROR: {data["error"]}')
+              sys.exit(1)
+          print(f'✅ Group DD: {data.get("total",0)} plans — {data.get("charged",0)} charged, {data.get("failed",0)} failed')
           "
 
       - name: Ping health check
