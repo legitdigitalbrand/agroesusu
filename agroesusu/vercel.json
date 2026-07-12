@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/autosave-charge",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/health-check",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

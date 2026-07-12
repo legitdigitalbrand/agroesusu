@@ -1,0 +1,46 @@
+name: Auto-Save Backup Cron
+
+# Fires at 05:10 UTC daily (10 min after Vercel's primary cron at 05:00).
+# This is a SAFETY NET only — if Vercel Cron fires successfully, the charge
+# endpoint is idempotent and will simply return 0 plans processed on the
+# second run (next_charge_at will already be in the future).
+on:
+  schedule:
+    - cron: '10 5 * * *'
+  workflow_dispatch:        # also allow manual trigger from GitHub UI
+
+jobs:
+  charge:
+    name: Charge due auto-save plans
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ping autosave charge endpoint
+        run: |
+          echo "Triggering auto-save charge at $(date -u)"
+          RESPONSE=$(curl -sf -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://agroesusu.vercel.app/api/cron/autosave-charge)
+          echo "Response: $RESPONSE"
+          # Fail the job if the endpoint returned an error status
+          echo "$RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          if 'error' in data:
+              print(f'ERROR: {data[\"error\"]}')
+              sys.exit(1)
+          print(f'✅ Processed {data.get(\"total\",0)} plans — {data.get(\"charged\",0)} charged, {data.get(\"failed\",0)} failed')
+          "
+
+      - name: Ping health check
+        run: |
+          HEALTH=$(curl -sf https://agroesusu.vercel.app/api/cron/health-check)
+          echo "Health: $HEALTH"
+          echo "$HEALTH" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          if data.get('status') != 'ok':
+              print('WARNING: Health check degraded:', json.dumps(data.get('checks', {})))
+          else:
+              print('✅ App healthy')
+          "

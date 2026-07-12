@@ -18,6 +18,14 @@ export default async function SavePage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
+  // Fetch active auto-save plans so we can show them on the page
+  const { data: autoSavePlans } = await supabase
+    .from('auto_save_plans')
+    .select('id, account_id, amount, frequency, status, next_charge_at, total_charged, charge_count, failure_reason')
+    .eq('user_id', user.id)
+    .in('status', ['active', 'failed'])
+    .order('created_at', { ascending: false });
+
   const totalSaved = accounts?.reduce((sum, acc) => sum + Number(acc.current_amount || 0), 0) || 0;
   const activeCount = accounts?.filter(a => a.status === 'active').length || 0;
 
@@ -62,6 +70,49 @@ export default async function SavePage() {
             </div>
           ))}
         </div>
+
+        {/* Auto-Save Plans section */}
+        {autoSavePlans && autoSavePlans.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Auto-Save Plans</h2>
+            <div className="space-y-3">
+              {autoSavePlans.map((plan) => {
+                const pot = accounts?.find(a => a.id === plan.account_id);
+                return (
+                  <div key={plan.id} className="flex items-center justify-between rounded-xl p-4 border"
+                    style={{ background: "var(--surface-card)", borderColor: plan.status === 'failed' ? "var(--danger)" : "var(--border-default)" }}>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+                        {pot?.name || 'Savings Pot'} — ₦{Number(plan.amount).toLocaleString()}
+                        <span className="ml-2 text-xs font-normal" style={{ color: "var(--text-muted)" }}>/{plan.frequency}</span>
+                      </p>
+                      {plan.status === 'active' && plan.next_charge_at && (
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          Next charge: {new Date(plan.next_charge_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
+                          {plan.charge_count > 0 && ` · ${plan.charge_count} charge${plan.charge_count > 1 ? 's' : ''} · ₦${Number(plan.total_charged).toLocaleString()} total`}
+                        </p>
+                      )}
+                      {plan.status === 'failed' && (
+                        <p className="text-xs mt-0.5" style={{ color: "var(--danger)" }}>
+                          Failed: {plan.failure_reason || 'Card charge failed'}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                        style={{
+                          background: plan.status === 'active' ? "var(--accent-subtle)" : "rgba(255,77,109,0.1)",
+                          color: plan.status === 'active' ? "var(--accent-text)" : "var(--danger)",
+                        }}>
+                        {plan.status === 'active' ? 'Active' : 'Failed'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {!accounts || accounts.length === 0 ? (
           <div className="rounded-xl p-12 text-center border" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
