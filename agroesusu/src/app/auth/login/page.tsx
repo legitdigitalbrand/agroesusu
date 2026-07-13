@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { AuthShell } from '@/components/ui/auth-shell';
+import { AuthSplitShell } from '@/components/ui/auth-split-shell';
 import { AuthInput } from '@/components/ui/auth-input';
 import { AuthButton } from '@/components/ui/auth-button';
 import { EyeIcon, EyeOffIcon, AlertTriangleIcon } from '@/components/icons';
@@ -45,7 +45,10 @@ export default function LoginPage() {
     : '/auth/register';
 
   return (
-    <AuthShell heading="Welcome back to AgroEsusu" subtext="Sign in to keep saving toward your goals.">
+    <AuthSplitShell
+      heading="Welcome back to AgroEsusu"
+      subtext="Sign in to keep saving toward your goals."
+    >
       <form onSubmit={handleLogin} className="space-y-4" noValidate>
         <AuthInput
           label="Email address"
@@ -81,7 +84,11 @@ export default function LoginPage() {
         {error && (
           <div
             className="text-sm p-3 rounded-xl border flex items-start gap-2"
-            style={{ background: 'rgba(220,38,38,0.06)', color: 'var(--danger)', borderColor: 'rgba(220,38,38,0.18)' }}
+            style={{
+              background: 'rgba(220,38,38,0.06)',
+              color: 'var(--danger)',
+              borderColor: 'rgba(220,38,38,0.18)',
+            }}
           >
             <AlertTriangleIcon className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{error}</span>
@@ -95,10 +102,10 @@ export default function LoginPage() {
 
       <p className="text-center text-sm mt-7" style={{ color: 'var(--text-muted)' }}>
         New to AgroEsusu?{' '}
-        <Link href={registerHref} className="font-semibold" style={{ color: 'var(--accent)' }}>
+        <Link href={registerHref} className="font-semibold" style={{ color: '#F97316' }}>
           Create an account
         </Link>
       </p>
-    </AuthShell>
+    </AuthSplitShell>
   );
 }

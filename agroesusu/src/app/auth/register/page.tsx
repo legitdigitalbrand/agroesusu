@@ -4,11 +4,14 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { AuthShell } from '@/components/ui/auth-shell';
+import { AuthSplitShell } from '@/components/ui/auth-split-shell';
 import { AuthInput } from '@/components/ui/auth-input';
 import { AuthButton } from '@/components/ui/auth-button';
 import { PasswordStrength, getPasswordScore } from '@/components/ui/password-strength';
-import { EyeIcon, EyeOffIcon, AlertTriangleIcon, ShieldCheckIcon, InfoIcon, CheckIcon } from '@/components/icons';
+import {
+  EyeIcon, EyeOffIcon, AlertTriangleIcon,
+  ShieldCheckIcon, InfoIcon, CheckIcon,
+} from '@/components/icons';
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -70,11 +73,10 @@ export default function RegisterPage() {
     : '/auth/login';
 
   return (
-    <AuthShell
+    <AuthSplitShell
       eyebrow="Get started"
       heading="Create your savings account"
       subtext="Takes less than a minute. No card required to start."
-      wide
     >
       <form onSubmit={handleRegister} className="space-y-4" noValidate>
         <AuthInput
@@ -121,7 +123,11 @@ export default function RegisterPage() {
           {showPhoneHint && (
             <div
               className="absolute left-0 top-full mt-1.5 z-10 w-64 text-xs rounded-lg p-2.5 border shadow-soft"
-              style={{ background: 'var(--surface-elevated)', color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
+              style={{
+                background: 'var(--surface-elevated)',
+                color: 'var(--text-secondary)',
+                borderColor: 'var(--border-default)',
+              }}
             >
               We only use this to notify you about deposits and group payouts — never for marketing.
             </div>
@@ -162,7 +168,9 @@ export default function RegisterPage() {
           required
           error={confirmError}
           rightElement={
-            passwordsMatch ? <CheckIcon className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={3} /> : undefined
+            passwordsMatch
+              ? <CheckIcon className="w-4 h-4" style={{ color: '#F97316' }} strokeWidth={3} />
+              : undefined
           }
         />
 
@@ -171,18 +179,29 @@ export default function RegisterPage() {
             type="checkbox"
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded shrink-0 accent-[var(--accent)]"
+            className="mt-0.5 w-4 h-4 rounded shrink-0"
+            style={{ accentColor: '#F97316' }}
           />
           <span className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            I agree to AgroEsusu&apos;s <a href="#" className="underline font-medium" style={{ color: 'var(--text-secondary)' }}>Terms of Service</a> and{' '}
-            <a href="#" className="underline font-medium" style={{ color: 'var(--text-secondary)' }}>Privacy Policy</a>.
+            I agree to AgroEsusu&apos;s{' '}
+            <a href="#" className="underline font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a href="#" className="underline font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Privacy Policy
+            </a>.
           </span>
         </label>
 
         {error && (
           <div
             className="text-sm p-3 rounded-xl border flex items-start gap-2"
-            style={{ background: 'rgba(220,38,38,0.06)', color: 'var(--danger)', borderColor: 'rgba(220,38,38,0.18)' }}
+            style={{
+              background: 'rgba(220,38,38,0.06)',
+              color: 'var(--danger)',
+              borderColor: 'rgba(220,38,38,0.18)',
+            }}
           >
             <AlertTriangleIcon className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{error}</span>
@@ -197,17 +216,17 @@ export default function RegisterPage() {
           className="flex items-center gap-2 justify-center text-xs pt-1"
           style={{ color: 'var(--text-faint)' }}
         >
-          <ShieldCheckIcon className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+          <ShieldCheckIcon className="w-3.5 h-3.5" style={{ color: '#F97316' }} />
           <span>Bank-grade encryption · Your data is never sold or shared</span>
         </div>
       </form>
 
       <p className="text-center text-sm mt-7" style={{ color: 'var(--text-muted)' }}>
         Already saving with us?{' '}
-        <Link href={loginHref} className="font-semibold" style={{ color: 'var(--accent)' }}>
+        <Link href={loginHref} className="font-semibold" style={{ color: '#F97316' }}>
           Sign in
         </Link>
       </p>
-    </AuthShell>
+    </AuthSplitShell>
   );
 }
