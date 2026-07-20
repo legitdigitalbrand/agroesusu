@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { chargeAuthorization, generateReference } from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference, PAYMENT_PROVIDER } from "@/lib/payment-provider";
 
 /**
  * GET /api/cron/group-dd-charge
@@ -9,11 +9,8 @@ import { chargeAuthorization, generateReference } from "@/lib/paystack";
  * Finds all active group_direct_debit_plans whose next_charge_at <= now,
  * charges each member's saved card, and credits their group contribution.
  *
- * Key invariants:
- * - Idempotent: if a member already has a verified contribution for this
- *   cycle, we skip them and advance next_charge_at without charging
- * - Per-plan try/catch: one failed card never blocks other members
- * - Esusu payout-ready notification fires when all members have contributed
+ * Note: Card authorization charges are only supported with Paystack.
+ * When PAYMENT_PROVIDER=safehaven, this cron logs a warning and skips.
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -21,27 +18,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  if (PAYMENT_PROVIDER === 'safehaven') {
+    console.warn("[group-dd-cron] Card-based direct debit not supported with Safe Haven. Skipping.");
+    return NextResponse.json({
+      message: "Card-based direct debit not supported with Safe Haven provider",
+      skipped: true,
+    });
+  }
+
   const admin = createAdminClient();
   const now = new Date().toISOString();
   const runId = `gdd_${Date.now()}`;
 
-  // Fetch all active plans due for charging, with group context
-  const { data: duePlans, error: fetchErr } = await admin
-    .from("group_direct_debit_plans")
-    .select(`
-      id, user_id, group_id, amount:groups!inner(contribution_amount),
-      authorization_code, email, next_charge_at, total_charged, charge_count,
-      groups!inner(id, name, type, current_cycle, contribution_amount, contribution_frequency, status, member_count)
-    `)
-    .eq("status", "active")
-    .lte("next_charge_at", now);
-
-  if (fetchErr) {
-    console.error(`[group-dd-cron][${runId}] fetch error:`, fetchErr.message);
-    return NextResponse.json({ error: fetchErr.message }, { status: 500 });
-  }
-
-  // Simpler flat query to avoid join complexity
   const { data: flatPlans } = await admin
     .from("group_direct_debit_plans")
     .select("id, user_id, group_id, authorization_code, email, next_charge_at, total_charged, charge_count")
@@ -51,11 +39,11 @@ export async function GET(request: NextRequest) {
   const plans = flatPlans || [];
   console.log(`[group-dd-cron][${runId}] Found ${plans.length} due plans`);
 
+  const service = await getPaymentService();
   const results: { plan_id: string; status: string; amount?: number; reason?: string }[] = [];
 
   for (const plan of plans) {
     try {
-      // Fetch group details for this plan
       const { data: group } = await admin
         .from("savings_groups")
         .select("id, name, type, current_cycle, contribution_amount, contribution_frequency, status")
@@ -63,7 +51,6 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (!group || !["active", "recruiting"].includes(group.status)) {
-        // Group inactive/disbanded — cancel the DD plan
         await admin.from("group_direct_debit_plans")
           .update({ status: "cancelled" })
           .eq("id", plan.id);
@@ -85,7 +72,6 @@ export async function GET(request: NextRequest) {
         .maybeSingle();
 
       if (existingContrib) {
-        // Already paid this cycle — just advance the schedule
         const next = computeNextChargeAt(group.contribution_frequency);
         await admin.from("group_direct_debit_plans")
           .update({ next_charge_at: next.toISOString() })
@@ -94,10 +80,9 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const ref = generateReference("AGC_GDD");
+      const ref = generatePaymentReference("AGC_GDD");
 
-      // Charge the card
-      const charge = await chargeAuthorization({
+      const charge = await service.chargeAuthorization({
         authorization_code: plan.authorization_code,
         email: plan.email,
         amount,
@@ -111,7 +96,7 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      if (charge.data.status === "success") {
+      if (charge.status) {
         // Insert verified contribution
         await admin.from("group_contributions").insert({
           group_id: plan.group_id,
@@ -191,10 +176,9 @@ export async function GET(request: NextRequest) {
         console.log(`[group-dd-cron][${runId}] ✅ ${plan.user_id} → ${group.name} ₦${amount}`);
       } else {
         await admin.from("group_direct_debit_plans")
-          .update({ status: "failed", failure_reason: `Paystack: ${charge.data.status}` })
+          .update({ status: "failed", failure_reason: "Charge declined" })
           .eq("id", plan.id);
 
-        // Notify member about failure
         await admin.from("notifications").insert({
           user_id: plan.user_id,
           type: "group_dd_failed",
@@ -202,11 +186,11 @@ export async function GET(request: NextRequest) {
           title: "Auto Contribution Failed",
           content: `Your automatic contribution to ${group.name} failed. Please contribute manually or update your card.`,
           status: "unread",
-          metadata: { group_id: plan.group_id, reason: charge.data.status },
+          metadata: { group_id: plan.group_id, reason: "declined" },
         });
 
-        results.push({ plan_id: plan.id, status: "declined", reason: charge.data.status });
-        console.warn(`[group-dd-cron][${runId}] ❌ ${plan.user_id} → ${group.name} declined: ${charge.data.status}`);
+        results.push({ plan_id: plan.id, status: "declined" });
+        console.warn(`[group-dd-cron][${runId}] ❌ ${plan.user_id} → ${group.name} declined`);
       }
     } catch (err: any) {
       await admin.from("group_direct_debit_plans")

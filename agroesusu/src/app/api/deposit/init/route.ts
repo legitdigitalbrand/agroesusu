@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { initializeTransaction, generateReference } from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference } from "@/lib/payment-provider";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -9,11 +9,6 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // This route previously trusted a client-supplied `user_id` with no auth
-  // check at all — anyone could call it with an arbitrary user_id/account_id
-  // and create pending transaction rows attributed to someone else's
-  // account. Every other money-movement route already re-derives the
-  // acting user from the session; this brings deposit-init in line.
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -33,7 +28,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { amount, account_id, account_name, email } = body;
 
-    // Validate
     if (!amount || amount < 100) {
       return NextResponse.json(
         { error: "Minimum deposit is ₦100" },
@@ -48,8 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Confirm the pot actually belongs to the authenticated user before
-    // creating any transaction record against it.
+    // Confirm the pot belongs to the authenticated user
     const admin = createAdminClient();
     const { data: account } = await admin
       .from("savings_accounts")
@@ -62,7 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Savings pot not found" }, { status: 404 });
     }
 
-    const reference = generateReference("AGC_DEP");
+    const reference = generatePaymentReference("AGC_DEP");
     const origin = request.nextUrl.origin;
 
     // Create pending transaction in Supabase
@@ -86,8 +79,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize Paystack transaction
-    const response = await initializeTransaction({
+    // Initialize transaction via the active payment provider
+    const service = await getPaymentService();
+    const result = await service.initializeTransaction({
       email,
       amount: Number(amount),
       reference,
@@ -99,17 +93,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!response.status) {
-      return NextResponse.json(
-        { error: "Failed to initialize payment" },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json({
-      authorization_url: response.data.authorization_url,
-      reference: response.data.reference,
-      access_code: response.data.access_code,
+      authorization_url: result.authorization_url,
+      reference: result.reference,
     });
   } catch (error) {
     console.error("Deposit init error:", error);

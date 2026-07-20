@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { initializeTransaction, generateReference } from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference } from "@/lib/payment-provider";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "You already have an active direct debit for this group" }, { status: 400 });
   }
 
-  const reference = generateReference("AGC_GDD");
+  const reference = generatePaymentReference("AGC_GDD");
   const cycleNumber = group.type === "esusu" ? group.current_cycle : 0;
   const origin = request.nextUrl.origin;
 
@@ -98,7 +98,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Paystack checkout
-  const txn = await initializeTransaction({
+  const service = await getPaymentService();
+  const txn = await service.initializeTransaction({
     email,
     amount: Number(group.contribution_amount),
     reference,
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     } as any,
   });
 
-  if (!txn.status) return NextResponse.json({ error: "Failed to initialize payment" }, { status: 500 });
+  if (!txn.authorization_url) return NextResponse.json({ error: "Failed to initialize payment" }, { status: 500 });
 
-  return NextResponse.json({ authorization_url: txn.data.authorization_url, reference: txn.data.reference });
+  return NextResponse.json({ authorization_url: txn.authorization_url, reference: txn.reference });
 }

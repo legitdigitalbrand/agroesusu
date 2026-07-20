@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { initializeTransaction, generateReference } from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference } from "@/lib/payment-provider";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -87,11 +87,13 @@ export async function POST(request: NextRequest) {
 
   // Initialize Paystack — charge the FIRST instalment immediately so the
   // user sees real money move and the authorization is captured
-  const reference = generateReference("AGC_AUT");
+  const reference = generatePaymentReference("AGC_AUT");
   const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "https://agroesusu.vercel.app";
 
+  const service = await getPaymentService();
+
   try {
-    const tx = await initializeTransaction({
+    const tx = await service.initializeTransaction({
       email: user.email!,
       amount,
       reference,
@@ -110,7 +112,7 @@ export async function POST(request: NextRequest) {
       .update({ setup_reference: reference })
       .eq("id", plan.id);
 
-    return NextResponse.json({ url: tx.data.authorization_url });
+    return NextResponse.json({ url: tx.authorization_url });
   } catch (err: any) {
     // Clean up the pending plan if Paystack fails
     await admin.from("auto_save_plans").delete().eq("id", plan.id);

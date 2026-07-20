@@ -1,21 +1,22 @@
 import { createAdminClient } from "@/lib/supabase/server";
-import { verifyTransaction } from "@/lib/paystack";
+import { getPaymentService } from "@/lib/payment-provider";
 
 /**
- * Idempotently verifies a Paystack transaction for a group contribution and
+ * Idempotently verifies a transaction for a group contribution and
  * credits it — same pattern as verifyAndCreditDeposit (safe to call from
  * both the webhook and the browser redirect; the "verified" status check
  * prevents double-crediting).
  */
 export async function verifyAndCreditGroupContribution(reference: string) {
-  const verification = await verifyTransaction(reference);
+  const service = await getPaymentService();
+  const verification = await service.verifyTransaction(reference);
 
-  if (verification.data.status !== "success") {
-    return { status: verification.data.status as string, credited: false };
+  if (!verification.status) {
+    return { status: "pending", credited: false };
   }
 
   const admin = createAdminClient();
-  const amountInNaira = verification.data.amount / 100;
+  const amountInNaira = verification.amount / 100;
 
   const { data: contribution } = await admin
     .from("group_contributions")

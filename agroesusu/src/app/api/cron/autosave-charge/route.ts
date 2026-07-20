@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { chargeAuthorization, generateReference } from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference, PAYMENT_PROVIDER } from "@/lib/payment-provider";
 
 /**
  * GET /api/cron/autosave-charge
@@ -9,15 +9,12 @@ import { chargeAuthorization, generateReference } from "@/lib/paystack";
  * (06:00 Lagos / WAT). Vercel passes the CRON_SECRET automatically via the
  * Authorization header when invoking cron routes.
  *
- * Auth: Vercel Cron sets `Authorization: Bearer <CRON_SECRET>` on every
- * invocation. We also allow direct calls with the same header for manual
- * testing and the GitHub Actions backup cron.
- *
- * On failure of any individual plan the plan is marked "failed" and the
- * rest continue — a single bad card never blocks other users.
+ * Note: Card authorization charges are only supported with Paystack.
+ * Safe Haven requires a different recurring payment approach (virtual account
+ * deposits or scheduled transfers). When PAYMENT_PROVIDER=safehaven, this
+ * cron logs a warning and skips.
  */
 export async function GET(request: NextRequest) {
-  // Verify Vercel Cron secret (Authorization: Bearer <CRON_SECRET>)
   const authHeader = request.headers.get("authorization");
   const expectedSecret = process.env.CRON_SECRET;
 
@@ -25,11 +22,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  if (PAYMENT_PROVIDER === 'safehaven') {
+    console.warn("[autosave-cron] Card-based autosave not supported with Safe Haven. Skipping.");
+    return NextResponse.json({
+      message: "Card-based autosave not supported with Safe Haven provider",
+      skipped: true,
+    });
+  }
+
   const admin = createAdminClient();
   const now = new Date().toISOString();
   const runId = `run_${Date.now()}`;
 
-  // Fetch all active plans due for charging
   const { data: duePlans, error: fetchErr } = await admin
     .from("auto_save_plans")
     .select("id, user_id, account_id, amount, frequency, authorization_code, email, next_charge_at, total_charged, charge_count")
@@ -44,12 +48,13 @@ export async function GET(request: NextRequest) {
   const plans = duePlans || [];
   console.log(`[autosave-cron][${runId}] Found ${plans.length} due plans`);
 
+  const service = await getPaymentService();
   const results: { plan_id: string; status: string; amount?: number; reason?: string }[] = [];
 
   for (const plan of plans) {
-    const ref = generateReference("AGC_AUT");
+    const ref = generatePaymentReference("AGC_AUT");
     try {
-      const charge = await chargeAuthorization({
+      const charge = await service.chargeAuthorization({
         authorization_code: plan.authorization_code,
         email: plan.email,
         amount: plan.amount,
@@ -57,7 +62,7 @@ export async function GET(request: NextRequest) {
         metadata: { user_id: plan.user_id, account_id: plan.account_id, auto_save_plan_id: plan.id, is_recurring: true },
       });
 
-      if (charge.data.status === "success") {
+      if (charge.status) {
         // Credit the savings account
         const { data: acct } = await admin
           .from("savings_accounts")
@@ -81,7 +86,7 @@ export async function GET(request: NextRequest) {
           reference: ref,
           status: "completed",
           description: `Auto-save (${plan.frequency})`,
-          paystack_fee: 0,
+          fee_amount: 0,
         });
 
         // Advance next_charge_at
@@ -100,12 +105,11 @@ export async function GET(request: NextRequest) {
         results.push({ plan_id: plan.id, status: "charged", amount: plan.amount });
         console.log(`[autosave-cron][${runId}] ✅ Charged plan ${plan.id} — ₦${plan.amount}`);
       } else {
-        // Paystack returned a non-success status (e.g. card declined)
         await admin.from("auto_save_plans")
-          .update({ status: "failed", failure_reason: `Paystack: ${charge.data.status}` })
+          .update({ status: "failed", failure_reason: "Charge declined" })
           .eq("id", plan.id);
-        results.push({ plan_id: plan.id, status: "declined", reason: charge.data.status });
-        console.warn(`[autosave-cron][${runId}] ❌ Plan ${plan.id} declined: ${charge.data.status}`);
+        results.push({ plan_id: plan.id, status: "declined" });
+        console.warn(`[autosave-cron][${runId}] ❌ Plan ${plan.id} declined`);
       }
     } catch (err: any) {
       await admin.from("auto_save_plans")

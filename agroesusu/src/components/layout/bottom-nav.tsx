@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, PiggyIcon, UsersIcon, ReceiptIcon, UserIcon } from "@/components/icons";
+import { HomeIcon, PiggyIcon, UsersIcon, LoanHandIcon, ReceiptIcon, UserIcon } from "@/components/icons";
 
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/save", label: "Save", icon: PiggyIcon },
   { href: "/groups", label: "Groups", icon: UsersIcon },
+  { href: "/loans", label: "Loans", icon: LoanHandIcon },
   { href: "/transactions", label: "Activity", icon: ReceiptIcon },
   { href: "/profile", label: "Profile", icon: UserIcon },
 ];
@@ -25,16 +26,16 @@ export function BottomNav() {
         borderColor: "var(--nav-border)",
       }}
     >
-      <div className="flex items-center justify-around px-2 pt-2 pb-2 pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around px-1 pt-2 pb-2 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 px-3.5 py-2 rounded-2xl transition-colors"
+              className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-2xl transition-colors"
               style={{
                 background: isActive ? "var(--nav-active-bg)" : "transparent",
               }}

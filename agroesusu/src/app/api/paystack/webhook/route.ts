@@ -4,16 +4,18 @@ import { activateGroupDirectDebit } from "@/lib/group-direct-debit-credit";
 import { verifyAndCreditGroupContribution } from "@/lib/group-contribution-credit";
 import { finalizeWithdrawal } from "@/lib/withdraw-credit";
 import { finalizeGroupPayout } from "@/lib/group-payout-credit";
+import { processRepayment } from "@/lib/loans/loan-operations";
 
 /**
  * Paystack Webhook Handler
  * Receives payment events from Paystack and updates the database.
  *
  * Events we handle:
- * - charge.success: Deposit or group contribution completed — reference
- *   prefix (AGC_DEP vs AGC_GRP) tells us which crediting path to use.
+ * - charge.success: Deposit, group contribution, or loan repayment completed —
+ *   reference prefix (AGC_DEP / AGC_GRP / AGC_LRP) tells us which path to use.
  * - transfer.success / transfer.failed / transfer.reversed: Withdrawal
- *   (AGC_WDR) or group cycle payout (AGC_PAY) completed/failed.
+ *   (AGC_WDR), group cycle payout (AGC_PAY), or loan disbursement (AGC_LDB)
+ *   completed/failed.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,6 +31,19 @@ export async function POST(request: NextRequest) {
         result = await activateGroupDirectDebit(reference, data);
       } else if (reference.startsWith("AGC_GRP")) {
         result = await verifyAndCreditGroupContribution(reference);
+      } else if (reference.startsWith("AGC_LRP")) {
+        // Loan repayment charge — process the repayment
+        const admin = (await import("@/lib/supabase/server")).createAdminClient();
+        const { data: loanTx } = await admin
+          .from('loan_transactions')
+          .select('loan_id, amount')
+          .eq('reference', reference)
+          .single();
+
+        if (loanTx) {
+          await processRepayment(loanTx.loan_id, Number(loanTx.amount), 'manual', reference);
+          console.log(`✅ Loan repayment confirmed via webhook: ${reference}`);
+        }
       } else {
         result = await verifyAndCreditDeposit(reference);
       }
@@ -98,6 +113,13 @@ export async function POST(request: NextRequest) {
       const outcome = event === "transfer.success" ? "success" : event === "transfer.failed" ? "failed" : "reversed";
       if (reference.startsWith("AGC_PAY")) {
         await finalizeGroupPayout(reference, outcome);
+      } else if (reference.startsWith("AGC_LDB")) {
+        // Loan disbursement transfer — mark as completed
+        const admin = (await import("@/lib/supabase/server")).createAdminClient();
+        await admin.from('loan_transactions')
+          .update({ status: outcome === 'success' ? 'completed' : 'failed' })
+          .eq('reference', reference);
+        console.log(`Loan disbursement ${outcome} via webhook: ${reference}`);
       } else {
         await finalizeWithdrawal(reference, outcome);
       }

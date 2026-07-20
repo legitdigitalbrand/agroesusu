@@ -1,39 +1,39 @@
 import { createAdminClient } from "@/lib/supabase/server";
-import { verifyTransaction } from "@/lib/paystack";
+import { getPaymentService } from "@/lib/payment-provider";
 
 /**
- * Idempotently verifies a Paystack transaction and credits the user's
+ * Idempotently verifies a payment transaction and credits the user's
  * savings account. Safe to call multiple times for the same reference
  * (from the webhook AND from the browser redirect) — the completed-status
  * check prevents double-crediting.
  *
  * Handles two deposit paths:
  * 1. Card/USSD checkout — metadata contains user_id + account_id
- * 2. DVA bank transfer — no metadata; we look up the user by Paystack
+ * 2. DVA bank transfer — no metadata; we look up the user by
  *    customer code and credit their default Flex pot
  *
  * Uses the ADMIN (service-role) Supabase client because this runs outside
- * a user session (Paystack webhooks have no cookies) — RLS would
- * otherwise silently block these writes, which is what caused deposits to
- * get stuck on "pending".
+ * a user session (webhooks have no cookies) — RLS would otherwise silently
+ * block these writes.
  */
 export async function verifyAndCreditDeposit(reference: string) {
-  const verification = await verifyTransaction(reference);
+  const service = await getPaymentService();
+  const verification = await service.verifyTransaction(reference);
 
-  if (verification.data.status !== "success") {
-    return { status: verification.data.status as string, credited: false };
+  if (!verification.status) {
+    return { status: "pending", credited: false };
   }
 
   const admin = createAdminClient();
-  const metadata = verification.data.metadata || {};
-  const amountInNaira = verification.data.amount / 100;
-  const feesInNaira = (verification.data.fees || 0) / 100;
+  const metadata = verification.metadata || {};
+  const amountInNaira = verification.amount / 100;
+  const feesInNaira = (verification.fees || 0) / 100;
   let userId = metadata.user_id;
   let accountId = metadata.account_id;
 
-  // DVA deposits: no metadata — find user by Paystack customer code
+  // DVA/bank transfer deposits: no metadata — find user by customer code
   if (!userId) {
-    const customerCode = verification.data.customer?.customer_code;
+    const customerCode = verification.raw?.customer?.customer_code;
     if (customerCode) {
       const { data: profile } = await admin
         .from("profiles")
@@ -119,7 +119,7 @@ export async function verifyAndCreditDeposit(reference: string) {
     .update({
       status: "completed",
       fee_amount: feesInNaira,
-      paystack_response: JSON.stringify(verification.data),
+      paystack_response: JSON.stringify(verification.raw),
       completed_date: new Date().toISOString(),
     })
     .eq("payment_reference", reference);
@@ -153,8 +153,7 @@ export async function verifyAndCreditDeposit(reference: string) {
 
   // Round-up automation: if the user has a Stash pot with round-up enabled,
   // credit it with the spare change from this deposit (rounded up to the
-  // nearest ₦100). This is a bookkeeping allocation, not a second real
-  // charge — the round-up "comes from" this same completed deposit.
+  // nearest ₦100).
   await applyRoundUp(admin, userId, accountId, amountInNaira, reference);
 
   await admin.from("notifications").insert({

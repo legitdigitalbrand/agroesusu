@@ -1,12 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-
-const PAYSTACK_BASE_URL = "https://api.paystack.co";
-const SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+import { getPaymentService, PAYMENT_PROVIDER } from "@/lib/payment-provider";
 
 /**
- * Create a Paystack customer + dedicated virtual account for a user.
- * Called once per user — subsequent calls return existing DVA if already created.
+ * Create a virtual account for a user via the active payment provider.
+ * Called once per user — subsequent calls return existing account if already created.
+ *
+ * With Paystack: creates a Paystack customer + dedicated virtual account (DVA)
+ * With Safe Haven: creates a Safe Haven sub-account (permanent virtual account)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient();
 
-    // Check if user already has a DVA
+    // Check if user already has a virtual account
     const { data: profile } = await admin
       .from("profiles")
       .select("paystack_customer_code, paystack_dva_account_number, paystack_dva_bank_name, dva_status, email, full_name, phone")
@@ -36,110 +37,79 @@ export async function POST(request: NextRequest) {
         status: "assigned",
         account_number: profile.paystack_dva_account_number,
         bank_name: profile.paystack_dva_bank_name,
+        provider: PAYMENT_PROVIDER,
       });
     }
 
-    let customerCode = profile.paystack_customer_code;
+    // Use the payment provider abstraction
+    const service = await getPaymentService();
 
-    // Step 1: Create Paystack customer if not exists
-    if (!customerCode) {
-      const customerRes = await fetch(`${PAYSTACK_BASE_URL}/customer`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: profile.email,
-          first_name: profile.full_name?.split(" ")[0] || "",
-          last_name: profile.full_name?.split(" ").slice(1).join(" ") || "",
-          phone: profile.phone || "",
-        }),
+    try {
+      const virtualAccount = await service.createVirtualAccount({
+        email: profile.email,
+        full_name: profile.full_name || '',
+        user_id: userId,
       });
 
-      const customerData = await customerRes.json();
-
-      if (!customerRes.ok) {
-        console.error("Paystack customer creation failed:", customerData);
-        return NextResponse.json({
-          error: customerData.message || "Failed to create customer account",
-        }, { status: 400 });
-      }
-
-      customerCode = customerData.data.customer_code;
-
-      // Save customer code
+      // Save virtual account details to profile
       await admin
         .from("profiles")
-        .update({ paystack_customer_code: customerCode })
+        .update({
+          paystack_dva_account_number: virtualAccount.account_number,
+          paystack_dva_bank_name: virtualAccount.bank_name,
+          dva_status: "assigned",
+        })
         .eq("id", userId);
-    }
 
-    // Step 2: Create dedicated virtual account
-    const dvaRes = await fetch(`${PAYSTACK_BASE_URL}/dedicated_account`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        customer: customerCode,
-        preferred_bank: process.env.PAYSTACK_DVA_BANK || "wema-bank",
-      }),
-    });
+      return NextResponse.json({
+        status: "assigned",
+        account_number: virtualAccount.account_number,
+        bank_name: virtualAccount.bank_name,
+        provider: service.provider,
+      });
+    } catch (err: any) {
+      console.error(`${service.provider} virtual account creation failed:`, err);
 
-    const dvaData = await dvaRes.json();
+      // If Paystack DVA creation fails because business account isn't activated,
+      // fall back to a pending state rather than dead-ending the user
+      if (service.provider === 'paystack' && /not available|not activated|business/i.test(err.message || '')) {
+        // Try the old Paystack flow as fallback — create customer first
+        const customerRes = await fetch("https://api.paystack.co/customer", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: profile.email,
+            first_name: profile.full_name?.split(" ")[0] || "",
+            last_name: profile.full_name?.split(" ").slice(1).join(" ") || "",
+            phone: profile.phone || "",
+          }),
+        });
 
-    if (!dvaRes.ok) {
-      console.error("Paystack DVA creation failed:", dvaData);
-      // Some errors are OK — account might already exist
-      if (dvaData.message?.includes("already")) {
-        // Try to fetch existing DVA
-        const existingRes = await fetch(
-          `${PAYSTACK_BASE_URL}/dedicated_account?customer=${customerCode}`,
-          { headers: { Authorization: `Bearer ${SECRET_KEY}` } }
-        );
-        const existingData = await existingRes.json();
-        if (existingData.data?.length > 0) {
-          const dva = existingData.data[0];
+        const customerData = await customerRes.json();
+
+        if (customerRes.ok) {
           await admin
             .from("profiles")
             .update({
-              paystack_dva_account_number: dva.account_number,
-              paystack_dva_bank_name: dva.bank?.name || "Wema Bank",
-              dva_status: "assigned",
+              paystack_customer_code: customerData.data.customer_code,
+              dva_status: "pending",
             })
             .eq("id", userId);
 
           return NextResponse.json({
-            status: "assigned",
-            account_number: dva.account_number,
-            bank_name: dva.bank?.name || "Wema Bank",
+            status: "pending",
+            message: "Your account number is being set up. We'll notify you when it's ready.",
           });
         }
       }
+
       return NextResponse.json({
-        error: dvaData.message || "Failed to create account number",
+        error: err.message || "Failed to create account number",
       }, { status: 400 });
     }
-
-    const dva = dvaData.data;
-
-    // Save DVA details
-    await admin
-      .from("profiles")
-      .update({
-        paystack_dva_account_number: dva.account_number,
-        paystack_dva_bank_name: dva.bank?.name || "Wema Bank",
-        dva_status: "assigned",
-      })
-      .eq("id", userId);
-
-    return NextResponse.json({
-      status: "assigned",
-      account_number: dva.account_number,
-      bank_name: dva.bank?.name || "Wema Bank",
-    });
   } catch (error) {
     console.error("DVA creation error:", error);
     return NextResponse.json({ error: "Failed to create account number" }, { status: 500 });
@@ -172,5 +142,6 @@ export async function GET(request: NextRequest) {
     status: profile.dva_status || "pending",
     account_number: profile.paystack_dva_account_number || null,
     bank_name: profile.paystack_dva_bank_name || null,
+    provider: PAYMENT_PROVIDER,
   });
 }

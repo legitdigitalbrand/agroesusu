@@ -1,8 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-
-const PAYSTACK_BASE_URL = "https://api.paystack.co";
-const SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+import { getPaymentService } from "@/lib/payment-provider";
+import { PAYMENT_PROVIDER } from "@/lib/payment-provider";
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,40 +28,92 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Identity already verified" }, { status: 400 });
     }
 
-    // Call Paystack BVN verification
     const crypto = await import("crypto");
     const bvnHash = crypto.createHash("sha256").update(bvn).digest("hex");
     const bvnLast4 = bvn.slice(-4);
 
-    const response = await fetch(`${PAYSTACK_BASE_URL}/bank/resolve_bvn/${bvn}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
+    // Use the payment provider abstraction — routes to Paystack or Safe Haven
+    const service = await getPaymentService();
+    const verificationResult = await service.verifyBVN(bvn);
 
-    const data = await response.json();
-
-    // Paystack's BVN lookup requires account-level activation we don't have
-    // yet (401/403, or a message saying the route/feature isn't available).
-    // Don't dead-end the user on an infra gap that isn't their fault —
-    // accept the BVN for manual review instead of hard-failing.
-    const isFeatureUnavailable =
-      response.status === 401 ||
-      response.status === 403 ||
-      /not available|not enabled|not permitted|unauthorized/i.test(data.message || "");
-
-    if (isFeatureUnavailable) {
-      console.error("BVN lookup unavailable (Paystack feature not activated):", data);
-      await admin
-        .from("profiles")
-        .update({
+    // ─── Safe Haven: two-step OTP flow ───
+    if (PAYMENT_PROVIDER === 'safehaven') {
+      if (verificationResult.raw?.needsOtp) {
+        // Store BVN hash + the identityId for the validate step
+        await admin.from("profiles").update({
           bvn_last_4: bvnLast4,
           bvn_hash: bvnHash,
-          kyc_status: "pending_review",
-        })
-        .eq("id", userId);
+          kyc_status: "pending_otp",
+        }).eq("id", userId);
+
+        return NextResponse.json({
+          status: "pending_otp",
+          message: "An OTP has been sent to the phone number registered with your BVN. Enter it to complete verification.",
+          identityId: verificationResult.raw.identityId,
+        });
+      }
+
+      if (verificationResult.status === 'verified') {
+        // Direct verification (no OTP needed in some flows)
+        const { data: userProfile } = await admin.from("profiles").select("full_name").eq("id", userId).single();
+        const registeredName = (userProfile?.full_name || "").toLowerCase().trim();
+        const bvnFirstName = (verificationResult.first_name || "").toLowerCase().trim();
+        const bvnLastName = (verificationResult.last_name || "").toLowerCase().trim();
+        const nameMatched = fuzzyNameMatch(registeredName, bvnFirstName, bvnLastName);
+
+        const kycStatus = nameMatched ? "verified" : "pending_review";
+
+        await admin.from("profiles").update({
+          bvn_last_4: bvnLast4,
+          bvn_hash: bvnHash,
+          bvn_first_name: verificationResult.first_name || "",
+          bvn_last_name: verificationResult.last_name || "",
+          kyc_status: kycStatus,
+          kyc_verified_date: nameMatched ? new Date().toISOString() : null,
+        }).eq("id", userId);
+
+        await admin.from("notifications").insert({
+          user_id: userId,
+          type: "kyc",
+          channel: "in_app",
+          title: nameMatched ? "Identity Verified" : "Identity Under Review",
+          content: nameMatched
+            ? "Your BVN has been verified. You can now withdraw your savings."
+            : "Your BVN verification is under review. Our team will confirm your identity shortly.",
+          status: "unread",
+          metadata: { kyc_status: kycStatus, provider: "safehaven" },
+        });
+
+        return NextResponse.json({
+          status: kycStatus,
+          message: nameMatched
+            ? "Identity verified successfully. Withdrawals unlocked."
+            : "Your BVN name doesn't match your registered name. Your account is under review.",
+        });
+      }
+
+      // Verification failed
+      await admin.from("profiles").update({
+        bvn_last_4: bvnLast4,
+        bvn_hash: bvnHash,
+        kyc_status: "pending_review",
+      }).eq("id", userId);
+
+      return NextResponse.json({
+        status: "pending_review",
+        message: "BVN verification could not be completed automatically. Your BVN has been submitted for manual review.",
+      });
+    }
+
+    // ─── Paystack: single-call flow (existing behavior preserved) ───
+    if (verificationResult.status === 'pending_review') {
+      // Paystack's BVN lookup requires account-level activation we don't have yet
+      console.error("BVN lookup unavailable (Paystack feature not activated)");
+      await admin.from("profiles").update({
+        bvn_last_4: bvnLast4,
+        bvn_hash: bvnHash,
+        kyc_status: "pending_review",
+      }).eq("id", userId);
 
       await admin.from("notifications").insert({
         user_id: userId,
@@ -80,44 +131,29 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (!response.ok || !data.status) {
-      console.error("BVN verification failed:", data);
+    if (verificationResult.status === 'failed') {
       return NextResponse.json({
-        error: data.message || "BVN verification failed. Please check your BVN and try again.",
+        error: "BVN verification failed. Please check your BVN and try again.",
       }, { status: 400 });
     }
 
-    const bvnData = data.data;
-    const bvnFirstName = (bvnData.first_name || "").toLowerCase().trim();
-    const bvnLastName = (bvnData.last_name || "").toLowerCase().trim();
-    // Get the user's registered name
-    const { data: userProfile } = await admin
-      .from("profiles")
-      .select("full_name")
-      .eq("id", userId)
-      .single();
-
+    // Verified — name matching
+    const bvnFirstName = (verificationResult.first_name || "").toLowerCase().trim();
+    const bvnLastName = (verificationResult.last_name || "").toLowerCase().trim();
+    const { data: userProfile } = await admin.from("profiles").select("full_name").eq("id", userId).single();
     const registeredName = (userProfile?.full_name || "").toLowerCase().trim();
-
-    // Fuzzy name matching — check if first name or last name from BVN appears in registered name
     const nameMatched = fuzzyNameMatch(registeredName, bvnFirstName, bvnLastName);
-
     const kycStatus = nameMatched ? "verified" : "pending_review";
 
-    // Update profile — store only last 4 + hash, never full BVN
-    await admin
-      .from("profiles")
-      .update({
-        bvn_last_4: bvnLast4,
-        bvn_hash: bvnHash,
-        bvn_first_name: bvnData.first_name || "",
-        bvn_last_name: bvnData.last_name || "",
-        kyc_status: kycStatus,
-        kyc_verified_date: nameMatched ? new Date().toISOString() : null,
-      })
-      .eq("id", userId);
+    await admin.from("profiles").update({
+      bvn_last_4: bvnLast4,
+      bvn_hash: bvnHash,
+      bvn_first_name: verificationResult.first_name || "",
+      bvn_last_name: verificationResult.last_name || "",
+      kyc_status: kycStatus,
+      kyc_verified_date: nameMatched ? new Date().toISOString() : null,
+    }).eq("id", userId);
 
-    // Create notification
     await admin.from("notifications").insert({
       user_id: userId,
       type: "kyc",
@@ -127,7 +163,7 @@ export async function POST(request: NextRequest) {
         ? "Your BVN has been verified. You can now withdraw your savings."
         : "Your BVN verification is under review. Our team will confirm your identity shortly.",
       status: "unread",
-      metadata: { kyc_status: kycStatus },
+      metadata: { kyc_status: kycStatus, provider: "paystack" },
     });
 
     return NextResponse.json({
@@ -135,8 +171,8 @@ export async function POST(request: NextRequest) {
       message: nameMatched
         ? "Identity verified successfully. Withdrawals unlocked."
         : "Your BVN name doesn't match your registered name. Your account is under review — you can still save, but withdrawals will be unlocked after review.",
-      bvn_first_name: bvnData.first_name,
-      bvn_last_name: bvnData.last_name,
+      bvn_first_name: verificationResult.first_name,
+      bvn_last_name: verificationResult.last_name,
     });
   } catch (error) {
     console.error("BVN verification error:", error);
@@ -150,15 +186,11 @@ function fuzzyNameMatch(registered: string, bvnFirst: string, bvnLast: string): 
   const regParts = registered.split(/\s+/);
   const bvnNames = [bvnFirst, bvnLast].filter(Boolean);
 
-  // Check if any BVN name part matches any registered name part
   for (const bvnName of bvnNames) {
     for (const regPart of regParts) {
       if (regPart.length >= 3 && bvnName.length >= 3) {
-        // Exact match
         if (regPart === bvnName) return true;
-        // One contains the other (handles middle name differences)
         if (regPart.includes(bvnName) || bvnName.includes(regPart)) return true;
-        // Levenshtein distance for typos (distance <= 2)
         if (levenshtein(regPart, bvnName) <= 2) return true;
       }
     }

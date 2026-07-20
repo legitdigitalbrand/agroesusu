@@ -355,3 +355,15 @@ export function TrophyIcon(props: IconProps) {
     </svg>
   );
 }
+
+// Loan icon — hand with naira/cash (Kuda-standard line art)
+export function LoanHandIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M3 17l5-3 4 1 5-2c1-.4 2 .1 2 1.5s-1 1.8-2 2.1l-6 2.2-4-1.8z" />
+      <path d="M7 14V9c0-1 .8-2 2-2s2 1 2 2v3" />
+      <path d="M11 11l3-1.5c1-.5 2 .2 2 1.2s-.8 1.6-1.8 1.8L11 13" />
+      <path d="M7 6.5l3-3.5" strokeWidth="2.5" />
+    </svg>
+  );
+}

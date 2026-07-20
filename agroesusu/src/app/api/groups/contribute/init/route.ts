@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { initializeTransaction, generateReference } from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference } from "@/lib/payment-provider";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const reference = generateReference("AGC_GRP");
+    const reference = generatePaymentReference("AGC_GRP");
     const origin = request.nextUrl.origin;
 
     const { error: insertError } = await supabase.from("group_contributions").insert({
@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    const response = await initializeTransaction({
+    const service = await getPaymentService();
+    const response = await service.initializeTransaction({
       email,
       amount: Number(group.contribution_amount),
       reference,
@@ -107,13 +108,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!response.status) {
+    if (!response.authorization_url) {
       return NextResponse.json({ error: "Failed to initialize payment" }, { status: 500 });
     }
 
     return NextResponse.json({
-      authorization_url: response.data.authorization_url,
-      reference: response.data.reference,
+      authorization_url: response.authorization_url,
+      reference: response.reference,
     });
   } catch (error: any) {
     console.error("Group contribute init error:", error);

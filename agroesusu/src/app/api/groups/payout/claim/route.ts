@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import {
-  createTransferRecipient,
-  initiateTransfer,
-  generateReference,
-} from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference } from "@/lib/payment-provider";
 import { calcGroupPayoutFee } from "@/lib/fees";
 
 export async function POST(request: NextRequest) {
@@ -81,16 +77,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nothing to pay out" }, { status: 400 });
     }
 
-    // Facilitation fee (the automated "esusu collector" fee) — kept by the
-    // platform, recipient gets the pool minus this.
+    // Facilitation fee (the automated "esusu collector" fee)
     const fee = calcGroupPayoutFee(payoutAmount);
     const netPayout = payoutAmount - fee;
 
-    const reference = generateReference("AGC_PAY");
+    const reference = generatePaymentReference("AGC_PAY");
+
+    // Use the payment provider abstraction
+    const service = await getPaymentService();
 
     let recipientCode: string;
     try {
-      const recipient = await createTransferRecipient({
+      const recipient = await service.createTransferRecipient({
         name: account_name,
         account_number,
         bank_code,
@@ -102,8 +100,7 @@ export async function POST(request: NextRequest) {
 
     const isLastCycle = group.current_cycle >= group.total_cycles;
 
-    // Deduct pool + advance cycle optimistically before initiating transfer,
-    // to prevent double-claim races. Rolled back by the webhook on failure.
+    // Deduct pool + advance cycle optimistically before initiating transfer
     await admin
       .from("savings_groups")
       .update({
@@ -129,16 +126,20 @@ export async function POST(request: NextRequest) {
       status: "processing",
       description: `Cycle ${group.current_cycle} payout from ${group.name} — ₦${fee.toLocaleString()} facilitation fee applied`,
       fee_amount: fee,
-      paystack_response: JSON.stringify({ recipient_code: recipientCode, bank_code, account_number, group_id }),
+      paystack_response: JSON.stringify({ recipient_code: recipientCode, bank_code, account_number, group_id, provider: service.provider }),
     });
 
     try {
-      await initiateTransfer({
+      const transferResult = await service.initiateTransfer({
         amount: netPayout,
         recipient_code: recipientCode,
         reference,
         reason: `AgroEsusu cycle payout — ${group.name}`,
       });
+
+      if (transferResult.status === 'failed') {
+        throw new Error('Transfer initiation failed');
+      }
     } catch (err: any) {
       // Roll everything back — the transfer never even started
       await admin

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listBanks } from "@/lib/paystack";
+import { getPaymentService } from "@/lib/payment-provider";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
@@ -13,8 +13,9 @@ export async function GET() {
   }
 
   try {
-    const banks = await listBanks();
-    return NextResponse.json({ banks });
+    const service = await getPaymentService();
+    const banks = await service.listBanks();
+    return NextResponse.json({ banks, provider: service.provider });
   } catch (error: any) {
     console.error("List banks error:", error);
     return NextResponse.json(

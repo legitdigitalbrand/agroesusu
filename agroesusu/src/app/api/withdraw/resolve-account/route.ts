@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccountNumber } from "@/lib/paystack";
+import { getPaymentService } from "@/lib/payment-provider";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const resolved = await resolveAccountNumber(account_number, bank_code);
+    const service = await getPaymentService();
+    const resolved = await service.resolveAccountNumber(account_number, bank_code);
     return NextResponse.json(resolved);
   } catch (error: any) {
     console.error("Resolve account error:", error);

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import {
-  createTransferRecipient,
-  initiateTransfer,
-  generateReference,
-} from "@/lib/paystack";
+import { getPaymentService, generatePaymentReference } from "@/lib/payment-provider";
 import { WITHDRAWAL_FEE_NGN } from "@/lib/fees";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -97,17 +93,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Deduct the withdrawal amount PLUS our flat fee from the pot balance.
-    // The fee is our revenue — kept in the platform, never sent to the bank.
     const newBalance = Number(account.current_amount) - totalDebit;
+    const reference = generatePaymentReference("AGC_WDR");
 
-    const reference = generateReference("AGC_WDR");
+    // Use the payment provider abstraction
+    const service = await getPaymentService();
 
     // Create the transfer recipient + initiate transfer BEFORE touching the
-    // balance — if Paystack rejects the recipient/transfer, nothing changes.
+    // balance — if the provider rejects, nothing changes.
     let recipientCode: string;
     try {
-      const recipient = await createTransferRecipient({
+      const recipient = await service.createTransferRecipient({
         name: account_name,
         account_number,
         bank_code,
@@ -145,18 +141,35 @@ export async function POST(request: NextRequest) {
       status: "processing",
       description: `Withdrawal to ${account_name} (${bank_code} ****${account_number.slice(-4)}) — ₦${fee} fee applied`,
       fee_amount: fee,
-      paystack_response: JSON.stringify({ recipient_code: recipientCode, bank_code, account_number }),
+      paystack_response: JSON.stringify({ recipient_code: recipientCode, bank_code, account_number, provider: service.provider }),
     });
 
     try {
-      await initiateTransfer({
+      const transferResult = await service.initiateTransfer({
         amount: withdrawAmount,
         recipient_code: recipientCode,
         reference,
         reason: `AgroEsusu withdrawal — ${account.name}`,
       });
+
+      if (transferResult.status === 'failed') {
+        // Transfer initiation failed — refund immediately
+        await admin
+          .from("savings_accounts")
+          .update({ current_amount: Number(account.current_amount) })
+          .eq("id", account_id);
+        await admin
+          .from("transactions")
+          .update({ status: "reversed" })
+          .eq("payment_reference", reference);
+
+        return NextResponse.json(
+          { error: "Transfer could not be initiated. Your balance has not been affected." },
+          { status: 500 }
+        );
+      }
     } catch (err: any) {
-      // Transfer initiation itself failed — refund immediately, don't wait for a webhook that will never come
+      // Transfer initiation itself failed — refund immediately
       await admin
         .from("savings_accounts")
         .update({ current_amount: Number(account.current_amount) })
@@ -176,6 +189,7 @@ export async function POST(request: NextRequest) {
       status: "processing",
       reference,
       fee,
+      provider: service.provider,
     });
   } catch (error: any) {
     console.error("Withdraw init error:", error);

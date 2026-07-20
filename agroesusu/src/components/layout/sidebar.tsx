@@ -5,12 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/lib/supabase/client";
-import { HomeIcon, PiggyIcon, UsersIcon, ReceiptIcon, UserIcon, LogoutIcon } from "@/components/icons";
+import { HomeIcon, PiggyIcon, UsersIcon, LoanHandIcon, ReceiptIcon, UserIcon, LogoutIcon } from "@/components/icons";
 
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/save", label: "Save", icon: PiggyIcon },
   { href: "/groups", label: "Groups", icon: UsersIcon },
+  { href: "/loans", label: "Loans", icon: LoanHandIcon },
   { href: "/transactions", label: "Activity", icon: ReceiptIcon },
   { href: "/profile", label: "Profile", icon: UserIcon },
 ];
@@ -67,7 +68,7 @@ export function Sidebar({ user }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
           return (
             <Link
