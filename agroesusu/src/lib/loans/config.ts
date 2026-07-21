@@ -11,7 +11,7 @@
  */
 
 // The master feature flag. When false:
-// - Loan applications are accepted but disbursement is simulated (pot_credit, not real Paystack transfer)
+// - Loan applications are accepted but disbursement is simulated (pot_credit, not real transfer)
 // - The admin dashboard shows a clear "SANDBOX MODE" banner
 // - No real money leaves the platform
 export const LOANS_LIVE_MODE = false;
@@ -22,7 +22,7 @@ export interface LoanTierConfig {
   label: string;
   minAmount: number;        // ₦
   maxAmount: number;         // ₦
-  flatInterestRate: number;  // % — flat, not reducing balance
+  aprRange: { min: number; max: number };  // Annual Percentage Rate (%), risk-based
   // Eligibility criteria
   minSavingMonths: number;
   minCompletedCycles: number;
@@ -38,7 +38,7 @@ export const TIER_CONFIGS: Record<string, LoanTierConfig> = {
     label: 'Starter',
     minAmount: 5000,
     maxAmount: 30000,
-    flatInterestRate: 10,   // 10% flat
+    aprRange: { min: 28, max: 35 },   // Higher APR — no credit history, higher risk
     minSavingMonths: 1,
     minCompletedCycles: 0,
     minCreditScore: 300,
@@ -50,7 +50,7 @@ export const TIER_CONFIGS: Record<string, LoanTierConfig> = {
     label: 'Established',
     minAmount: 30000,
     maxAmount: 150000,
-    flatInterestRate: 8,    // 8% flat — lower rate for lower risk
+    aprRange: { min: 22, max: 28 },   // Moderate APR — some history
     minSavingMonths: 3,
     minCompletedCycles: 1,
     minCreditScore: 500,
@@ -62,7 +62,7 @@ export const TIER_CONFIGS: Record<string, LoanTierConfig> = {
     label: 'Trusted',
     minAmount: 150000,
     maxAmount: 500000,
-    flatInterestRate: 6,    // 6% flat — lowest rate for lowest risk
+    aprRange: { min: 18, max: 24 },   // Lowest APR — proven repayment history
     minSavingMonths: 6,
     minCompletedCycles: 2,
     minCreditScore: 700,
@@ -70,6 +70,52 @@ export const TIER_CONFIGS: Record<string, LoanTierConfig> = {
     lateFeeFlat: 3000,
   },
 };
+
+// ─── APR Calculation ───
+/**
+ * Calculates the interest amount for a loan based on APR and term.
+ * APR is prorated for the actual loan duration (simple interest, not compound).
+ *
+ * @param principal - Loan amount in Naira
+ * @param apr - Annual Percentage Rate (e.g. 30 for 30%)
+ * @param installments - Number of weekly installments
+ * @returns { interestAmount, totalRepayable, apr, effectiveRate }
+ */
+export function calculateLoanInterest(
+  principal: number,
+  apr: number,
+  installments: number,
+): { interestAmount: number; totalRepayable: number; apr: number; effectiveRate: number } {
+  const weeksPerYear = 52;
+  const loanWeeks = installments; // each installment = 1 week
+  const effectiveRate = (apr / 100) * (loanWeeks / weeksPerYear);
+  const interestAmount = Math.round(principal * effectiveRate);
+  const totalRepayable = principal + interestAmount;
+
+  return { interestAmount, totalRepayable, apr, effectiveRate };
+}
+
+/**
+ * Determines the actual APR for a user based on their tier and credit score.
+ * Higher credit scores within a tier get the lower end of the APR range.
+ */
+export function determineAPR(
+  tier: 'starter' | 'established' | 'trusted',
+  creditScore: number,
+): number {
+  const config = TIER_CONFIGS[tier];
+  const { min, max } = config.aprRange;
+
+  // Map credit score within tier's range to APR within tier's APR range
+  // Higher credit score → lower APR (inverse relationship)
+  const scoreMin = config.minCreditScore;
+  const scoreRange = 200; // assumed range within tier
+  const scoreRatio = Math.min(1, Math.max(0, (creditScore - scoreMin) / scoreRange));
+  // Inverse: high score → low APR
+  const apr = max - (max - min) * scoreRatio;
+
+  return Math.round(apr * 100) / 100; // round to 2 decimal places
+}
 
 // ─── Repayment Options ───
 export const REPAYMENT_SCHEDULES = [
@@ -86,8 +132,8 @@ export const MAX_AUTO_RETRY_ATTEMPTS = 2;
 
 // ─── Reference Prefixes ───
 export const LOAN_REF = {
-  disbursement: 'AGC_LDB',    // loan disbursement (Paystack transfer)
-  repayment: 'AGC_LRP',       // loan repayment (Paystack charge)
+  disbursement: 'AGC_LDB',    // loan disbursement (transfer)
+  repayment: 'AGC_LRP',       // loan repayment (charge)
   autoDeduct: 'AGC_LAD',      // loan auto-deduction
 };
 

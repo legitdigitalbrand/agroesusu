@@ -407,3 +407,232 @@ export function verifySafeHavenWebhook(
 
   return signature === expectedSignature;
 }
+
+// ─── VAS (Value-Added Services) ───
+// Safe Haven VAS API for airtime, data, cable TV, and utility bill payments.
+// These are Safe Haven-specific — not part of the PaymentService interface.
+
+export interface VASService {
+  _id: string;
+  name: string;
+  identifier: string;
+  description: string;
+}
+
+export interface VASCategory {
+  _id: string;
+  name: string;
+  description?: string;
+  type?: string;
+}
+
+export interface VASProduct {
+  _id: string;
+  name: string;
+  bundleCode?: string;
+  amount?: number;
+  description?: string;
+  duration?: string;
+}
+
+export interface VASTransaction {
+  id: string;
+  reference: string;
+  status: string;
+  amount: number;
+  serviceCategoryId: string;
+}
+
+// Get all VAS services (Airtime, Data, Cable TV, Utility Bills)
+export async function getVASServices(): Promise<VASService[]> {
+  const result = await safeHavenRequest('/vas/services', 'GET');
+  return result.data || result || [];
+}
+
+// Get categories for a specific VAS service (e.g. MTN, Glo, Airtel for airtime)
+export async function getVASServiceCategories(serviceId: string): Promise<VASCategory[]> {
+  const result = await safeHavenRequest(`/vas/services/${serviceId}/categories`, 'GET');
+  return result.data || result || [];
+}
+
+// Get products/bundles for a specific category (e.g. data plans for MTN)
+export async function getVASCategoryProducts(categoryId: string): Promise<VASProduct[]> {
+  const result = await safeHavenRequest(`/vas/categories/${categoryId}/products`, 'GET');
+  return result.data || result || [];
+}
+
+// Verify a meter number (electricity) or smart card number (cable TV)
+export async function verifyVASAccount(params: {
+  type: 'electricity' | 'cable';
+  accountNumber: string;  // meter number or card number
+  serviceCategoryId: string;
+}): Promise<{ valid: boolean; vendType?: string; accountName?: string; message?: string }> {
+  try {
+    const result = await safeHavenRequest('/vas/verify', 'POST', {
+      type: params.type,
+      accountNumber: params.accountNumber,
+      serviceCategoryId: params.serviceCategoryId,
+    });
+    return {
+      valid: result.data?.status === 'success' || result.statusCode === 200,
+      vendType: result.data?.vendType,
+      accountName: result.data?.accountName,
+      message: result.data?.message || result.message,
+    };
+  } catch (err: any) {
+    return { valid: false, message: err.message };
+  }
+}
+
+// Purchase airtime
+export async function purchaseAirtime(params: {
+  serviceCategoryId: string;
+  amount: number;           // in Naira
+  debitAccountNumber: string;
+  phoneNumber: string;
+  externalReference?: string;
+}): Promise<VASTransaction> {
+  const result = await safeHavenRequest('/vas/pay/airtime', 'POST', {
+    serviceCategoryId: params.serviceCategoryId,
+    amount: Math.round(params.amount * 100), // convert to kobo
+    channel: 'WEB',
+    debitAccountNumber: params.debitAccountNumber,
+    phoneNumber: params.phoneNumber,
+    externalReference: params.externalReference,
+  });
+  return {
+    id: result.data?.id || '',
+    reference: result.data?.reference || '',
+    status: result.data?.status || 'pending',
+    amount: params.amount,
+    serviceCategoryId: params.serviceCategoryId,
+  };
+}
+
+// Purchase a data bundle
+export async function purchaseDataBundle(params: {
+  serviceCategoryId: string;
+  bundleCode: string;
+  amount: number;           // in Naira
+  debitAccountNumber: string;
+  phoneNumber: string;
+  externalReference?: string;
+}): Promise<VASTransaction> {
+  const result = await safeHavenRequest('/vas/pay/data', 'POST', {
+    serviceCategoryId: params.serviceCategoryId,
+    bundleCode: params.bundleCode,
+    amount: Math.round(params.amount * 100), // convert to kobo
+    channel: 'WEB',
+    debitAccountNumber: params.debitAccountNumber,
+    phoneNumber: params.phoneNumber,
+    externalReference: params.externalReference,
+  });
+  return {
+    id: result.data?.id || '',
+    reference: result.data?.reference || '',
+    status: result.data?.status || 'pending',
+    amount: params.amount,
+    serviceCategoryId: params.serviceCategoryId,
+  };
+}
+
+// Purchase a cable TV subscription
+export async function purchaseCableTV(params: {
+  serviceCategoryId: string;
+  bundleCode: string;
+  amount: number;
+  debitAccountNumber: string;
+  cardNumber: string;       // smart card number
+  externalReference?: string;
+}): Promise<VASTransaction> {
+  const result = await safeHavenRequest('/vas/pay/cable-tv', 'POST', {
+    serviceCategoryId: params.serviceCategoryId,
+    bundleCode: params.bundleCode,
+    amount: Math.round(params.amount * 100),
+    channel: 'WEB',
+    debitAccountNumber: params.debitAccountNumber,
+    cardNumber: params.cardNumber,
+    externalReference: params.externalReference,
+  });
+  return {
+    id: result.data?.id || '',
+    reference: result.data?.reference || '',
+    status: result.data?.status || 'pending',
+    amount: params.amount,
+    serviceCategoryId: params.serviceCategoryId,
+  };
+}
+
+// Pay a utility bill (electricity)
+export async function payUtilityBill(params: {
+  serviceCategoryId: string;
+  amount: number;
+  debitAccountNumber: string;
+  meterNumber: string;
+  vendType: string;         // returned from verifyVASAccount
+  externalReference?: string;
+}): Promise<VASTransaction> {
+  const result = await safeHavenRequest('/vas/pay/utility', 'POST', {
+    serviceCategoryId: params.serviceCategoryId,
+    amount: Math.round(params.amount * 100),
+    channel: 'WEB',
+    debitAccountNumber: params.debitAccountNumber,
+    meterNumber: params.meterNumber,
+    vendType: params.vendType,
+    externalReference: params.externalReference,
+  });
+  return {
+    id: result.data?.id || '',
+    reference: result.data?.reference || '',
+    status: result.data?.status || 'pending',
+    amount: params.amount,
+    serviceCategoryId: params.serviceCategoryId,
+  };
+}
+
+// ─── KYC Tier / Verification Level ───
+// Fetch the user's current KYC tier from Safe Haven
+export interface KYCTierResult {
+  level: number;
+  label: string;
+  description: string;
+  benefits: string[];
+}
+
+export async function getKYCTier(accountId?: string): Promise<KYCTierResult | null> {
+  try {
+    // Safe Haven doesn't have a dedicated "KYC tier" endpoint,
+    // but account details include verification status.
+    // We infer tier from the account verification status.
+    if (!accountId) return null;
+
+    const result = await safeHavenRequest(`/accounts/${accountId}`, 'GET');
+    const verificationStatus = result.data?.verificationStatus || result.verificationStatus || 'pending';
+
+    // Map Safe Haven verification levels to AgroEsusu tiers
+    const tiers: Record<string, KYCTierResult> = {
+      verified: {
+        level: 3,
+        label: 'Verified',
+        description: 'Full KYC verified',
+        benefits: ['Higher loan limits (up to ₦500K)', 'Longer HarvestLock terms', 'Faster disbursements'],
+      },
+      pending: {
+        level: 2,
+        label: 'Pending Verification',
+        description: 'Verification in progress',
+        benefits: ['Moderate loan limits (up to ₦150K)', 'Standard HarvestLock terms'],
+      },
+      unverified: {
+        level: 1,
+        label: 'Basic',
+        description: 'BVN verified, full KYC pending',
+        benefits: ['Starter loan limits (up to ₦30K)', 'AgroFlex and AgroGoal savings'],
+      },
+    };
+
+    return tiers[verificationStatus] || tiers.unverified;
+  } catch {
+    return null;
+  }
+}

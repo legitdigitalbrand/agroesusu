@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, PiggyIcon, UsersIcon, LoanHandIcon, ReceiptIcon, UserIcon } from "@/components/icons";
+import { HomeIcon, PiggyIcon, UsersIcon, LoanHandIcon, ReceiptIcon, UserIcon, PayIcon } from "@/components/icons";
 
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
-  { href: "/save", label: "Save", icon: PiggyIcon },
-  { href: "/groups", label: "Groups", icon: UsersIcon },
   { href: "/loans", label: "Loans", icon: LoanHandIcon },
+  { href: "/save", label: "Save", icon: PiggyIcon },
+  { href: "/pay", label: "Pay", icon: PayIcon },
+  { href: "/groups", label: "Groups", icon: UsersIcon },
   { href: "/transactions", label: "Activity", icon: ReceiptIcon },
   { href: "/profile", label: "Profile", icon: UserIcon },
 ];
@@ -26,7 +27,7 @@ export function BottomNav() {
         borderColor: "var(--nav-border)",
       }}
     >
-      <div className="flex items-center justify-around px-1 pt-2 pb-2 pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around px-0.5 pt-1.5 pb-1.5 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
@@ -35,20 +36,20 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-2xl transition-colors"
+              className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-colors"
               style={{
                 background: isActive ? "var(--nav-active-bg)" : "transparent",
               }}
             >
               <Icon
-                className="w-[20px] h-[20px]"
+                className="w-[18px] h-[18px]"
                 style={{
                   color: isActive ? "var(--nav-text-active)" : "var(--nav-text-inactive)",
                   strokeWidth: isActive ? 2.5 : 2,
                 }}
               />
               <span
-                className="text-[10px]"
+                className="text-[9px]"
                 style={{
                   fontWeight: isActive ? 600 : 500,
                   color: isActive ? "var(--nav-text-active)" : "var(--nav-text-inactive)",

@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon, CheckIcon, InfoIcon, AlertTriangleIcon } from '@/components/icons';
 import { formatNaira } from '@/lib/utils';
-import { LOANS_LIVE_MODE, REPAYMENT_SCHEDULES } from '@/lib/loans/config';
+import { LOANS_LIVE_MODE, REPAYMENT_SCHEDULES, calculateLoanInterest, determineAPR } from '@/lib/loans/config';
 
 interface TierData {
   tier: string;
   label: string;
   minAmount: number;
   maxAmount: number;
-  flatInterestRate: number;
+  aprRange: { min: number; max: number };
   lateFeeFlat: number;
 }
 
@@ -22,6 +22,7 @@ interface EligibilityData {
   eligibleAmount: { min: number; max: number };
   reasons: string[];
   blockingIssues: string[];
+  creditScore: { total: number } | null;
 }
 
 interface Pot {
@@ -43,8 +44,10 @@ export function ApplyForm({ eligibility, pots }: { eligibility: EligibilityData;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const interestAmount = Math.round((amount * tier.flatInterestRate / 100) * 100) / 100;
-  const totalRepayable = amount + interestAmount;
+  // Determine actual APR based on user's credit score within their tier
+  const creditScore = eligibility.creditScore?.total || 300;
+  const apr = determineAPR(tier.tier as 'starter' | 'established' | 'trusted', creditScore);
+  const { interestAmount, totalRepayable, effectiveRate } = calculateLoanInterest(amount || 0, apr, numInstallments);
   const installmentAmount = Math.round((totalRepayable / numInstallments) * 100) / 100;
   const firstDueDate = new Date();
   firstDueDate.setDate(firstDueDate.getDate() + 7);
@@ -76,6 +79,7 @@ export function ApplyForm({ eligibility, pots }: { eligibility: EligibilityData;
           linkedPotId,
           esusuPayoutOptIn,
           disbursementAccountId: linkedPotId,
+          creditScore,
         }),
       });
 
@@ -101,7 +105,7 @@ export function ApplyForm({ eligibility, pots }: { eligibility: EligibilityData;
 
         <h1 className="text-xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>Apply for a Loan</h1>
         <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
-          {tier.label} tier · {formatNaira(tier.minAmount)} – {formatNaira(tier.maxAmount)} · {tier.flatInterestRate}% flat interest
+          {tier.label} tier · {formatNaira(tier.minAmount)} – {formatNaira(tier.maxAmount)} · {apr}% APR
         </p>
 
         {!LOANS_LIVE_MODE && (
@@ -220,68 +224,65 @@ export function ApplyForm({ eligibility, pots }: { eligibility: EligibilityData;
                 <span className="font-medium" style={{ color: "var(--text-primary)" }}>{formatNaira(amount)}</span>
               </div>
               <div className="flex justify-between">
-                <span style={{ color: "var(--text-secondary)" }}>Interest ({tier.flatInterestRate}% flat)</span>
-                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{formatNaira(interestAmount)}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t" style={{ borderColor: "var(--border-subtle)" }}>
-                <span className="font-semibold" style={{ color: "var(--accent)" }}>Total Repayable</span>
-                <span className="font-bold" style={{ color: "var(--accent)" }}>{formatNaira(totalRepayable)}</span>
+                <span style={{ color: "var(--text-secondary)" }}>Interest rate</span>
+                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{apr}% APR</span>
               </div>
               <div className="flex justify-between">
-                <span style={{ color: "var(--text-secondary)" }}>Weekly payment</span>
+                <span style={{ color: "var(--text-secondary)" }}>Interest amount ({(effectiveRate * 100).toFixed(2)}% effective)</span>
+                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{formatNaira(interestAmount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: "var(--text-secondary)" }}>Loan term</span>
+                <span className="font-medium" style={{ color: "var(--text-primary)" }}>{numInstallments} weeks</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: "var(--text-secondary)" }}>Weekly installment</span>
                 <span className="font-medium" style={{ color: "var(--text-primary)" }}>{formatNaira(installmentAmount)}</span>
               </div>
               <div className="flex justify-between">
-                <span style={{ color: "var(--text-secondary)" }}>First due date</span>
+                <span style={{ color: "var(--text-secondary)" }}>First payment due</span>
                 <span className="font-medium" style={{ color: "var(--text-primary)" }}>
-                  {firstDueDate.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {firstDueDate.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span style={{ color: "var(--text-secondary)" }}>Late fee (after 3-day grace)</span>
-                <span className="font-medium" style={{ color: "var(--warning)" }}>{formatNaira(tier.lateFeeFlat)}</span>
+              <div className="flex justify-between pt-2 mt-2 border-t" style={{ borderColor: "var(--border-default)" }}>
+                <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Total repayment</span>
+                <span className="font-bold" style={{ color: "var(--text-primary)" }}>{formatNaira(totalRepayable)}</span>
               </div>
             </div>
-
-            <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
-              <p className="text-xs font-medium mb-1" style={{ color: "var(--text-secondary)" }}>If you miss a payment:</p>
-              <ul className="space-y-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                <li>• Days 1–3: Grace period — we'll retry + remind you</li>
-                <li>• Day 4+: {formatNaira(tier.lateFeeFlat)} late fee + temporary restriction on new loans/pots</li>
-                <li>• Day 14+: Our team will contact you to arrange repayment</li>
-                <li>• Your savings are never locked as punishment</li>
-              </ul>
-            </div>
-
-            <label className="flex items-start gap-2 mt-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="mt-1 w-4 h-4"
-                style={{ accentColor: "var(--accent)" }}
-              />
-              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                I understand and accept these terms, including the repayment schedule and late fee policy.
-              </span>
-            </label>
+            <p className="text-xs mt-3" style={{ color: "var(--text-muted)" }}>
+              {apr}% APR — you'll repay {formatNaira(totalRepayable)} total over {numInstallments} weeks. Late fee: {formatNaira(tier.lateFeeFlat)} after 3 days grace.
+            </p>
           </div>
         )}
 
-        {error && (
-          <div className="text-sm p-3 rounded-lg border mb-4" style={{ background: "rgba(193,57,43,0.08)", color: "var(--danger)", borderColor: "rgba(193,57,43,0.2)" }}>
-            {error}
-          </div>
-        )}
+        {/* Terms acceptance */}
+        <label className="flex items-start gap-3 mb-4 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1 w-4 h-4"
+            style={{ accentColor: "var(--accent)" }}
+          />
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            I understand the loan terms including the {apr}% APR, total repayment of {formatNaira(totalRepayable)}, weekly auto-deduction schedule, and late fee policy. I authorize AgroEsusu to deduct repayments from my selected pot.
+          </p>
+        </label>
 
+        {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={submitting || !amount || !linkedPotId || !acceptedTerms}
-          className="w-full py-3.5 rounded-lg font-semibold transition disabled:opacity-50"
-          style={{ background: "var(--accent)", color: "var(--hero-text)" }}
+          disabled={submitting || !acceptedTerms || !amount}
+          className="w-full py-3.5 rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}
         >
-          {submitting ? 'Submitting…' : 'Submit Application'}
+          {submitting ? 'Submitting…' : 'Apply for Loan'}
         </button>
+
+        {error && (
+          <p className="text-sm mt-3 text-center" style={{ color: "var(--danger)" }}>{error}</p>
+        )}
       </div>
     </div>
   );

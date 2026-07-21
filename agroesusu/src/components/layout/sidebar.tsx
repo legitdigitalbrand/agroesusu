@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/lib/supabase/client";
-import { HomeIcon, PiggyIcon, UsersIcon, LoanHandIcon, ReceiptIcon, UserIcon, LogoutIcon } from "@/components/icons";
+import { HomeIcon, PiggyIcon, UsersIcon, LoanHandIcon, ReceiptIcon, UserIcon, PayIcon, LogoutIcon } from "@/components/icons";
 
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
-  { href: "/save", label: "Save", icon: PiggyIcon },
-  { href: "/groups", label: "Groups", icon: UsersIcon },
   { href: "/loans", label: "Loans", icon: LoanHandIcon },
+  { href: "/save", label: "Save", icon: PiggyIcon },
+  { href: "/pay", label: "Pay", icon: PayIcon },
+  { href: "/groups", label: "Groups", icon: UsersIcon },
   { href: "/transactions", label: "Activity", icon: ReceiptIcon },
   { href: "/profile", label: "Profile", icon: UserIcon },
 ];
@@ -32,9 +33,6 @@ export function Sidebar({ user }: SidebarProps) {
     : "??";
 
   const handleSignOut = async () => {
-    // Flip to a visibly "working" state the instant the click happens —
-    // signOut() + the redirect involve a network round-trip, and with no
-    // feedback during that gap the button just looked broken/unresponsive.
     setIsSigningOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -66,7 +64,7 @@ export function Sidebar({ user }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;

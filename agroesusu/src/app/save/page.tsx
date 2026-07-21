@@ -30,10 +30,9 @@ export default async function SavePage() {
   const activeCount = accounts?.filter(a => a.status === 'active').length || 0;
 
   const potTypes = [
-    { Icon: DropletIcon, name: 'Flex', desc: 'Save anytime, withdraw anytime.' },
-    { Icon: TargetIcon, name: 'Goal', desc: 'Target a specific amount and track progress.' },
-    { Icon: WheatIcon, name: 'Seasonal', desc: 'Lock for planting season.' },
-    { Icon: LockIcon, name: 'Stash', desc: 'Long-term lock for bigger goals.' },
+    { Icon: DropletIcon, name: 'AgroFlex', desc: 'Save anytime, withdraw anytime.' },
+    { Icon: TargetIcon, name: 'AgroGoal', desc: 'Target a specific amount and track progress.' },
+    { Icon: LockIcon, name: 'HarvestLock', desc: 'Lock funds for a harvest cycle (3/6/12 months).' },
   ];
 
   return (

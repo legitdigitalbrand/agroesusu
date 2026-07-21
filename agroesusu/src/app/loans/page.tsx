@@ -5,7 +5,7 @@ import { PageHero, PageBody } from '@/components/ui/page-hero';
 import { formatNaira, formatDate } from '@/lib/utils';
 import { LOANS_LIVE_MODE, TIER_CONFIGS } from '@/lib/loans/config';
 import { checkEligibility } from '@/lib/loans/eligibility';
-import { LoanHandIcon, ArrowLeftIcon, CheckIcon, AlertTriangleIcon, InfoIcon } from '@/components/icons';
+import { LoanHandIcon, ArrowLeftIcon, CheckIcon, AlertTriangleIcon, InfoIcon, ShieldCheckIcon } from '@/components/icons';
 
 export default async function LoansPage() {
   const supabase = await createClient();
@@ -53,6 +53,15 @@ export default async function LoansPage() {
       </PageHero>
 
       <PageBody maxWidth="max-w-5xl">
+
+        {/* Trust badge */}
+        <div className="rounded-xl p-3 mb-5 border flex items-center gap-2" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+          <ShieldCheckIcon className="w-4 h-4 shrink-0" style={{ color: "var(--action-green)" }} />
+          <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+            Loans powered by Safe Haven MFB — a CBN-licensed &amp; NDIC-insured microfinance bank. APR shown is annual; actual cost depends on your tier and credit score.
+          </p>
+        </div>
+
         {/* Sandbox banner */}
         {!LOANS_LIVE_MODE && (
           <div className="rounded-xl p-4 mb-6 border flex items-start gap-3" style={{ background: "rgba(201,137,31,0.08)", borderColor: "rgba(201,137,31,0.3)" }}>
@@ -76,6 +85,9 @@ export default async function LoansPage() {
                   <span className="text-lg font-bold capitalize" style={{ color: "var(--accent)" }}>{eligibility.tier.label} Tier</span>
                   <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                     Borrow {formatNaira(eligibility.tier.minAmount)} – {formatNaira(eligibility.tier.maxAmount)}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    {eligibility.tier.aprRange.min}% – {eligibility.tier.aprRange.max}% APR · Weekly installments
                   </p>
                 </div>
               ) : (

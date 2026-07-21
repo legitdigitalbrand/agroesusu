@@ -367,3 +367,59 @@ export function LoanHandIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function PayIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+      <path d="M6 15h4" />
+    </svg>
+  );
+}
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="7" y="2" width="10" height="20" rx="2" />
+      <path d="M11 18h2" />
+    </svg>
+  );
+}
+
+export function TvIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="2" y="7" width="20" height="13" rx="2" />
+      <path d="M7 2l5 5 5-5" />
+    </svg>
+  );
+}
+
+export function BoltIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M13 2L3 14h7l-2 8 10-12h-7z" />
+    </svg>
+  );
+}
+
+export function WifiIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M5 12.55a11 11 0 0 1 14 0" />
+      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
+  );
+}
+
+export function BadgeIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M8 21h8a2 2 0 0 0 2-2v-6.5l1 1V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v8.5l1-1V19a2 2 0 0 0 2 2z" />
+      <path d="M9 11l2 2 4-4" />
+    </svg>
+  );
+}

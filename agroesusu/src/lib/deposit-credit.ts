@@ -49,7 +49,7 @@ export async function verifyAndCreditDeposit(reference: string) {
           .from("savings_accounts")
           .select("id")
           .eq("user_id", userId)
-          .eq("type", "flex")
+          .eq("type", "agroflex")
           .order("created_at", { ascending: true })
           .limit(1)
           .single();
@@ -62,14 +62,14 @@ export async function verifyAndCreditDeposit(reference: string) {
             .from("savings_accounts")
             .insert({
               user_id: userId,
-              type: "flex",
+              type: "agroflex",
               name: "Default Savings",
               target_amount: 0,
               current_amount: 0,
               interest_rate: 2,
               lock_type: "none",
               status: "active",
-              icon: "flex",
+              icon: "agroflex",
               description: "Auto-created for bank transfer deposits",
             })
             .select()
@@ -183,7 +183,7 @@ async function applyRoundUp(
     .from("savings_accounts")
     .select("id, current_amount")
     .eq("user_id", userId)
-    .eq("type", "stash")
+    .eq("type", "harvestlock")
     .eq("round_up_enabled", true)
     .neq("id", sourceAccountId)
     .limit(1)

@@ -7,7 +7,7 @@
 
 import { createAdminClient } from '@/lib/supabase/server';
 import { getPaymentService, generatePaymentReference } from '../payment-provider';
-import { LOANS_LIVE_MODE, TIER_CONFIGS, LOAN_REF, GRACE_PERIOD_DAYS, MAX_AUTO_RETRY_ATTEMPTS } from './config';
+import { LOANS_LIVE_MODE, TIER_CONFIGS, LOAN_REF, GRACE_PERIOD_DAYS, MAX_AUTO_RETRY_ATTEMPTS, calculateLoanInterest, determineAPR } from './config';
 import { updateCreditScore } from './credit-score';
 
 // ─── Types ───
@@ -22,6 +22,7 @@ export interface LoanApplicationInput {
   disbursementBankCode?: string;  // for paystack_transfer
   disbursementAccountNumber?: string;
   disbursementAccountName?: string;
+  creditScore?: number;
 }
 
 export interface LoanApplicationResult {
@@ -91,9 +92,9 @@ export async function createLoanApplication(input: LoanApplicationInput): Promis
 
   // Calculate loan terms
   const principal = input.amount;
-  const interestRate = tier.flatInterestRate;
-  const interestAmount = Math.round((principal * interestRate / 100) * 100) / 100;
-  const totalRepayable = principal + interestAmount;
+  const apr = determineAPR(tier.tier, input.creditScore || 300);
+  const { interestAmount, totalRepayable, effectiveRate } = calculateLoanInterest(principal, apr, input.numInstallments);
+  const interestRate = apr; // Store APR as the interest_rate
   const installmentAmount = Math.round((totalRepayable / input.numInstallments) * 100) / 100;
 
   // Calculate first due date (7 days from now for weekly)

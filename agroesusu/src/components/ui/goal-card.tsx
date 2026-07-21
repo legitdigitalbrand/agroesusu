@@ -15,10 +15,13 @@ interface GoalCardProps {
 
 // Map pot type (or icon key) to a Kuda-standard SVG icon component.
 const TYPE_ICON_MAP: Record<string, typeof TargetIcon> = {
-  flex: DropletIcon,
-  goal: TargetIcon,
-  seasonal: WheatIcon,
-  stash: LockIcon,
+  agroflex: DropletIcon,
+  flex: DropletIcon, // legacy alias
+  agrogoal: TargetIcon,
+  goal: TargetIcon, // legacy alias
+  harvestlock: LockIcon,
+  seasonal: LockIcon, // legacy alias → HarvestLock
+  stash: LockIcon, // legacy alias → HarvestLock
   seeds: SeedlingIcon,
   fertilizer: SeedlingIcon,
   tractor: TractorIcon,

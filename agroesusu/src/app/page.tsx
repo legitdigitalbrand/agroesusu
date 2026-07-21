@@ -106,6 +106,16 @@ export default async function DashboardPage() {
       <div className="px-4 sm:px-5 lg:px-8 pt-7"
         style={{ background: "var(--surface-base)" }}>
 
+                {/* Trust badge — Powered by Safe Haven MFB */}
+        <div className="mb-4 lg:max-w-md">
+          <div className="rounded-xl p-3 border flex items-center gap-2" style={{ background: "var(--surface-card)", borderColor: "var(--border-default)" }}>
+            <ShieldCheckIcon className="w-4 h-4 shrink-0" style={{ color: "var(--action-green)" }} />
+            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+              Powered by Safe Haven MFB — a CBN-licensed &amp; NDIC-insured microfinance bank.
+            </p>
+          </div>
+        </div>
+
         {/* DVA Card */}
         {dvaAccountNumber && (
           <div className="mb-4 lg:max-w-md">

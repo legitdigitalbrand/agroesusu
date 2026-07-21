@@ -75,7 +75,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
               <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{formatNaira(Number(loan.principal))}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm" style={{ color: "var(--text-muted)" }}>Interest ({Number(loan.interest_rate)}% flat)</span>
+              <span className="text-sm" style={{ color: "var(--text-muted)" }}>Interest ({Number(loan.interest_rate)}% APR)</span>
               <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{formatNaira(Number(loan.interest_amount))}</span>
             </div>
             <div className="flex justify-between pt-2 border-t" style={{ borderColor: "var(--border-subtle)" }}>
