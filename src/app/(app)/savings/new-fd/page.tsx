@@ -10,6 +10,7 @@ export default function NewFixedDepositPage() {
   const [principal, setPrincipal] = useState('');
   const [term, setTerm] = useState(90);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const rate = 12;
   const interest = (Number(principal) * rate * term) / (365 * 100);
@@ -17,28 +18,33 @@ export default function NewFixedDepositPage() {
 
   async function handleCreate() {
     setLoading(true);
+    setError(null);
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setError('Not authenticated'); return; }
       const maturityDate = new Date();
       maturityDate.setDate(maturityDate.getDate() + term);
-      const { error } = await supabase.from('fixed_deposits').insert({
+      const { error: insertError } = await supabase.from('fixed_deposits').insert({
         user_id: user.id,
         principal: parseFloat(principal),
-        rate,
+        interest_rate: rate,
         term_days: term,
         maturity_date: maturityDate.toISOString().split('T')[0],
         status: 'active',
       });
-      if (!error) router.push('/savings');
-    } catch (err) { console.error(err); }
+      if (insertError) throw insertError;
+      router.push('/savings');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create deposit');
+    }
     setLoading(false);
   }
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">New Fixed Deposit</h1>
+      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
       <div className="bg-white rounded-2xl border p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Principal Amount (₦)</label>

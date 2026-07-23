@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 const faqs = [
   { q: 'How do I apply for a loan?', a: 'Tap "Apply for Loan" on your dashboard, fill in the amount and purpose, and get an instant decision.' },
@@ -15,15 +16,34 @@ export default function SupportPage() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   async function handleSend() {
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError('Not authenticated'); return; }
+
+      // Insert as a notification so support staff can see it
+      const { error: notifError } = await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: 'Support ticket',
+        body: message,
+        read: false,
+      });
+
+      if (notifError) throw notifError;
+
+      setSent(true);
+      setMessage('');
+      setTimeout(() => setSent(false), 4000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    }
     setLoading(false);
-    setSent(true);
-    setMessage('');
-    setTimeout(() => setSent(false), 4000);
   }
 
   return (
@@ -54,6 +74,7 @@ export default function SupportPage() {
       {/* Contact Form */}
       <div className="bg-white rounded-2xl border p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Send us a message</h2>
+        {error && <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
         {sent && (
           <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
             ✓ Message sent! We'll get back to you within 24 hours.

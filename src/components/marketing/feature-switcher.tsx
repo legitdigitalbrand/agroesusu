@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, Banknote, PiggyBank, Sprout } from 'lucide-react';
 
 const tabs = [
@@ -11,8 +12,9 @@ const tabs = [
     icon: Banknote,
     heading: 'Farm loans without the hassle',
     description: 'Get instant decisions on crop, livestock, and equipment loans. No collateral, no guarantor. Borrow from ₦50,000 to ₦10,000,000 with flexible terms from 3 to 12 months.',
-    link: '/loans',
-    color: 'from-forest-green to-forest-green-dark',
+    link: '/loan-plans',
+    image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80&w=800',
+    imageAlt: 'Nigerian farmer inspecting crops in a green field',
   },
   {
     id: 'save',
@@ -20,8 +22,9 @@ const tabs = [
     icon: PiggyBank,
     heading: 'Esusu savings, reimagined',
     description: 'Join esusu circles with trusted farmers or start a solo target-savings plan. Lock funds in fixed deposits and earn competitive interest. Your money grows while you plan the next harvest.',
-    link: '/savings',
-    color: 'from-earth-gold to-earth-gold-dark',
+    link: '/savings-plans',
+    image: 'https://images.unsplash.com/photo-1633158829585-23ba8767b1c2?auto=format&fit=crop&q=80&w=800',
+    imageAlt: 'African farmers meeting in a group, discussing savings',
   },
   {
     id: 'pay',
@@ -30,7 +33,8 @@ const tabs = [
     heading: 'Pay for everything you need',
     description: 'Buy seeds, fertilizer, and farm inputs. Pay bills, send money to any Nigerian bank, and manage your finances — all from your Agroesusu account.',
     link: '/features',
-    color: 'from-rust-orange to-forest-green',
+    image: 'https://images.unsplash.com/photo-1605000797499-36a1e2d41793?auto=format&fit=crop&q=80&w=800',
+    imageAlt: 'Farmer using a mobile phone for digital payments',
   },
 ];
 
@@ -55,13 +59,23 @@ export default function FeatureSwitcher() {
         ))}
       </div>
 
-      <div className={`bg-gradient-to-br ${tab.color} rounded-3xl p-8 md:p-12 text-white animate-fade-in`}>
+      <div className="grid md:grid-cols-2 gap-6 items-center bg-white rounded-3xl border p-6 md:p-10 animate-fade-in">
         <div className="max-w-xl">
           <h3 className="text-2xl md:text-3xl font-bold mb-3">{tab.heading}</h3>
-          <p className="text-white/80 mb-6">{tab.description}</p>
-          <Link href={tab.link} className="inline-flex items-center gap-1 text-white font-medium hover:gap-2 transition-all">
+          <p className="text-gray-600 mb-6">{tab.description}</p>
+          <Link href={tab.link} className="inline-flex items-center gap-1 text-forest-green font-medium hover:gap-2 transition-all">
             Learn More <ArrowRight size={18} />
           </Link>
+        </div>
+        <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden">
+          <Image
+            src={tab.image}
+            alt={tab.imageAlt}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 50vw"
+            priority={active === 0}
+          />
         </div>
       </div>
     </div>

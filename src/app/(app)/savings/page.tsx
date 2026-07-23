@@ -41,7 +41,7 @@ export default async function SavingsPage() {
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{c.name}</p>
-                    <p className="text-xs text-gray-400">{c.frequency} • {formatNaira(c.contribution_amount)} • {c.member_count} members</p>
+                    <p className="text-xs text-gray-400">{c.frequency} • {formatNaira(c.contribution_amount)} • {c.max_members} members</p>
                   </div>
                 </div>
                 <span className="text-xs font-medium px-2 py-1 rounded-full bg-forest-green/10 text-forest-green capitalize">{c.status}</span>
@@ -70,7 +70,7 @@ export default async function SavingsPage() {
               <div key={d.id} className="flex items-center justify-between p-4 rounded-lg border">
                 <div>
                   <p className="font-medium text-gray-900">{formatNaira(d.principal)}</p>
-                  <p className="text-xs text-gray-400">{d.rate}% per annum • {d.term_days} days • matures {formatDate(d.maturity_date)}</p>
+                  <p className="text-xs text-gray-400">{d.interest_rate}% per annum • {d.term_days} days • matures {formatDate(d.maturity_date)}</p>
                 </div>
                 <span className="text-xs font-medium px-2 py-1 rounded-full bg-forest-green/10 text-forest-green capitalize">{d.status}</span>
               </div>

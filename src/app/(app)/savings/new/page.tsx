@@ -12,33 +12,49 @@ export default function NewCirclePage() {
   const [frequency, setFrequency] = useState('weekly');
   const [members, setMembers] = useState('5');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleCreate() {
     setLoading(true);
+    setError(null);
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setError('Not authenticated'); return; }
 
-      const { error } = await supabase.from('savings_circles').insert({
+      const memberCount = parseInt(members);
+
+      // Create the circle
+      const { data: circle, error: circleError } = await supabase.from('savings_circles').insert({
         name,
         owner_id: user.id,
         contribution_amount: parseFloat(amount),
         frequency,
-        member_count: parseInt(members),
-        payout_order_json: { order: [] },
+        max_members: memberCount,
         status: 'active',
+      }).select().single();
+
+      if (circleError) throw circleError;
+
+      // Add owner as first member
+      await supabase.from('savings_circle_members').insert({
+        circle_id: circle.id,
+        user_id: user.id,
+        payout_position: 1,
       });
 
-      if (!error) router.push('/savings');
-    } catch (err) { console.error(err); }
+      router.push('/savings');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create circle');
+    }
     setLoading(false);
   }
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Create Esusu Circle</h1>
+      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
       <div className="bg-white rounded-2xl border p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Circle Name</label>
