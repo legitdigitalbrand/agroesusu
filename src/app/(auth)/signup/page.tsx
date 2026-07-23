@@ -22,6 +22,7 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -39,15 +40,27 @@ export default function SignupPage() {
         return;
       }
 
-      if (data.user) {
-        router.push('/onboarding');
-      } else {
-        // Shouldn't happen, but handle gracefully
-        setError('Something went wrong. Please try again.');
-        setLoading(false);
+      // signUp may or may not return a session depending on config
+      // (email confirmation enabled/disabled). If no session, try to
+      // sign in explicitly so the session cookies are set before we navigate.
+      if (!data.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) {
+          // If sign-in also fails, the account was created but session
+          // couldn't be established. Redirect to login so they can try.
+          router.push('/login');
+          return;
+        }
       }
+
+      // Wait for the session to be confirmed in cookies before navigating.
+      // createBrowserClient writes session cookies asynchronously via
+      // onAuthStateChange — calling getSession() forces a read that
+      // ensures the cookies have been committed to document.cookie.
+      await supabase.auth.getSession();
+
+      router.push('/onboarding');
     } catch (err) {
-      // Catches: missing env vars, network errors, client init failures
       setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
       setLoading(false);
     }
