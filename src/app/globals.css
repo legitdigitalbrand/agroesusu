@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-primary: #0B6B3A;
+    --brand-accent: #D4A574;
+    --brand-cream: #FAF9F6;
+    
+    /* System HSL variables for standard usage */
+    --background: 44 20% 98%; /* #FAF9F6 */
+    --foreground: 145 81% 10%; /* Dark Green-900 */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 145 81% 10%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 145 81% 10%;
+ 
+    --primary: 145 81% 23%; /* #0B6B3A */
+    --primary-foreground: 44 20% 98%; /* #FAF9F6 */
+ 
+    --secondary: 44 20% 90%;
+    --secondary-foreground: 145 81% 10%;
+ 
+    --muted: 44 20% 94%;
+    --muted-foreground: 145 30% 30%;
+ 
+    --accent: 31 52% 64%; /* #D4A574 */
+    --accent-foreground: 145 81% 23%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 145 30% 90%;
+    --input: 145 30% 90%;
+    --ring: 145 81% 23%;
+ 
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    background-color: #FAF9F6; /* cream background */
+    color: #14532d; /* dark green-900 */
+    font-family: var(--font-inter), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-plus-jakarta), system-ui, sans-serif;
+    font-weight: 700;
+    color: #0B6B3A; /* Brand Primary */
+  }
+}
