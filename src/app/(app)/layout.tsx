@@ -15,7 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq('id', session.user.id)
     .single();
 
-  const { data: unreadCount } = await supabase
+  const { count: unreadCount } = await supabase
     .from('notifications')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', session.user.id)

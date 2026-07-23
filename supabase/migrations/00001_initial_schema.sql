@@ -51,9 +51,9 @@ CREATE TABLE public.wallet_transactions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     wallet_id uuid REFERENCES public.wallets(id) ON DELETE CASCADE,
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    type text CHECK (type IN ('fund','withdraw','repay','transfer_in','transfer_out','bill_pay')),
-    amount numeric,
-    status text DEFAULT 'pending' CHECK (status IN ('pending','success','failed')),
+    type text CHECK (type IN ('fund', 'withdraw', 'transfer_in', 'transfer_out', 'bill_pay', 'repay', 'loan_disbursement')),
+    amount numeric NOT NULL,
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'success', 'failed')),
     safe_haven_reference text,
     counterparty jsonb,
     created_at timestamptz DEFAULT now()
@@ -66,11 +66,14 @@ CREATE TABLE public.loans (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
     purpose text,
-    amount_requested numeric,
+    amount_requested numeric NOT NULL,
     amount_approved numeric,
-    tenor_days int,
-    monthly_rate numeric,
-    status text DEFAULT 'pending_review' CHECK (status IN ('pending_review','scoring','auto_approved','auto_declined','manual_review','disbursed','repaying','closed','defaulted')),
+    tenor_days int NOT NULL,
+    monthly_rate numeric NOT NULL,
+    status text DEFAULT 'pending_review' CHECK (status IN (
+        'pending_review', 'scoring', 'auto_approved', 'auto_declined',
+        'manual_review', 'disbursed', 'repaying', 'closed', 'defaulted'
+    )),
     disbursed_at timestamptz,
     closed_at timestamptz,
     created_at timestamptz DEFAULT now()
@@ -93,10 +96,11 @@ CREATE TABLE public.loan_events (
 CREATE TABLE public.loan_repayment_schedule (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     loan_id uuid REFERENCES public.loans(id) ON DELETE CASCADE,
-    due_date date,
-    amount_due numeric,
+    due_date date NOT NULL,
+    amount_due numeric NOT NULL,
     amount_paid numeric DEFAULT 0,
-    status text DEFAULT 'upcoming' CHECK (status IN ('upcoming','paid','overdue','partial'))
+    status text DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'paid', 'partial', 'overdue')),
+    created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
@@ -104,13 +108,14 @@ CREATE TABLE public.loan_repayment_schedule (
 -- ==========================================
 CREATE TABLE public.savings_circles (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name text,
     owner_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    contribution_amount numeric,
-    frequency text CHECK (frequency IN ('daily','weekly','monthly')),
-    member_count int,
-    payout_order_json jsonb,
-    status text DEFAULT 'active' CHECK (status IN ('active','completed','paused')),
+    name text NOT NULL,
+    contribution_amount numeric NOT NULL,
+    frequency text CHECK (frequency IN ('daily', 'weekly', 'monthly')),
+    max_members int DEFAULT 20,
+    start_date date,
+    current_payout_index int DEFAULT 0,
+    status text DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),
     created_at timestamptz DEFAULT now()
 );
 
@@ -121,8 +126,10 @@ CREATE TABLE public.savings_circle_members (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     circle_id uuid REFERENCES public.savings_circles(id) ON DELETE CASCADE,
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    position int,
-    join_date timestamptz DEFAULT now(),
+    payout_position int NOT NULL,
+    total_contributed numeric DEFAULT 0,
+    received_payout boolean DEFAULT false,
+    created_at timestamptz DEFAULT now(),
     UNIQUE(circle_id, user_id)
 );
 
@@ -132,11 +139,12 @@ CREATE TABLE public.savings_circle_members (
 CREATE TABLE public.fixed_deposits (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    principal numeric,
-    rate numeric,
-    term_days int,
-    maturity_date date,
-    status text DEFAULT 'active' CHECK (status IN ('active','matured','withdrawn'))
+    principal numeric NOT NULL,
+    interest_rate numeric NOT NULL,
+    term_days int NOT NULL,
+    maturity_date date NOT NULL,
+    status text DEFAULT 'active' CHECK (status IN ('active', 'matured', 'withdrawn')),
+    created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
@@ -145,11 +153,12 @@ CREATE TABLE public.fixed_deposits (
 CREATE TABLE public.bill_payments (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    category text CHECK (category IN ('farm_input','airtime','data','electricity','water','other')),
-    vendor text,
-    amount numeric,
-    status text DEFAULT 'pending' CHECK (status IN ('pending','success','failed')),
-    reference text
+    category text NOT NULL,
+    vendor text NOT NULL,
+    amount numeric NOT NULL,
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'success', 'failed')),
+    reference text,
+    created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
@@ -159,8 +168,9 @@ CREATE TABLE public.referrals (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     referrer_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
     referee_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    bonus_amount numeric,
-    status text DEFAULT 'pending' CHECK (status IN ('pending','earned','paid'))
+    bonus_amount numeric DEFAULT 0,
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'qualified', 'paid')),
+    created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
@@ -169,9 +179,10 @@ CREATE TABLE public.referrals (
 CREATE TABLE public.cards (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    card_type text CHECK (card_type IN ('virtual','physical')),
-    last4 text,
-    status text DEFAULT 'active' CHECK (status IN ('active','frozen','cancelled'))
+    card_type text CHECK (card_type IN ('virtual', 'physical')),
+    last_four text,
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'frozen', 'cancelled')),
+    created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
@@ -179,8 +190,8 @@ CREATE TABLE public.cards (
 -- ==========================================
 CREATE TABLE public.notifications (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    title text,
+    user_id text,
+    title text NOT NULL,
     body text,
     read boolean DEFAULT false,
     created_at timestamptz DEFAULT now()
@@ -192,11 +203,10 @@ CREATE TABLE public.notifications (
 CREATE TABLE public.kyc_documents (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    doc_type text,
+    doc_type text CHECK (doc_type IN ('selfie', 'id_card', 'utility_bill', 'farm_proof')),
     storage_path text,
-    status text DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
-    reviewed_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
-    reviewed_at timestamptz
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
@@ -204,11 +214,14 @@ CREATE TABLE public.kyc_documents (
 -- ==========================================
 CREATE TABLE public.admin_review_queue (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    related_type text CHECK (related_type IN ('loan','kyc')),
+    user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+    related_type text NOT NULL,
     related_id uuid,
     reason text,
-    status text DEFAULT 'pending' CHECK (status IN ('pending','assigned','resolved')),
-    assigned_to uuid REFERENCES public.profiles(id) ON DELETE SET NULL
+    status text DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reviewed_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+    reviewed_at timestamptz,
+    created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
@@ -217,98 +230,27 @@ CREATE TABLE public.admin_review_queue (
 CREATE TABLE public.credit_scoring_runs (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-    score int,
+    score int NOT NULL,
+    decision text NOT NULL,
     inputs_json jsonb,
-    decision text,
     created_at timestamptz DEFAULT now()
 );
 
 -- ==========================================
--- PERFORMANCE INDEXES
+-- INDEXES
 -- ==========================================
--- Profiles indexes
-CREATE INDEX idx_profiles_referred_by ON public.profiles(referred_by);
-CREATE INDEX idx_profiles_created_at ON public.profiles(created_at);
-
--- Wallets indexes
-CREATE INDEX idx_wallets_user_id ON public.wallets(user_id);
-CREATE INDEX idx_wallets_created_at ON public.wallets(created_at);
-
--- Wallet Transactions indexes
-CREATE INDEX idx_wallet_transactions_wallet_id ON public.wallet_transactions(wallet_id);
 CREATE INDEX idx_wallet_transactions_user_id ON public.wallet_transactions(user_id);
-CREATE INDEX idx_wallet_transactions_created_at ON public.wallet_transactions(created_at);
-
--- Loans indexes
+CREATE INDEX idx_wallet_transactions_wallet_id ON public.wallet_transactions(wallet_id);
 CREATE INDEX idx_loans_user_id ON public.loans(user_id);
-CREATE INDEX idx_loans_created_at ON public.loans(created_at);
-
--- Loan Events indexes
+CREATE INDEX idx_loans_status ON public.loans(status);
 CREATE INDEX idx_loan_events_loan_id ON public.loan_events(loan_id);
-CREATE INDEX idx_loan_events_created_at ON public.loan_events(created_at);
-
--- Loan Repayment Schedule indexes
 CREATE INDEX idx_loan_repayment_schedule_loan_id ON public.loan_repayment_schedule(loan_id);
-
--- Savings Circles indexes
-CREATE INDEX idx_savings_circles_owner_id ON public.savings_circles(owner_id);
-CREATE INDEX idx_savings_circles_created_at ON public.savings_circles(created_at);
-
--- Savings Circle Members indexes
 CREATE INDEX idx_savings_circle_members_circle_id ON public.savings_circle_members(circle_id);
-CREATE INDEX idx_savings_circle_members_user_id ON public.savings_circle_members(user_id);
-CREATE INDEX idx_savings_circle_members_join_date ON public.savings_circle_members(join_date);
-
--- Fixed Deposits indexes
-CREATE INDEX idx_fixed_deposits_user_id ON public.fixed_deposits(user_id);
-
--- Bill Payments indexes
-CREATE INDEX idx_bill_payments_user_id ON public.bill_payments(user_id);
-
--- Referrals indexes
-CREATE INDEX idx_referrals_referrer_id ON public.referrals(referrer_id);
-CREATE INDEX idx_referrals_referee_id ON public.referrals(referee_id);
-
--- Cards indexes
-CREATE INDEX idx_cards_user_id ON public.cards(user_id);
-
--- Notifications indexes
 CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
-CREATE INDEX idx_notifications_created_at ON public.notifications(created_at);
-
--- KYC Documents indexes
-CREATE INDEX idx_kyc_documents_user_id ON public.kyc_documents(user_id);
-CREATE INDEX idx_kyc_documents_reviewed_by ON public.kyc_documents(reviewed_by);
-
--- Admin Review Queue indexes
-CREATE INDEX idx_admin_review_queue_related_id ON public.admin_review_queue(related_id);
-CREATE INDEX idx_admin_review_queue_assigned_to ON public.admin_review_queue(assigned_to);
-
--- Credit Scoring Runs indexes
+CREATE INDEX idx_bill_payments_user_id ON public.bill_payments(user_id);
 CREATE INDEX idx_credit_scoring_runs_user_id ON public.credit_scoring_runs(user_id);
-CREATE INDEX idx_credit_scoring_runs_created_at ON public.credit_scoring_runs(created_at);
-
-
--- ==========================================
--- ROW LEVEL SECURITY (RLS) ENABLEMENT
--- ==========================================
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wallet_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.loans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.loan_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.loan_repayment_schedule ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.savings_circles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.savings_circle_members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.fixed_deposits ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bill_payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cards ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.kyc_documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admin_review_queue ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.credit_scoring_runs ENABLE ROW LEVEL SECURITY;
-
+CREATE INDEX idx_fixed_deposits_user_id ON public.fixed_deposits(user_id);
+CREATE INDEX idx_referrals_referrer_id ON public.referrals(referrer_id);
 
 -- ==========================================
 -- HELPER FUNCTIONS & TRIGGERS
@@ -317,19 +259,15 @@ ALTER TABLE public.credit_scoring_runs ENABLE ROW LEVEL SECURITY;
 -- 1. Helper function to check if the current user is an admin
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
-DECLARE
-  is_admin_user boolean;
 BEGIN
-  -- We query profiles directly. Since this is SECURITY DEFINER, RLS is bypassed.
-  SELECT (role = 'admin') INTO is_admin_user
-  FROM public.profiles
-  WHERE id = auth.uid();
-  
-  RETURN COALESCE(is_admin_user, false);
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 2. Audit Trail Immutability Trigger & Function (for loan_events)
+-- 2. Block immutable table updates/deletes
 CREATE OR REPLACE FUNCTION public.block_immutable_update_delete()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -344,19 +282,26 @@ FOR EACH ROW EXECUTE FUNCTION public.block_immutable_update_delete();
 -- 3. Automatic Profile Creation Trigger & Function (for new auth.users)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+  new_referral_code text;
 BEGIN
+  -- Generate a unique referral code
+  new_referral_code := 'AGRO' || UPPER(SUBSTRING(MD5(RANDOM()::text || new.id::text) FROM 1 FOR 8));
+
   INSERT INTO public.profiles (
     id,
     full_name,
     email,
     phone,
+    referral_code,
     role
   )
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'full_name', ''),
     new.email,
-    new.phone,
+    COALESCE(new.phone, new.raw_user_meta_data->>'phone', ''),
+    new_referral_code,
     'user'
   )
   ON CONFLICT (id) DO NOTHING;
@@ -368,75 +313,85 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-
 -- ==========================================
 -- ROW LEVEL SECURITY POLICIES
 -- ==========================================
 
 -- Profiles Policies
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own profile" ON public.profiles FOR ALL TO authenticated USING (id = auth.uid()) WITH CHECK (id = auth.uid());
 CREATE POLICY "Admins have full access to profiles" ON public.profiles FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Wallets Policies
+ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own wallet" ON public.wallets FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to wallets" ON public.wallets FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Wallet Transactions Policies
+ALTER TABLE public.wallet_transactions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own transactions" ON public.wallet_transactions FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to transactions" ON public.wallet_transactions FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Loans Policies
+ALTER TABLE public.loans ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own loans" ON public.loans FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to loans" ON public.loans FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- Loan Events Policies (SELECT only for users, ALL for admin)
+-- Loan Events Policies (read-only for users)
+ALTER TABLE public.loan_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their own loan events" ON public.loan_events FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.loans WHERE public.loans.id = public.loan_events.loan_id AND public.loans.user_id = auth.uid()));
 CREATE POLICY "Admins have full access to loan events" ON public.loan_events FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Loan Repayment Schedule Policies
+ALTER TABLE public.loan_repayment_schedule ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own repayment schedules" ON public.loan_repayment_schedule FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.loans WHERE public.loans.id = public.loan_repayment_schedule.loan_id AND public.loans.user_id = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM public.loans WHERE public.loans.id = public.loan_repayment_schedule.loan_id AND public.loans.user_id = auth.uid()));
 CREATE POLICY "Admins have full access to repayment schedules" ON public.loan_repayment_schedule FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Savings Circles Policies
+ALTER TABLE public.savings_circles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Owners can manage their savings circles" ON public.savings_circles FOR ALL TO authenticated USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
 CREATE POLICY "Admins have full access to savings circles" ON public.savings_circles FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Savings Circle Members Policies
+ALTER TABLE public.savings_circle_members ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Members can manage their membership" ON public.savings_circle_members FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to savings circle members" ON public.savings_circle_members FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Fixed Deposits Policies
+ALTER TABLE public.fixed_deposits ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own fixed deposits" ON public.fixed_deposits FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to fixed deposits" ON public.fixed_deposits FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Bill Payments Policies
+ALTER TABLE public.bill_payments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own bill payments" ON public.bill_payments FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to bill payments" ON public.bill_payments FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Referrals Policies
+ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view and manage their own referrals" ON public.referrals FOR ALL TO authenticated USING (referrer_id = auth.uid() OR referee_id = auth.uid()) WITH CHECK (referrer_id = auth.uid() OR referee_id = auth.uid());
 CREATE POLICY "Admins have full access to referrals" ON public.referrals FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Cards Policies
+ALTER TABLE public.cards ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own cards" ON public.cards FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to cards" ON public.cards FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Notifications Policies
-CREATE POLICY "Users can manage their own notifications" ON public.notifications FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own notifications" ON public.notifications FOR ALL TO authenticated USING (user_id = auth.uid()::text) WITH CHECK (user_id = auth.uid()::text);
 CREATE POLICY "Admins have full access to notifications" ON public.notifications FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- KYC Documents Policies
+ALTER TABLE public.kyc_documents ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own KYC documents" ON public.kyc_documents FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to KYC documents" ON public.kyc_documents FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- Admin Review Queue Policies (SELECT only for users, ALL for admin)
-CREATE POLICY "Users can view their own review queue items" ON public.admin_review_queue FOR SELECT TO authenticated USING (
-  (related_type = 'loan' AND EXISTS (SELECT 1 FROM public.loans WHERE public.loans.id = public.admin_review_queue.related_id AND public.loans.user_id = auth.uid())) OR
-  (related_type = 'kyc' AND EXISTS (SELECT 1 FROM public.kyc_documents WHERE public.kyc_documents.id = public.admin_review_queue.related_id AND public.kyc_documents.user_id = auth.uid())) OR
-  (assigned_to = auth.uid())
-);
+-- Admin Review Queue Policies
+ALTER TABLE public.admin_review_queue ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins have full access to review queue" ON public.admin_review_queue FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Credit Scoring Runs Policies
+ALTER TABLE public.credit_scoring_runs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own scoring runs" ON public.credit_scoring_runs FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins have full access to scoring runs" ON public.credit_scoring_runs FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());

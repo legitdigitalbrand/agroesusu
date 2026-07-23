@@ -6,7 +6,6 @@ const publicRoutes = ['/', '/loans', '/savings', '/features', '/about', '/career
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow marketing routes and API routes
   if (publicRoutes.some(r => pathname === r || pathname.startsWith(r + '/')) || pathname.startsWith('/api')) {
     return NextResponse.next();
   }
@@ -18,8 +17,10 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         getAll() { return request.cookies.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options as Record<string, boolean | number | string | Date> | undefined)
+          );
         },
       },
     }
