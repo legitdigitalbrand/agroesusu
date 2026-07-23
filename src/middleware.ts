@@ -1,12 +1,29 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const publicRoutes = ['/', '/loans', '/savings', '/features', '/about', '/careers', '/blog', '/faqs', '/contact', '/login', '/signup'];
+const publicRoutes = [
+  '/',
+  '/loan-plans',
+  '/savings-plans',
+  '/features',
+  '/about',
+  '/careers',
+  '/blog',
+  '/faqs',
+  '/contact',
+  '/login',
+  '/signup',
+  '/onboarding',
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (publicRoutes.some(r => pathname === r || pathname.startsWith(r + '/')) || pathname.startsWith('/api')) {
+  // Allow public routes and API routes
+  if (
+    publicRoutes.some((r) => pathname === r || pathname.startsWith(r + '/')) ||
+    pathname.startsWith('/api')
+  ) {
     return NextResponse.next();
   }
 
@@ -16,7 +33,9 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll(); },
+        getAll() {
+          return request.cookies.getAll();
+        },
         setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options as Record<string, boolean | number | string | Date> | undefined)
@@ -26,7 +45,9 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session) {
     const redirectUrl = new URL('/login', request.url);
