@@ -1,14 +1,15 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { formatNaira } from '@/lib/format';
+import { calculateLoan } from '@/lib/loan-calc';
+
+const MONTHLY_RATE = 0.0265;
 
 export default function LoansPage() {
   const [amount, setAmount] = useState(500000);
   const [tenor, setTenor] = useState(91);
-  const monthlyRate = 0.0265;
-  const totalRepayment = Math.ceil(amount + amount * monthlyRate * (tenor / 30));
-  const monthlyRepayment = Math.ceil(totalRepayment / (tenor / 30));
+  const calc = useMemo(() => calculateLoan(amount, MONTHLY_RATE, tenor), [amount, tenor]);
 
   return (
     <div className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
@@ -41,9 +42,10 @@ export default function LoansPage() {
             <div className="flex justify-between text-xs text-gray-400 mt-1"><span>3 months</span><span>12 months</span></div>
           </div>
           <div className="p-4 bg-cream rounded-lg border space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Monthly rate</span><span className="font-medium">{(monthlyRate * 100).toFixed(2)}%</span></div>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Monthly repayment</span><span className="font-semibold text-forest-green">{formatNaira(monthlyRepayment)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Total repayment</span><span className="font-medium">{formatNaira(totalRepayment)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Monthly rate</span><span className="font-medium">{(MONTHLY_RATE * 100).toFixed(2)}%</span></div>
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Monthly repayment</span><span className="font-semibold text-forest-green">{formatNaira(calc.monthlyRepayment)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Total interest</span><span className="font-medium">{formatNaira(calc.totalInterest)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Total repayment</span><span className="font-medium">{formatNaira(calc.totalRepayment)}</span></div>
           </div>
         </div>
         <Link href="/signup" className="block mt-6 py-3 bg-forest-green text-white rounded-lg font-semibold text-center hover:bg-forest-green-dark transition">Get Started</Link>

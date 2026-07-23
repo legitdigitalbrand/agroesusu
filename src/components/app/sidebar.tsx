@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Banknote, PiggyBank, Wallet, Receipt,
-  ArrowLeftRight, CreditCard, Gift, User, Bell, LifeBuoy, X
+  ArrowLeftRight, CreditCard, Gift, User, Bell, LifeBuoy, Shield, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -20,6 +20,7 @@ const navItems = [
   { href: '/referrals', label: 'Referrals', icon: Gift },
   { href: '/notifications', label: 'Notifications', icon: Bell },
   { href: '/profile', label: 'Profile', icon: User },
+    { href: '/admin', label: 'Admin', icon: Shield },
   { href: '/support', label: 'Support', icon: LifeBuoy },
 ];
 

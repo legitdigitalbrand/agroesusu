@@ -1,4 +1,14 @@
 {
-  "buildCommand": "npm run build",
-  "framework": "nextjs"
+  "buildCommand": "next build",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/repayments",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/overdue-check",
+      "schedule": "0 7 * * *"
+    }
+  ]
 }

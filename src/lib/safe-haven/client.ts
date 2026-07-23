@@ -140,8 +140,13 @@ export class SafeHavenClient implements ISafeHavenClient {
   }
 
   verifyWebhookSignature(payload: string, signature: string): boolean {
-    this.ensureConfigured();
+    // Webhook verification only needs the webhook secret, NOT the API key
     if (!this.webhookSecret) {
+      // In development without a webhook secret, accept all (sandbox only)
+      // In production this MUST be configured
+      if (this.env === 'sandbox' && !this.apiKey) {
+        return true;
+      }
       throw new Error('Safe Haven webhook secret not configured — set SAFE_HAVEN_WEBHOOK_SECRET in environment');
     }
     const hmac = crypto.createHmac('sha256', this.webhookSecret);

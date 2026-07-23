@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { formatNaira, formatDate } from '@/lib/format';
-import EmptyState from '@/components/app/empty-state';
 import { notFound } from 'next/navigation';
+import RepayButton from '@/components/app/repay-button';
 
 const statusColors: Record<string, string> = {
   pending_review: 'bg-yellow-50 text-yellow-700',
@@ -41,9 +41,16 @@ export default async function LoanDetailPage({ params }: { params: { id: string 
     .eq('loan_id', loan.id)
     .order('created_at', { ascending: true });
 
+  const { data: wallet } = await supabase
+    .from('wallets')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .single();
+
   const totalDue = schedule?.reduce((sum, s) => sum + s.amount_due, 0) || 0;
   const totalPaid = schedule?.reduce((sum, s) => sum + s.amount_paid, 0) || 0;
   const outstanding = totalDue - totalPaid;
+  const nextDue = schedule?.find(s => s.status === 'upcoming' || s.status === 'overdue' || s.status === 'partial');
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -73,7 +80,13 @@ export default async function LoanDetailPage({ params }: { params: { id: string 
               <p className="font-medium">{formatDate(loan.disbursed_at)}</p>
             </div>
           )}
-          {loan.status === 'disbursed' || loan.status === 'repaying' ? (
+          {loan.closed_at && (
+            <div>
+              <p className="text-xs text-gray-400">Closed</p>
+              <p className="font-medium">{formatDate(loan.closed_at)}</p>
+            </div>
+          )}
+          {(loan.status === 'disbursed' || loan.status === 'repaying') && (
             <>
               <div>
                 <p className="text-xs text-gray-400">Total Due</p>
@@ -84,14 +97,23 @@ export default async function LoanDetailPage({ params }: { params: { id: string 
                 <p className="font-medium text-forest-green">{formatNaira(outstanding)}</p>
               </div>
             </>
-          ) : null}
+          )}
         </div>
 
         {(loan.status === 'disbursed' || loan.status === 'repaying') && outstanding > 0 && (
-          <div className="mt-4 flex gap-3">
-            <button className="flex-1 py-2.5 bg-forest-green text-white rounded-lg font-medium hover:bg-forest-green-dark transition">
-              Repay {formatNaira(outstanding)} in Full
-            </button>
+          <div className="mt-6">
+            {wallet && (
+              <p className="text-sm text-gray-500 mb-2">Wallet balance: {formatNaira(wallet.balance_cached || 0)}</p>
+            )}
+            <RepayButton
+              loanId={loan.id}
+              walletId={wallet?.id || ''}
+              userId={session.user.id}
+              outstanding={outstanding}
+              walletBalance={wallet?.balance_cached || 0}
+              nextDueAmount={nextDue?.amount_due || 0}
+              nextDueId={nextDue?.id || ''}
+            />
           </div>
         )}
       </div>
@@ -106,8 +128,8 @@ export default async function LoanDetailPage({ params }: { params: { id: string 
                 <tr className="text-left text-xs text-gray-400 border-b">
                   <th className="pb-2 font-medium">Due Date</th>
                   <th className="pb-2 font-medium">Amount</th>
+                  <th className="pb-2 font-medium">Paid</th>
                   <th className="pb-2 font-medium">Status</th>
-                  <th className="pb-2 font-medium text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -115,22 +137,14 @@ export default async function LoanDetailPage({ params }: { params: { id: string 
                   <tr key={s.id} className="border-b last:border-0">
                     <td className="py-3">{formatDate(s.due_date)}</td>
                     <td className="py-3 font-medium">{formatNaira(s.amount_due)}</td>
+                    <td className="py-3">{formatNaira(s.amount_paid)}</td>
                     <td className="py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
                         s.status === 'paid' ? 'bg-green-50 text-green-700' :
                         s.status === 'overdue' ? 'bg-red-50 text-red-700' :
                         s.status === 'partial' ? 'bg-orange-50 text-orange-700' :
                         'bg-gray-100 text-gray-500'
-                      }`}>
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      {s.status === 'upcoming' || s.status === 'overdue' || s.status === 'partial' ? (
-                        <button className="text-forest-green text-xs font-medium hover:underline">
-                          Repay Now
-                        </button>
-                      ) : null}
+                      }`}>{s.status}</span>
                     </td>
                   </tr>
                 ))}
