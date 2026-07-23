@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import SafeImage from '@/components/marketing/safe-image';
 import { Shield, Landmark, Banknote, ArrowRight } from 'lucide-react';
 import FeatureSwitcher from '@/components/marketing/feature-switcher';
 import Testimonials from '@/components/marketing/testimonials';
@@ -37,11 +37,10 @@ export default function HomePage() {
             </div>
           </div>
           <div className="relative h-72 md:h-96 rounded-3xl overflow-hidden shadow-sm">
-            <Image
-              src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80&w=900"
+            <SafeImage
+              src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&q=80&w=900"
               alt="Nigerian farmer tending to a vibrant green crop field at sunrise"
               fill
-              className="object-cover"
               priority
               sizes="(max-width: 768px) 100vw, 50vw"
             />
@@ -92,18 +91,18 @@ export default function HomePage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Farm & Finance</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { tag: 'Loans', title: 'How to qualify for a ₦5M farm loan in 2026', color: 'bg-forest-green', image: 'https://images.unsplash.com/photo-1554474190-2c5c600f8a95?auto=format&fit=crop&q=80&w=600', alt: 'Farmer reviewing loan documents' },
-            { tag: 'Savings', title: 'Esusu circles: The traditional savings method, digitized', color: 'bg-earth-gold', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5a2104a?auto=format&fit=crop&q=80&w=600', alt: 'Community of farmers saving together' },
-            { tag: 'Payments', title: '5 ways Agroesusu helps you manage farm expenses', color: 'bg-rust-orange', image: 'https://images.unsplash.com/photo-1605000797499-36a1e2d41793?auto=format&fit=crop&q=80&w=600', alt: 'Farmer making mobile payments' },
+            { tag: 'Loans', title: 'How to qualify for a ₦5M farm loan in 2026', color: 'bg-forest-green', image: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&q=80&w=600', alt: 'Farmer reviewing loan documents', gradient: 'from-forest-green to-forest-green-dark' },
+            { tag: 'Savings', title: 'Esusu circles: The traditional savings method, digitized', color: 'bg-earth-gold', image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=600', alt: 'Community of farmers saving together', gradient: 'from-earth-gold to-earth-gold-dark' },
+            { tag: 'Payments', title: '5 ways Agroesusu helps you manage farm expenses', color: 'bg-rust-orange', image: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=600', alt: 'Farmer making mobile payments', gradient: 'from-rust-orange to-forest-green' },
           ].map((post, i) => (
             <Link key={i} href="/blog" className="group">
               <div className="relative h-48 rounded-xl mb-3 overflow-hidden">
-                <Image
+                <SafeImage
                   src={post.image}
                   alt={post.alt}
                   fill
-                  className="object-cover group-hover:scale-105 transition duration-300"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  gradient={post.gradient}
                 />
               </div>
               <span className={`text-xs font-medium px-2 py-1 rounded-full text-white ${post.color}`}>{post.tag}</span>
@@ -141,11 +140,10 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute right-0 top-0 w-64 h-full opacity-20">
-            <Image
-              src="https://images.unsplash.com/photo-1605000797499-36a1e2d41793?auto=format&fit=crop&q=80&w=400"
+            <SafeImage
+              src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=400"
               alt="Farmer using mobile app"
               fill
-              className="object-cover"
               sizes="256px"
             />
           </div>

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight, Banknote, PiggyBank, Sprout } from 'lucide-react';
+import SafeImage from './safe-image';
 
 const tabs = [
   {
@@ -15,6 +15,7 @@ const tabs = [
     link: '/loan-plans',
     image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80&w=800',
     imageAlt: 'Nigerian farmer inspecting crops in a green field',
+    gradient: 'from-forest-green to-forest-green-dark',
   },
   {
     id: 'save',
@@ -23,8 +24,9 @@ const tabs = [
     heading: 'Esusu savings, reimagined',
     description: 'Join esusu circles with trusted farmers or start a solo target-savings plan. Lock funds in fixed deposits and earn competitive interest. Your money grows while you plan the next harvest.',
     link: '/savings-plans',
-    image: 'https://images.unsplash.com/photo-1633158829585-23ba8767b1c2?auto=format&fit=crop&q=80&w=800',
+    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800',
     imageAlt: 'African farmers meeting in a group, discussing savings',
+    gradient: 'from-earth-gold to-earth-gold-dark',
   },
   {
     id: 'pay',
@@ -33,8 +35,9 @@ const tabs = [
     heading: 'Pay for everything you need',
     description: 'Buy seeds, fertilizer, and farm inputs. Pay bills, send money to any Nigerian bank, and manage your finances — all from your Agroesusu account.',
     link: '/features',
-    image: 'https://images.unsplash.com/photo-1605000797499-36a1e2d41793?auto=format&fit=crop&q=80&w=800',
+    image: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=800',
     imageAlt: 'Farmer using a mobile phone for digital payments',
+    gradient: 'from-rust-orange to-forest-green',
   },
 ];
 
@@ -68,13 +71,13 @@ export default function FeatureSwitcher() {
           </Link>
         </div>
         <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden">
-          <Image
+          <SafeImage
             src={tab.image}
             alt={tab.imageAlt}
             fill
-            className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
             priority={active === 0}
+            gradient={tab.gradient}
           />
         </div>
       </div>

@@ -20,14 +20,20 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
       router.push(redirect);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to log in. Please try again.');
+      setLoading(false);
     }
   }
 
@@ -42,7 +48,7 @@ function LoginForm() {
           <p className="text-sm text-gray-500 mb-6">Log in to your account</p>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm break-words">
               {error}
             </div>
           )}

@@ -20,23 +20,36 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone,
+    try {
+      const supabase = createClient();
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone,
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      setError(error.message);
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        router.push('/onboarding');
+      } else {
+        // Shouldn't happen, but handle gracefully
+        setError('Something went wrong. Please try again.');
+        setLoading(false);
+      }
+    } catch (err) {
+      // Catches: missing env vars, network errors, client init failures
+      setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
       setLoading(false);
-    } else if (data.user) {
-      router.push('/onboarding');
     }
   }
 
@@ -51,7 +64,7 @@ export default function SignupPage() {
           <p className="text-sm text-gray-500 mb-6">Start growing your farm and your money</p>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm break-words">
               {error}
             </div>
           )}
