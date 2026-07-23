@@ -17,8 +17,8 @@ export default function Header() {
 
         {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-8">
-          <Link href="/loans" className="text-sm font-medium text-gray-700 hover:text-forest-green transition">Loans</Link>
-          <Link href="/savings" className="text-sm font-medium text-gray-700 hover:text-forest-green transition">Savings</Link>
+          <Link href="/loan-plans" className="text-sm font-medium text-gray-700 hover:text-forest-green transition">Loans</Link>
+          <Link href="/savings-plans" className="text-sm font-medium text-gray-700 hover:text-forest-green transition">Savings</Link>
           <Link href="/features" className="text-sm font-medium text-gray-700 hover:text-forest-green transition">Features</Link>
           <div
             className="relative"
@@ -55,8 +55,8 @@ export default function Header() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="lg:hidden border-t bg-cream px-4 py-4 space-y-2">
-          <Link href="/loans" onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700">Loans</Link>
-          <Link href="/savings" onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700">Savings</Link>
+          <Link href="/loan-plans" onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700">Loans</Link>
+          <Link href="/savings-plans" onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700">Savings</Link>
           <Link href="/features" onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700">Features</Link>
           <Link href="/about" onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700">About</Link>
           <Link href="/careers" onClick={() => setMobileOpen(false)} className="block py-2 text-sm font-medium text-gray-700">Careers</Link>

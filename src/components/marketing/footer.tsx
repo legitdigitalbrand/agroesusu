@@ -25,8 +25,8 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-sm mb-3 text-white/90">Products</h4>
             <ul className="space-y-2 text-sm text-white/70">
-              <li><Link href="/loans" className="hover:text-white transition">Loans</Link></li>
-              <li><Link href="/savings" className="hover:text-white transition">Savings</Link></li>
+              <li><Link href="/loan-plans" className="hover:text-white transition">Loans</Link></li>
+              <li><Link href="/savings-plans" className="hover:text-white transition">Savings</Link></li>
               <li><Link href="/features" className="hover:text-white transition">Features</Link></li>
               <li><Link href="/signup" className="hover:text-white transition">Get Started</Link></li>
             </ul>
