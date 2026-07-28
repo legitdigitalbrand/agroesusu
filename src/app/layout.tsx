@@ -1,30 +1,21 @@
-import type { Metadata } from 'next';
-import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
-import './globals.css';
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "@/components/providers";
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-plus-jakarta',
-  display: 'swap',
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: 'Agroesusu — Grow Your Farm, Grow Your Money',
-  description: 'An agricultural fintech platform empowering farmers with seamless saving, low-interest micro-loans, and automated secure wallet services.',
-  openGraph: {
-    title: 'Agroesusu — Grow Your Farm, Grow Your Money',
-    description: 'An agricultural fintech platform empowering farmers with seamless saving, low-interest micro-loans, and automated secure wallet services.',
-    url: 'https://agroesusu.com',
-    siteName: 'Agroesusu',
-    locale: 'en_US',
-    type: 'website',
-  },
+  title: "AgroEsusu — Save Together. Grow Together.",
+  description: "Agricultural savings and lending platform for Nigerian farmers, cooperatives, and agro-businesses.",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0B6B3A",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -33,9 +24,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`}>
-      <body className="antialiased">
-        {children}
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="font-sans">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

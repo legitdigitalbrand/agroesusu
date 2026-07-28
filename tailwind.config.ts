@@ -9,6 +9,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Brand palette — Deep Green / Gold / Light Green
+        brand: {
+          primary: '#0B6B3A',      // Deep Green
+          'primary-dark': '#094F2B',
+          'primary-light': '#1A8F4F',
+          gold: '#D4A574',         // Gold
+          'gold-dark': '#B88A50',
+          'gold-light': '#E8C7A0',
+          accent: '#4CAF50',        // Light Green accent
+          cream: '#FAF9F6',
+        },
+        // Semantic colors
+        success: '#16A34A',
+        warning: '#F59E0B',
+        danger: '#DC2626',
+        // shadcn/ui CSS variable mappings
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -47,6 +63,9 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
       },
     },
   },
