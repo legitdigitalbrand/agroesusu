@@ -156,7 +156,7 @@ export async function getInvestmentPoolPerformance(): Promise<{
   for (const product of (products || [])) {
     const { data: accounts } = await supabase
       .from('investment_accounts')
-      .select('current_value')
+      .select('id, current_value')
       .eq('product_id', product.id)
       .eq('status', 'active');
     const aum = (accounts || []).reduce((s, a) => s + Number(a.current_value), 0);
