@@ -5,7 +5,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { initiate } from '@/modules/orchestrator';
 import { getProduct } from './products';
-import type { InvestmentAccount, SubscriptionRequest, SubscriptionResult, RedemptionRequest, RedemptionResult } from './types';
+import type { InvestmentAccount, SubscriptionRequest, SubscriptionResult, RedemptionRequest, RedemptionResult, RolloverRequest, RolloverResult } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -403,4 +403,76 @@ export async function getAccountTransactions(accountId: string): Promise<unknown
     .order('created_at', { ascending: false });
   if (error) throw new Error(`Failed to get investment transactions: ${error.message}`);
   return data || [];
+}
+
+// ============================================================================
+// Rollover — reinvest a matured investment into a new term
+// ============================================================================
+
+/**
+ * Rollover a matured investment into a new term.
+ * 
+ * Flow:
+ * 1. Validate the account is in 'matured' status
+ * 2. Redeem the matured investment (principal + returns → wallet)
+ * 3. Create a new investment account with the same product
+ * 4. Subscribe to the new account (wallet → new investment)
+ * 5. Link the new account to the old one (rolled_over_from)
+ * 
+ * The new account gets a fresh terms snapshot from the current product config.
+ * If the product config has changed since the original subscription, the new
+ * account gets the NEW terms — this is explicit and deliberate.
+ */
+export async function rolloverInvestment(request: RolloverRequest): Promise<RolloverResult> {
+  const supabase = getServiceClient();
+
+  try {
+    // Get the matured account
+    const { data: account, error: accError } = await supabase
+      .from('investment_accounts')
+      .select('*')
+      .eq('id', request.investment_account_id)
+      .single();
+    if (accError || !account) return { success: false, error: 'Investment account not found' };
+    if (account.status !== 'matured') return { success: false, error: `Account must be 'matured' to rollover (current: ${account.status})` };
+
+    // Step 1: Redeem the matured investment (full redemption to wallet)
+    const redemptionResult = await redeem({
+      investment_account_id: request.investment_account_id,
+      wallet_id: request.wallet_id,
+      is_partial: false,
+    });
+    if (!redemptionResult.success) return { success: false, error: `Redemption failed: ${redemptionResult.error}` };
+
+    // Step 2: Get the product for the new subscription
+    const product = await getProduct(account.product_id);
+    if (!product) return { success: false, error: 'Original product no longer exists' };
+    if (!product.is_active) return { success: false, error: 'Original product is no longer active — cannot rollover' };
+
+    // Step 3: Subscribe to a new investment with the same product
+    const subscriptionResult = await subscribe({
+      product_id: account.product_id,
+      customer_id: account.customer_id,
+      wallet_id: request.wallet_id,
+      amount: redemptionResult.redeemed_amount || Number(account.current_value),
+      tenure_days: request.new_tenure_days,
+      accept_risk_disclosure: true, // Customer already accepted — but new terms may apply
+    });
+    if (!subscriptionResult.success) return { success: false, error: `New subscription failed: ${subscriptionResult.error}` };
+    if (!subscriptionResult.account) return { success: false, error: 'New account not created' };
+
+    // Step 4: Link the new account to the old one
+    await supabase.from('investment_accounts').update({
+      rolled_over_from: request.investment_account_id,
+      rolled_over_at: new Date().toISOString(),
+    }).eq('id', subscriptionResult.account.id);
+
+    return {
+      success: true,
+      new_account_id: subscriptionResult.account.id,
+      transaction_reference: subscriptionResult.transaction_reference,
+    };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }

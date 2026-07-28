@@ -1,5 +1,8 @@
 // ============================================================================
 // Investment Module — Type Definitions
+// 
+// UPDATED IN PHASE 8: Added return_guarantee distinction, pool performance,
+// proportional distribution, and rollover types.
 // ============================================================================
 
 export type InvestmentType = 'fixed_income' | 'unitized' | 'cooperative_fund' | 'money_market' | 'agricultural_pool';
@@ -7,6 +10,17 @@ export type InvestmentStatus = 'pending' | 'active' | 'matured' | 'redeemed' | '
 export type ProductStatus = 'draft' | 'active' | 'suspended' | 'retired';
 export type InvestmentTxType = 'subscription' | 'redemption' | 'returns_payout' | 'returns_reinvest' | 'management_fee' | 'early_exit_fee' | 'top_up' | 'principal_return';
 export type RiskLevel = 'low' | 'moderate' | 'high' | 'very_high';
+
+/**
+ * Return Guarantee Type — honestly distinguishes return structures.
+ * 
+ * - 'guanteed': Rate is contractually guaranteed (e.g., Fixed Income Fund)
+ * - 'expected': Target rate, highly likely but not contractual (e.g., Money Market)
+ * - 'variable_pool': Returns depend on actual pool performance (e.g., Agricultural Pool, Cooperative Growth Fund)
+ * 
+ * Products with 'variable_pool' must NEVER show expected_return_rate as guaranteed.
+ */
+export type ReturnGuaranteeType = 'guaranteed' | 'expected' | 'variable_pool';
 
 export interface InvestmentProduct {
   id: string;
@@ -16,6 +30,7 @@ export interface InvestmentProduct {
   description: string | null;
   expected_return_rate: number;
   return_type: string;
+  return_guarantee: ReturnGuaranteeType;
   min_investment: number;
   max_investment: number | null;
   min_tenure_days: number;
@@ -62,6 +77,8 @@ export interface InvestmentAccount {
   risk_disclosure_accepted_at: string | null;
   risk_disclosure_version: string;
   metadata: Record<string, unknown>;
+  rolled_over_from: string | null;
+  rolled_over_at: string | null;
   created_at: string;
 }
 
@@ -94,6 +111,88 @@ export interface RiskDisclosureAcceptance {
   user_agent: string | null;
 }
 
+// ============================================================================
+// Pool Performance & Distribution Types
+// ============================================================================
+
+/**
+ * Pool Performance Record — admin-entered performance data for variable_pool products.
+ * 
+ * This is the INPUT MECHANISM for pool-based returns. It is NOT a fabricated
+ * performance model. Pool performance is manually entered by admin staff based
+ * on real-world outcomes (crop sales, cooperative profit distributions, etc.).
+ * 
+ * Every entry is fully auditable: who entered it, when, based on what source.
+ */
+export interface PoolPerformanceRecord {
+  id: string;
+  product_id: string;
+  performance_date: string;
+  period_start: string;
+  period_end: string;
+  total_pool_value: number;
+  total_returns: number;
+  return_rate: number;
+  expense_ratio: number;
+  net_distributable: number;
+  distributed_amount: number;
+  is_distributed: boolean;
+  distributed_at: string | null;
+  entered_by: string;
+  entered_at: string;
+  source_description: string;
+  supporting_notes: string | null;
+  source_reference: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PoolDistribution {
+  id: string;
+  performance_record_id: string;
+  investment_account_id: string;
+  customer_id: string;
+  pool_share: number;
+  distributed_amount: number;
+  distribution_type: 'payout' | 'reinvest';
+  financial_transaction_id: string | null;
+  distributed_at: string;
+  distributed_by: string | null;
+  created_at: string;
+}
+
+/**
+ * Admin-entered pool performance data.
+ * This is what an admin staff member submits when recording pool performance.
+ */
+export interface PoolPerformanceEntry {
+  product_id: string;
+  performance_date: string;
+  period_start: string;
+  period_end: string;
+  total_pool_value: number;
+  total_returns: number;
+  return_rate: number;
+  expense_ratio?: number;
+  source_description: string;
+  supporting_notes?: string;
+  source_reference?: string;
+  entered_by: string;  // auth.users ID of the admin
+}
+
+export interface DistributionResult {
+  success: boolean;
+  performance_record_id: string;
+  total_distributed: number;
+  contributor_count: number;
+  distributions: PoolDistribution[];
+  error?: string;
+}
+
+// ============================================================================
+// Request/Result Types
+// ============================================================================
+
 export interface SubscriptionRequest {
   product_id: string;
   customer_id: string;
@@ -108,8 +207,21 @@ export interface SubscriptionRequest {
 export interface RedemptionRequest {
   investment_account_id: string;
   wallet_id: string;
-  amount?: number;        // NULL = full redemption
+  amount?: number;
   is_partial: boolean;
+}
+
+export interface RolloverRequest {
+  investment_account_id: string;
+  wallet_id: string;
+  new_tenure_days?: number;
+}
+
+export interface RolloverResult {
+  success: boolean;
+  new_account_id?: string;
+  transaction_reference?: string;
+  error?: string;
 }
 
 export interface SubscriptionResult {

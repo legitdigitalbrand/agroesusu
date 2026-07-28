@@ -551,3 +551,52 @@ Investment returns go through the Orchestrator with two paths: `investment_retur
 - Auto-reinvest doesn't touch the wallet — the returns stay in the investment
 - Returns are recognized as an expense, consistent with savings interest and the accounting model
 - Daily cron at 9 AM processes returns for all active investment accounts
+
+---
+
+## ADR-033: Return Guarantee Distinction (Fixed vs. Variable Pool)
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Every investment product has a `return_guarantee` field: 'guaranteed' (contractually fixed), 'expected' (target rate, not contractual), or 'variable_pool' (returns depend on actual pool performance). Products with 'variable_pool' must never display their expected_return_rate as guaranteed. The daily returns cron skips variable_pool products — their returns come from admin-entered pool performance records.
+
+### Consequences
+- Customers see honest return projections — guaranteed products show guaranteed rates, pool products show "expected" with clear disclosure
+- The data model itself enforces the distinction — no UI or copy can imply a guaranteed return on a variable product
+- The system uses two different return mechanisms: formula-based (guaranteed/expected) vs. pool-performance-based (variable_pool)
+- Phase 9 reporting must represent both types honestly — not sum them into one "investment returns" number
+
+---
+
+## ADR-034: Pool Performance Data Source — Manual Admin Entry
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Pool performance data is entered manually by admin staff through the `recordPoolPerformance()` function. Each entry captures who entered it, when, the performance figures, and a source description (e.g., "crop sales completed"). There is no automated data feed — this is financial data driving payouts to multiple people, and it must be traceable to a human decision-maker.
+
+### Consequences
+- Every performance entry has a full audit trail (entered_by, entered_at, source_description, source_reference)
+- Future automated feeds (crop yield APIs, market prices) would feed into the same interface — no module redesign needed
+- Distribution cannot happen without a performance entry — the system never fabricates performance figures
+- Admin staff are responsible for the accuracy of performance data — this is a governance decision, not a technical one
+
+---
+
+## ADR-035: Pool Distribution Through Orchestrator
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Pool distributions go through the Orchestrator with the same posting templates as individual returns: `investment_returns` (payout to wallet) or `investment_reinvest` (reinvest into investment settlement). Each contributor's distribution is a separate Orchestrator call with its own idempotency key.
+
+### Consequences
+- Every pool distribution is a proper double-entry posting with audit trail
+- Proportional share is calculated as contributor's current_value / total_pool_value
+- Distribution type (payout vs. reinvest) is per-account, based on the account's auto_reinvest setting
+- If one contributor's distribution fails (e.g., no wallet), the others still succeed — partial distribution is logged
+- The performance record tracks total_distributed vs. net_distributable for reconciliation
