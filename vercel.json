@@ -21,6 +21,10 @@
     {
       "path": "/api/cron/process-esusu-payouts",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/process-returns",
+      "schedule": "0 9 * * *"
     }
   ]
 }

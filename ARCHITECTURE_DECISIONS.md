@@ -487,3 +487,67 @@ Governance structures (executive positions, committees, voting rules, meeting fr
 - A cooperative can add/remove executive positions without code changes
 - Voting thresholds are per-cooperative configurable
 - The platform supports diverse cooperative types (agricultural, trade, community)
+
+---
+
+## ADR-029: Investment Settlement as Liability (2003)
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Investment settlement accounts are liabilities under parent 2003. Each investment account gets its own child account: 2003.INV-ACC-XXXXXX. Subscriptions: D Wallet, C Investment Settlement. Redemptions: D Investment Settlement, C Wallet. Returns: D Interest Expense, C Wallet/Settlement.
+
+### Consequences
+- Investment balances are derived from the Ledger — never written directly
+- The same Orchestrator/Ledger path used for all other financial movements
+- Returns are recognized as an expense (Interest Expense 5000), consistent with savings interest
+- Auto-reinvest adds to the investment settlement account without touching the wallet
+
+---
+
+## ADR-030: Permanent Risk Disclosure Storage
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Risk disclosure acceptances are permanently stored in a dedicated `risk_disclosure_acceptances` table. Each record captures the full disclosure text, version, product name, risk level, IP address, and user agent at the time of acceptance. Records are never deleted or modified — they are permanent legal evidence.
+
+### Consequences
+- Even if the product's disclosure text changes, the original acceptance record preserves the exact text the customer agreed to
+- The investment account has a DB-level CHECK constraint preventing activation without disclosure acceptance
+- IP address and user agent provide additional audit trail for regulatory compliance
+- Version tracking enables legal teams to determine which disclosure version each customer accepted
+
+---
+
+## ADR-031: Investment Terms Snapshot at Subscription
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+When a customer subscribes to an investment product, the product's current terms (rate, fees, lock periods, features) are captured in a `terms_snapshot` JSONB column on the investment account. Subsequent product configuration changes do not retroactively affect existing accounts.
+
+### Consequences
+- Admin can change product rates/fees without breaking existing investments
+- Each account has a permanent record of the terms it was opened under
+- Disputes can be resolved by referencing the terms snapshot
+- Same pattern as Phase 5's savings account terms snapshot
+
+---
+
+## ADR-032: Returns Through Orchestrator — Payout and Reinvest
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Investment returns go through the Orchestrator with two paths: `investment_returns` (paid to wallet: D Interest Expense, C Wallet) and `investment_reinvest` (reinvested: D Interest Expense, C Investment Settlement). Both are proper double-entry postings with audit trails.
+
+### Consequences
+- All return movements are auditable in the Ledger
+- Auto-reinvest doesn't touch the wallet — the returns stay in the investment
+- Returns are recognized as an expense, consistent with savings interest and the accounting model
+- Daily cron at 9 AM processes returns for all active investment accounts

@@ -1,7 +1,7 @@
 // ============================================================================
 // Orchestrator Types — The Calling Contract
 //
-// EXTENDED IN PHASE 7: Added group_contribution and group_payout.
+// EXTENDED IN PHASE 8: Added investment_reinvest for auto-reinvestment.
 // ============================================================================
 
 export type FinancialTransactionType =
@@ -20,6 +20,7 @@ export type FinancialTransactionType =
   | 'investment_subscription'
   | 'investment_redemption'
   | 'investment_returns'
+  | 'investment_reinvest'
   | 'fee_charge'
   | 'fee_reversal'
   | 'reversal'

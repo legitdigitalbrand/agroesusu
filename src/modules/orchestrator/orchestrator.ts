@@ -100,7 +100,7 @@ export async function initiate(
     const template = getPostingTemplate(request.transaction_type);
     if (!template) validationErrors.push(`No posting template for: ${request.transaction_type}`);
 
-    const needsWallet = !['savings_interest', 'adjustment'].includes(request.transaction_type);
+    const needsWallet = !['savings_interest', 'investment_reinvest', 'adjustment'].includes(request.transaction_type);
     if (needsWallet && !request.wallet_id) validationErrors.push('wallet_id is required');
 
     if (requiresProductAccount(request.transaction_type) && !request.product_account_id) {
@@ -118,7 +118,7 @@ export async function initiate(
 
     // Look up interest expense account (5000) for savings interest
     let interestExpenseAccount: { id: string } | null = null;
-    if (request.transaction_type === 'savings_interest') {
+    if (['savings_interest', 'investment_returns', 'investment_reinvest'].includes(request.transaction_type)) {
       interestExpenseAccount = await getAccountByCode('5000');
       if (!interestExpenseAccount) validationErrors.push('Interest expense account (5000) not found');
     }
@@ -185,7 +185,7 @@ export async function initiate(
 
     // 8. CREATE WALLET_TRANSACTIONS READ MODEL ENTRY
     if (request.wallet_id && walletAccountId && request.transaction_type !== 'savings_interest') {
-      const walletCreditTypes = ['wallet_deposit', 'savings_withdrawal', 'loan_disbursement', 'group_payout'];
+      const walletCreditTypes = ['wallet_deposit', 'savings_withdrawal', 'loan_disbursement', 'group_payout', 'investment_redemption', 'investment_returns'];
       const direction = walletCreditTypes.includes(request.transaction_type) ? 'credit' : 'debit';
 
       await supabase.from('wallet_transactions').insert({
