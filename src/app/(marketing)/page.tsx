@@ -164,7 +164,7 @@ export default function Homepage() {
                 The digital savings and affordable lending platform tailored specifically for 
                 Nigerian farmers, agricultural cooperatives, and food businesses. Secure your 
                 future, protect your harvest, and expand your yield.
-              </p>
+              </motion.p>
 
               <motion.div variants={fadeIn} className="flex flex-col sm:flex-row gap-4">
                 <Link href="/signup" className="btn-primary text-center justify-center flex items-center gap-2 py-3.5 px-8 text-base">

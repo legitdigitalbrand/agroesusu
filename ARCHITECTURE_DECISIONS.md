@@ -600,3 +600,66 @@ Pool distributions go through the Orchestrator with the same posting templates a
 - Distribution type (payout vs. reinvest) is per-account, based on the account's auto_reinvest setting
 - If one contributor's distribution fails (e.g., no wallet), the others still succeed — partial distribution is logged
 - The performance record tracks total_distributed vs. net_distributable for reconciliation
+
+---
+
+## ADR-036: Reporting as Read-Only Consumer (No Alternate Source of Truth)
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Reporting modules query existing sources of truth (Ledger, module tables) in real-time or on-demand. No aggregated/reporting table becomes an alternate source of truth. The `reporting_snapshots` table stores daily metrics for trend analysis but is explicitly marked as derived and rebuildable.
+
+### Consequences
+- Every figure in a report can be reconstructed from the Ledger or originating module data
+- The `reporting_snapshots` table is NOT a source of truth — it's a performance optimization for trend analysis
+- If snapshots drift from source data, the snapshots are wrong, not the source data
+- Compliance reports query the Ledger directly, never the snapshots table
+
+---
+
+## ADR-037: Aggregation Strategy — Real-Time for Operational, On-Demand for Compliance
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Operational dashboards use real-time queries (acceptable staleness: seconds). Compliance/regulatory reports use on-demand generation (must be point-in-time accurate). Risk reports use on-demand (must be auditable). Audit log viewer uses real-time (needed for incident response).
+
+### Consequences
+- Operational dashboards are fast but may show slightly stale data (acceptable for day-to-day monitoring)
+- Compliance reports are generated on-demand with full traceability documentation
+- For production at 1M users, operational dashboards would switch to 5-15 min materialized views
+- The `reporting_snapshots` table provides historical trend data (daily snapshots) without being a real-time source
+
+---
+
+## ADR-038: Admin Action Audit Trail
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Every admin console action (config change, RBAC change, override) is logged in `admin_action_log` with: admin_user_id, admin_role, action, action_category, entity_type, entity_id, before_state, after_state, result, source_ip, user_agent. This is the same rigor as customer-facing financial actions.
+
+### Consequences
+- Admin actions are fully auditable — who did what, when, what changed
+- Before/after state captures the full impact of config changes
+- Source IP and user agent provide additional audit trail
+- Admin action log is queryable through the audit viewer API
+
+---
+
+## ADR-039: Investment Reporting Separates Guaranteed from Variable Returns
+
+**Date:** 2026-07-28  
+**Status:** Accepted  
+
+### Decision
+Investment pool performance reports show guaranteed, variable_pool, and expected returns in SEPARATE sections. They are never blended into a single misleading aggregate. The report includes an explicit warning against summing them without clear labeling.
+
+### Consequences
+- Reports honestly represent the risk/return profile of different product types
+- A compliance officer or auditor can see exactly which returns are contractual vs. performance-based
+- Future reporting phases must maintain this separation
