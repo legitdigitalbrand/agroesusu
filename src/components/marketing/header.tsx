@@ -1,135 +1,105 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Sprout, Menu, X, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 
+import { Menu, X } from "lucide-react";
+import { LogoMark } from "@/components/yield";
+
+// Matches mockup's landing page nav bar
 const navLinks = [
-  { name: 'Home', href: '/' },
-  { name: 'Savings', href: '/savings-plans' },
-  { name: 'Loans', href: '/loan-plans' },
-  { name: 'Features', href: '/features' },
-  { name: 'About', href: '/about' },
-  { name: 'Contact', href: '/contact' },
+  { name: "Features", href: "/#features" },
+  { name: "How it works", href: "/#how" },
+  { name: "Savings & Loans", href: "/#savings" },
+  { name: "Cooperatives", href: "/#cooperatives" },
+  { name: "Contact", href: "/#contact" },
 ];
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
         isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-md border-b border-gray-100 py-3'
-          : 'bg-white py-4 border-b border-gray-100'
+          ? "bg-paper/95 backdrop-blur-md shadow-sm border-b border-line py-3"
+          : "bg-paper py-4 border-b border-line"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
-            <div className="bg-indigo p-2 rounded-xl text-white group-hover:bg-indigo-deep transition-colors">
-              <Sprout className="h-6 w-6" />
-            </div>
-            <span className="text-xl font-bold text-indigo tracking-tight">Agriq<span className="text-ochre">cap</span></span>
-          </Link>
-
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`text-sm font-medium transition-colors hover:text-indigo ${
-                    isActive ? 'text-indigo font-semibold' : 'text-gray-600'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Desktop CTAs */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="text-sm font-semibold text-gray-700 hover:text-indigo transition-colors px-3 py-2"
-            >
-              Login
-            </Link>
-            <Link href="/signup" className="btn-primary flex items-center gap-1">
-              Get Started <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 hover:text-indigo focus:outline-none p-1"
-              aria-label="Toggle menu"
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
+      <div className="max-w-[1180px] mx-auto px-6 md:px-10 flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <LogoMark size={28} />
+          <span className="font-display font-medium text-[17px] tracking-tight text-ink">
+            Agriqcap
+          </span>
         </div>
+
+        {/* Desktop nav */}
+        <div className="hidden md:flex gap-6 text-[13px] text-ink-soft">
+          {navLinks.map((link) => (
+            <Link key={link.name} href={link.href} className="hover:text-ink transition">
+              {link.name}
+            </Link>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="hidden md:flex items-center gap-3.5">
+          <Link href="/login" className="text-[13px] text-ink font-medium hover:text-indigo transition">
+            Log in
+          </Link>
+          <Link
+            href="/signup"
+            className="bg-ochre text-ink font-semibold text-[13px] px-5 py-2.5 rounded-[10px] hover:opacity-90 transition"
+          >
+            Get started
+          </Link>
+        </div>
+
+        {/* Mobile menu button */}
+        <button
+          className="md:hidden p-2 text-ink"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Toggle menu"
+        >
+          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile dropdown */}
       {isOpen && (
-        <div className="md:hidden bg-white border-b border-gray-100 animate-in slide-in-from-top-5 duration-200">
-          <div className="px-4 pt-2 pb-6 space-y-3 sm:px-6">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                    isActive
-                      ? 'bg-parchment text-indigo font-semibold'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-indigo'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-            <div className="pt-4 border-t border-gray-100 flex flex-col space-y-3 px-3">
-              <Link
-                href="/login"
-                onClick={() => setIsOpen(false)}
-                className="text-center font-semibold text-gray-700 hover:text-indigo py-2"
-              >
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setIsOpen(false)}
-                className="btn-primary text-center justify-center flex items-center gap-2 py-3"
-              >
-                Get Started <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+        <div className="md:hidden bg-paper border-t border-line px-6 py-4 space-y-3">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className="block text-[14px] text-ink-soft hover:text-ink transition"
+              onClick={() => setIsOpen(false)}
+            >
+              {link.name}
+            </Link>
+          ))}
+          <div className="flex gap-3 pt-2 border-t border-line">
+            <Link
+              href="/login"
+              className="flex-1 text-center text-[13px] text-ink font-medium border border-line py-2.5 rounded-[10px]"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/signup"
+              className="flex-1 text-center bg-ochre text-ink font-semibold text-[13px] py-2.5 rounded-[10px]"
+            >
+              Get started
+            </Link>
           </div>
         </div>
       )}

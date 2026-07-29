@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   Check, TrendingUp, Clock, Users, Landmark,
 } from "lucide-react";
-import { LogoMark } from "@/components/yield";
 
 // ════════════════════════════════════════════════════════════
 // Landing Page — matches yield-ui-mockups2.html "Landing page" screen
@@ -25,34 +24,8 @@ import { LogoMark } from "@/components/yield";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-paper">
-      {/* ═══ Nav bar ═══ */}
-      <nav className="flex items-center justify-between px-6 md:px-10 py-4 border-b border-line">
-        <div className="flex items-center gap-2">
-          <LogoMark size={28} />
-          <span className="font-display font-medium text-[17px] tracking-tight text-ink">Agriqcap</span>
-        </div>
-        <div className="hidden md:flex gap-6 text-[13px] text-ink-soft">
-          <a href="#features" className="hover:text-ink transition">Features</a>
-          <a href="#how" className="hover:text-ink transition">How it works</a>
-          <a href="#savings" className="hover:text-ink transition">Savings &amp; Loans</a>
-          <a href="#cooperatives" className="hover:text-ink transition">Cooperatives</a>
-          <a href="#contact" className="hover:text-ink transition">Contact</a>
-        </div>
-        <div className="flex items-center gap-3.5">
-          <Link href="/login" className="text-[13px] text-ink font-medium hover:text-indigo transition">
-            Log in
-          </Link>
-          <Link
-            href="/signup"
-            className="bg-ochre text-ink font-semibold text-[13px] px-5 py-2.5 rounded-[10px] hover:opacity-90 transition"
-          >
-            Get started
-          </Link>
-        </div>
-      </nav>
-
-      {/* ═══ Hero ═══ */}
+    <div className="">
+{/* ═══ Hero ═══ */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 px-6 md:px-10 py-14 md:py-20 items-center max-w-[1180px] mx-auto">
         {/* Left — copy */}
         <div>
@@ -254,15 +227,7 @@ export default function LandingPage() {
         </Link>
       </section>
 
-      {/* ═══ Footer ═══ */}
-      <footer className="flex flex-col sm:flex-row justify-between items-center px-6 md:px-10 py-5 border-t border-line text-[12px] text-ink-soft">
-        <span>© 2026 Agriqcap. All rights reserved.</span>
-        <div className="flex gap-4">
-          <Link href="/privacy" className="hover:text-ink transition">Privacy</Link>
-          <Link href="/terms" className="hover:text-ink transition">Terms</Link>
-          <Link href="/help" className="hover:text-ink transition">Contact</Link>
-        </div>
-      </footer>
+
     </div>
   );
 }
