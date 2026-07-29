@@ -9,22 +9,44 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand palette — Deep Green / Gold / Light Green
-        brand: {
-          primary: '#0B6B3A',      // Deep Green
-          'primary-dark': '#094F2B',
-          'primary-light': '#1A8F4F',
-          gold: '#D4A574',         // Gold
-          'gold-dark': '#B88A50',
-          'gold-light': '#E8C7A0',
-          accent: '#4CAF50',        // Light Green accent
-          cream: '#FAF9F6',
+        // ─── Yield Design System ─────────────────────────────
+        // Color roles (not just hex — the ROLE each color plays):
+        // indigo: structural/trust — navigation, hero cards, primary chrome
+        // ochre:  single sparing accent — ONE primary action/highlight per screen
+        // loam:   everyday positive/growth — positive amounts, success, secondary buttons
+        // clay:   negative amounts and alerts
+        // parchment/paper: neutral backgrounds — money always sits on these
+        // ink:    text colors
+
+        indigo: {
+          DEFAULT: '#1B5E20',
+          deep: '#123D15',
+          light: '#2E7D32',
         },
-        // Semantic colors
-        success: '#16A34A',
-        warning: '#F59E0B',
-        danger: '#DC2626',
-        // shadcn/ui CSS variable mappings
+        ochre: {
+          DEFAULT: '#BBDC12',
+          light: '#D4F042',
+          dim: '#9CB810',
+        },
+        loam: {
+          DEFAULT: '#3E8E2F',
+          light: '#5BAD4A',
+          dim: '#2D6B22',
+        },
+        clay: {
+          DEFAULT: '#B23A2E',
+          light: '#D55648',
+          dim: '#8A2D24',
+        },
+        parchment: '#F5F1E8',
+        paper: '#FFFEF9',
+        ink: {
+          DEFAULT: '#1C1B17',
+          soft: '#6B6B5F',
+        },
+        track: '#E8E4D9',
+
+        // shadcn/ui CSS variable mappings (kept for compatibility)
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -60,12 +82,15 @@ const config: Config = {
         },
       },
       borderRadius: {
+        xl: '1.25rem',
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-fraunces)', 'Georgia', 'serif'],
+        sans: ['var(--font-ibm-plex-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-ibm-plex-mono)', 'ui-monospace', 'monospace'],
       },
     },
   },

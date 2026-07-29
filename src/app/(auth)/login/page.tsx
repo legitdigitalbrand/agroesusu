@@ -1,213 +1,124 @@
-'use client';
+"use client";
 
-import { useState, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Eye, EyeOff, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { LogoMark } from "@/components/yield";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z.string().min(1, { message: 'Password is required' }),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get the redirect path from query param or default to /dashboard
-  const redirectPath = searchParams?.get('redirect') || '/dashboard';
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  const onSubmit = async (values: LoginFormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
+
     const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    try {
-      // 1. Sign in with password
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
-
-      if (signInError) {
-        throw new Error(signInError.message);
-      }
-
-      // 2. Ensure session cookies are fully committed
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Authentication failed. No active session found.');
-      }
-
-      // 3. Check if profile exists and has completed onboarding, if not maybe redirect to onboarding
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('kyc_tier, transaction_pin')
-        .eq('id', session.user.id)
-        .single();
-
-      let targetUrl = redirectPath;
-      // If we don't have a transaction_pin, they haven't completed onboarding steps, 
-      // so redirect to /onboarding unless they are explicitly going somewhere else.
-      if (profile && !profile.transaction_pin && redirectPath === '/dashboard') {
-        targetUrl = '/onboarding';
-      }
-
-      router.push(targetUrl);
-      router.refresh();
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err?.message || 'Invalid email or password.');
-    } finally {
+    if (signInError) {
+      setError(signInError.message);
       setLoading(false);
+      return;
     }
+
+    // Check if onboarding is complete
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("kyc_level")
+        .eq("auth_id", user.id)
+        .maybeSingle();
+
+      if (!customer) {
+        router.push("/onboarding");
+      } else {
+        router.push("/dashboard");
+      }
+    }
+    router.refresh();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-          Welcome back
-        </h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Log in to manage your AgroEsusu account and savings
-        </p>
+    <div className="min-h-screen bg-indigo-deep flex flex-col items-center justify-center px-6">
+      {/* Logo */}
+      <div className="mb-12 text-center">
+        <div className="inline-flex items-center gap-3 justify-center">
+          <LogoMark size={48} variant="admin" />
+          <span className="font-serif text-3xl text-white">Yield</span>
+        </div>
+        <p className="mt-2 text-sm text-white/50">Save. Borrow. Grow.</p>
       </div>
 
-      {error && (
-        <div className="rounded-xl bg-red-50 p-4 border border-red-100 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-          <div className="text-sm text-red-700 font-medium">{error}</div>
-        </div>
-      )}
+      {/* Card */}
+      <div className="w-full max-w-sm bg-paper rounded-2xl p-6">
+        <h1 className="font-serif text-2xl text-ink">Welcome back</h1>
+        <p className="text-sm text-ink-soft mt-1">Sign in to your account</p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Email */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-            Email Address
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-              <Mail className="w-5 h-5" />
-            </div>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div>
+            <label className="ys-label block mb-1.5">Email</label>
             <input
               type="email"
-              placeholder="e.g. b.akinola@gmail.com"
-              {...register('email')}
-              className={`input-field pl-10 focus:border-brand-primary focus:ring-brand-primary/20 ${
-                errors.email ? 'border-red-300 ring-red-100' : ''
-              }`}
-              disabled={loading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="ys-input"
+              placeholder="you@example.com"
             />
           </div>
-          {errors.email && (
-            <p className="mt-1 text-xs text-red-600 font-medium">{errors.email.message}</p>
-          )}
-        </div>
 
-        {/* Password */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Password
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs font-bold text-brand-primary hover:text-brand-primary-dark hover:underline transition"
-            >
-              Forgot Password?
-            </Link>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-              <Lock className="w-5 h-5" />
+          <div>
+            <label className="ys-label block mb-1.5">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="ys-input pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
-              {...register('password')}
-              className={`input-field pl-10 pr-10 focus:border-brand-primary focus:ring-brand-primary/20 ${
-                errors.password ? 'border-red-300 ring-red-100' : ''
-              }`}
-              disabled={loading}
-            />
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition"
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={loading}
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
           </div>
-          {errors.password && (
-            <p className="mt-1 text-xs text-red-600 font-medium">{errors.password.message}</p>
-          )}
-        </div>
 
-        {/* Submit */}
-        <button
-          type="submit"
-          className="btn-primary w-full py-3 mt-2 bg-brand-primary hover:bg-brand-primary-dark text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Logging in...
-            </>
-          ) : (
-            'Log In'
+          {error && (
+            <p className="text-sm text-clay bg-clay/5 rounded-lg px-3 py-2">{error}</p>
           )}
-        </button>
-      </form>
 
-      <div className="text-center pt-2">
-        <p className="text-sm text-gray-500">
-          Don&apos;t have an account?{' '}
-          <Link
-            href="/signup"
-            className="font-bold text-brand-primary hover:text-brand-primary-dark hover:underline transition"
+          <button
+            type="submit"
+            disabled={loading}
+            className="ys-btn-primary w-full"
           >
-            Sign Up
-          </Link>
-        </p>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-ink-soft">
+            New to Yield?{" "}
+            <Link href="/signup" className="text-loam font-medium hover:underline">
+              Create an account
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
-        <p className="text-sm text-gray-500 mt-2">Loading...</p>
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
   );
 }

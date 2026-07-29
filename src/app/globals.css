@@ -4,48 +4,27 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 152 80% 23%;
+    /* Yield Design System — mapped to shadcn variables for compatibility */
+    --background: 40 27% 97%;       /* paper-like warm white */
+    --foreground: 40 8% 10%;        /* ink */
+    --card: 40 30% 98%;             /* slightly warmer than bg */
+    --card-foreground: 40 8% 10%;
+    --popover: 40 30% 99%;
+    --popover-foreground: 40 8% 10%;
+    --primary: 127 55% 24%;         /* indigo */
     --primary-foreground: 0 0% 100%;
-    --secondary: 152 30% 95%;
-    --secondary-foreground: 152 80% 23%;
-    --muted: 152 20% 96%;
-    --muted-foreground: 152 10% 40%;
-    --accent: 152 50% 90%;
-    --accent-foreground: 152 80% 23%;
-    --destructive: 0 84% 60%;
+    --secondary: 40 20% 93%;        /* parchment */
+    --secondary-foreground: 40 8% 10%;
+    --muted: 40 15% 95%;
+    --muted-foreground: 40 5% 40%;  /* ink-soft */
+    --accent: 70 83% 47%;           /* ochre */
+    --accent-foreground: 127 55% 24%;
+    --destructive: 7 59% 44%;       /* clay */
     --destructive-foreground: 0 0% 100%;
-    --border: 152 20% 90%;
-    --input: 152 20% 90%;
-    --ring: 152 80% 23%;
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 127 55% 24%;
     --radius: 0.75rem;
-  }
-
-  .dark {
-    --background: 222 47% 7%;
-    --foreground: 0 0% 98%;
-    --card: 222 47% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 222 47% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 152 80% 30%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 152 20% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 152 15% 18%;
-    --muted-foreground: 152 10% 60%;
-    --accent: 152 20% 20%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 63% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 152 15% 22%;
-    --input: 152 15% 22%;
-    --ring: 152 80% 30%;
   }
 }
 
@@ -54,25 +33,55 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-paper text-ink antialiased;
   }
 }
 
 @layer components {
-  .card-surface {
-    @apply rounded-2xl bg-card p-6 shadow-sm border;
+  /* ─── Yield shared component classes ─── */
+
+  /* Card surface — the default container */
+  .ys-card {
+    @apply rounded-xl bg-paper border border-track/60 p-5;
   }
-  .input-field {
-    @apply w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20;
+
+  /* Dark card (indigo surface for hero/balance) */
+  .ys-card-dark {
+    @apply rounded-2xl bg-indigo text-white p-5;
   }
-  .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary-dark disabled:opacity-50 disabled:pointer-events-none;
+
+  /* Input field */
+  .ys-input {
+    @apply w-full rounded-lg border border-track bg-paper px-4 py-3 text-sm text-ink outline-none transition focus:border-indigo focus:ring-2 focus:ring-indigo/15;
   }
-  .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-accent;
+
+  /* Buttons */
+  .ys-btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-ochre px-5 py-3 text-sm font-semibold text-indigo-deep transition hover:bg-ochre-light disabled:opacity-40 disabled:pointer-events-none;
   }
-  .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground;
+  .ys-btn-loam {
+    @apply inline-flex items-center justify-center rounded-lg bg-loam px-5 py-3 text-sm font-semibold text-white transition hover:bg-loam-light disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .ys-btn-dark {
+    @apply inline-flex items-center justify-center rounded-lg bg-indigo-deep px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .ys-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-ink-soft transition hover:bg-parchment hover:text-ink;
+  }
+
+  /* Money text — always mono */
+  .ys-money {
+    @apply font-mono tabular-nums;
+  }
+  .ys-money-pos {
+    @apply font-mono tabular-nums text-loam;
+  }
+  .ys-money-neg {
+    @apply font-mono tabular-nums text-clay;
+  }
+
+  /* Label / caption */
+  .ys-label {
+    @apply text-xs font-medium text-ink-soft uppercase tracking-wide;
   }
 }
