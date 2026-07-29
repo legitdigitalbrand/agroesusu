@@ -142,6 +142,30 @@
     @apply rounded-2xl bg-paper p-6 shadow-sm;
   }
 
+  /* Input field — used on marketing pages (contact form etc.) */
+  .input-field {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid #E5E7E5;
+    background: #FBFCFB;
+    padding: 0.625rem 1rem;
+    font-size: 15px;
+    color: #1A2E1A;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    max-width: 100%;
+  }
+  .input-field:focus {
+    border-color: #1B5E20;
+    box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.12);
+  }
+  .input-field::placeholder {
+    color: #7B8B7B;
+    font-weight: 400;
+  }
+
+
   /* Secondary button — used on marketing pages */
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-[15px] font-medium transition;

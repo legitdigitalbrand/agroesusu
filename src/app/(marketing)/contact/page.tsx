@@ -119,7 +119,7 @@ export default function ContactPage() {
 
           {/* Contact Form (Right Column) */}
           <div className="lg:col-span-7">
-            <div className="card-surface border border-line shadow-lg p-8">
+            <div className="card-surface border border-line shadow-lg p-5 sm:p-6 md:p-8">
               {isSubmitted ? (
                 <div className="text-center py-12 space-y-6 animate-in fade-in duration-300">
                   <div className="bg-emerald-100 text-emerald-700 h-16 w-14 rounded-full flex items-center justify-center mx-auto">
