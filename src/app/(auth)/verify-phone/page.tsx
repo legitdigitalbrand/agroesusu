@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/yield";
+import { LogoMark } from "@/components/yield";
 
 export default function VerifyPhonePage() {
   const router = useRouter();
@@ -22,46 +21,55 @@ export default function VerifyPhonePage() {
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Wire to OTP verification
     router.push("/dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-indigo-deep flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <Link href="/" className="flex items-center justify-center mb-8">
-          <span className="font-display text-3xl text-white">Agriqcap</span>
-        </Link>
+    <div className="min-h-screen bg-indigo flex flex-col items-center justify-center px-6 py-10">
+      <div className="flex items-center gap-2 mb-6">
+        <LogoMark size={28} variant="admin" />
+        <span className="font-display font-medium text-[17px] tracking-wide text-white/90">
+          Agriqcap
+        </span>
+      </div>
 
-        <div className="bg-paper rounded-2xl shadow-xl p-8">
-          <h1 className="font-display text-2xl text-ink mb-1">Verify your phone</h1>
-          <p className="text-sm text-ink-soft mb-6">
-            Enter the 6-digit code sent to your phone.
-          </p>
+      <div className="text-center mb-5">
+        <h1 className="font-display font-bold text-[26px] leading-tight text-white mb-2">
+          Verify your phone
+        </h1>
+        <p className="text-[13px] text-white/70 max-w-[280px] mx-auto">
+          Enter the 6-digit code sent to your phone
+        </p>
+      </div>
 
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div className="flex justify-between gap-2">
-              {code.map((digit, i) => (
-                <input
-                  key={i}
-                  id={`digit-${i}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleDigitChange(i, e.target.value)}
-                  className="w-12 h-14 text-center text-xl font-mono rounded-lg border border-track bg-paper text-ink focus:border-indigo focus:outline-none"
-                />
-              ))}
-            </div>
-            <Button type="submit" className="w-full">Verify</Button>
-          </form>
+      <div className="w-full max-w-[340px]">
+        <form onSubmit={handleVerify} className="space-y-6">
+          <div className="flex justify-between gap-2">
+            {code.map((digit, i) => (
+              <input
+                key={i}
+                id={`digit-${i}`}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleDigitChange(i, e.target.value)}
+                className="w-11 h-13 h-[52px] text-center text-[20px] font-mono rounded-lg border border-track bg-paper text-ink focus:border-indigo focus:outline-none"
+              />
+            ))}
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-ochre text-ink font-medium text-[15px] py-3.5 rounded-[14px] hover:bg-ochre-light transition"
+          >
+            Verify
+          </button>
+        </form>
 
-          <p className="text-center mt-4 text-sm text-ink-soft">
-            Didn't get a code?{" "}
-            <button className="text-indigo font-medium hover:underline">Resend</button>
-          </p>
-        </div>
+        <p className="text-center mt-4 text-[14px] text-white/70">
+          Didn't get a code?{" "}
+          <button className="text-ochre font-medium hover:underline">Resend</button>
+        </p>
       </div>
     </div>
   );

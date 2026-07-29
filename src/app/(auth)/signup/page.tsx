@@ -24,7 +24,6 @@ export default function SignupPage() {
 
     const supabase = createClient();
 
-    // Step 1: Create auth user via Supabase
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -43,41 +42,67 @@ export default function SignupPage() {
       return;
     }
 
-    // Step 2: Bootstrap — create customer record + wallet
-    // This is the progressive registration step (Tier 0 — no KYC required)
     try {
       const res = await fetch("/api/bootstrap", { method: "POST" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         console.error("[signup] Bootstrap failed:", body);
-        // Not fatal — user can still access dashboard, bootstrap will retry on next /api/me call
       }
     } catch (err) {
       console.error("[signup] Bootstrap error:", err);
-      // Not fatal — proceed to dashboard
     }
 
-    // Step 3: Go straight to dashboard (no KYC blocking)
-    // Email confirmation is disabled for sandbox; user is logged in immediately
     router.push("/dashboard");
     router.refresh();
   };
 
   return (
-    <div className="min-h-screen bg-indigo-deep flex flex-col items-center justify-center px-6">
-      <div className="mb-10 text-center">
-        <div className="inline-flex items-center gap-3 justify-center">
-          <LogoMark size={48} variant="admin" />
-          <span className="font-display text-3xl text-white">Agriqcap</span>
-        </div>
-        <p className="mt-2 text-sm text-white/50">Save. Borrow. Grow Together.</p>
+    <div className="min-h-screen bg-indigo flex flex-col items-center justify-center px-6 py-10">
+      {/* Logo */}
+      <div className="flex items-center gap-2 mb-6">
+        <LogoMark size={28} variant="admin" />
+        <span className="font-display font-medium text-[17px] tracking-wide text-white/90">
+          Agriqcap
+        </span>
       </div>
 
-      <div className="w-full max-w-sm bg-paper rounded-2xl p-6">
-        <h1 className="font-display text-2xl text-ink">Create your Agriqcap account</h1>
-        <p className="text-sm text-ink-soft mt-1">Start saving and growing today</p>
+      {/* Mini card-stack illustration */}
+      <div className="relative h-[80px] w-full max-w-[200px] mb-4">
+        <div
+          className="absolute top-1/2 left-1/2 w-[90px] h-[58px] rounded-xl bg-indigo-deep"
+          style={{ transform: "translate(-70%, -45%) rotate(-12deg)" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 w-[90px] h-[58px] rounded-xl bg-loam shadow-xl"
+          style={{ transform: "translate(-50%, -55%) rotate(-2deg)" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 w-[90px] h-[58px] rounded-xl bg-ochre"
+          style={{ transform: "translate(-30%, -42%) rotate(10deg)" }}
+        >
+          <div className="absolute top-2 left-2 w-[20px] h-[13px] rounded bg-ink/20" />
+        </div>
+        <div className="absolute top-0 left-3 h-[26px] w-[26px] rounded-full bg-ochre flex items-center justify-center font-mono text-[11px] font-medium text-ink shadow-md">
+          ₦
+        </div>
+        <div className="absolute bottom-0 right-3 h-[26px] w-[26px] rounded-full bg-paper flex items-center justify-center font-mono text-[11px] font-medium text-ink shadow-md">
+          ₦
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      {/* Headline */}
+      <div className="text-center mb-5">
+        <h1 className="font-display font-bold text-[26px] leading-tight text-white mb-2">
+          Create your account
+        </h1>
+        <p className="text-[13px] text-white/70 max-w-[280px] mx-auto">
+          Start saving and growing together today
+        </p>
+      </div>
+
+      {/* Form card */}
+      <div className="w-full max-w-[340px] bg-paper rounded-[20px] p-6">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="ys-label block mb-1.5">Full name</label>
             <input
@@ -138,29 +163,34 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-clay bg-clay/5 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-[13px] text-clay bg-clay/5 rounded-lg px-3 py-2">{error}</p>
           )}
 
-          <button type="submit" disabled={loading} className="ys-btn-primary w-full">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-ochre text-ink font-medium text-[15px] py-3.5 rounded-[14px] hover:bg-ochre-light transition disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Create account"}
           </button>
         </form>
-
-        <p className="text-xs text-ink-soft mt-4 text-center">
-          By creating an account, you agree to our{" "}
-          <Link href="/terms" className="text-indigo hover:underline">Terms</Link> and{" "}
-          <Link href="/privacy" className="text-indigo hover:underline">Privacy Policy</Link>.
-        </p>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-ink-soft">
-            Already have an account?{" "}
-            <Link href="/login" className="text-loam font-medium hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </div>
       </div>
+
+      {/* Sign in link */}
+      <p className="text-[14px] text-white/70 mt-5 text-center">
+        Already have an account?{" "}
+        <Link href="/login" className="text-ochre font-medium hover:underline">
+          Sign in
+        </Link>
+      </p>
+
+      {/* Fineprint */}
+      <p className="text-[12px] text-white/40 text-center mt-4 max-w-[240px] leading-relaxed">
+        By creating an account, you agree to our{" "}
+        <Link href="/terms" className="text-white/60 underline">Terms</Link>
+        {" "}&{" "}
+        <Link href="/privacy" className="text-white/60 underline">Privacy Policy</Link>
+      </p>
     </div>
   );
 }

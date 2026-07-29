@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/yield";
+import { LogoMark } from "@/components/yield";
+import { Loader2 } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,58 +21,67 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-indigo-deep flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <Link href="/login" className="flex items-center justify-center mb-8">
-          <span className="font-display text-3xl text-white">Agriqcap</span>
-        </Link>
-
-        <div className="bg-paper rounded-2xl shadow-xl p-8">
-          {sent ? (
-            <div className="text-center space-y-4">
-              <h1 className="font-display text-2xl text-ink">Check your email</h1>
-              <p className="text-sm text-ink-soft">
-                We've sent a password reset link to <span className="font-medium text-ink">{email}</span>.
-                Follow the link to reset your password.
-              </p>
-              <Link href="/login">
-                <Button className="w-full">Back to login</Button>
-              </Link>
-            </div>
-          ) : (
-            <>
-              <h1 className="font-display text-2xl text-ink mb-1">Forgot password?</h1>
-              <p className="text-sm text-ink-soft mb-6">
-                Enter your email and we'll send you a reset link.
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="ys-label">EMAIL</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full rounded-lg border border-track bg-paper px-4 py-3 text-ink focus:border-indigo focus:outline-none"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Sending…" : "Send reset link"}
-                </Button>
-              </form>
-
-              <p className="text-center mt-6 text-sm text-ink-soft">
-                Remember your password?{" "}
-                <Link href="/login" className="text-indigo font-medium hover:underline">
-                  Sign in
-                </Link>
-              </p>
-            </>
-          )}
-        </div>
+    <div className="min-h-screen bg-indigo flex flex-col items-center justify-center px-6 py-10">
+      {/* Logo */}
+      <div className="flex items-center gap-2 mb-6">
+        <LogoMark size={28} variant="admin" />
+        <span className="font-display font-medium text-[17px] tracking-wide text-white/90">
+          Agriqcap
+        </span>
       </div>
+
+      {/* Headline */}
+      <div className="text-center mb-5">
+        <h1 className="font-display font-bold text-[26px] leading-tight text-white mb-2">
+          {sent ? "Check your email" : "Forgot password?"}
+        </h1>
+        <p className="text-[13px] text-white/70 max-w-[280px] mx-auto">
+          {sent
+            ? `We've sent a reset link to ${email}`
+            : "Enter your email and we'll send you a reset link"}
+        </p>
+      </div>
+
+      {/* Form card */}
+      <div className="w-full max-w-[340px] bg-paper rounded-[20px] p-6">
+        {sent ? (
+          <Link
+            href="/login"
+            className="block w-full bg-ochre text-ink font-medium text-[15px] py-3.5 rounded-[14px] text-center hover:bg-ochre-light transition"
+          >
+            Back to login
+          </Link>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="ys-label block mb-1.5">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="ys-input"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-ochre text-ink font-medium text-[15px] py-3.5 rounded-[14px] hover:bg-ochre-light transition disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Send reset link"}
+            </button>
+          </form>
+        )}
+      </div>
+
+      {/* Back link */}
+      <p className="text-[14px] text-white/70 mt-5 text-center">
+        Remember your password?{" "}
+        <Link href="/login" className="text-ochre font-medium hover:underline">
+          Sign in
+        </Link>
+      </p>
     </div>
   );
 }
