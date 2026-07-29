@@ -146,4 +146,36 @@
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-[15px] font-medium transition;
   }
+
+  /* Auth input — matches mockup field styling */
+  .auth-input {
+    width: 100%;
+    background: #F4FAF4;
+    border: 1.5px solid #D6E8D2;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: #1A2417;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .auth-input::placeholder {
+    color: #5C6B57;
+    font-weight: 400;
+  }
+  .auth-input:focus {
+    border-color: #1B5E20;
+    box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.12);
+  }
+  .auth-input:hover:not(:focus) {
+    border-color: #3E8E2F;
+  }
+
+  /* Border line utility */
+  .border-line {
+    border-color: #D6E8D2;
+  }
+
 }
