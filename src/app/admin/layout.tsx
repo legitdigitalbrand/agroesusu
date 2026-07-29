@@ -1,17 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, PiggyBank, Landmark, TrendingUp, Users,
   FileText, Shield, ScrollText, LogOut,
 } from "lucide-react";
-import { LogoMark } from "@/components/yield";
+import { LogoMark, LoadingState } from "@/components/yield";
 import { cn } from "@/lib/utils";
+import { useMe } from "@/hooks/use-me";
 
 // Admin console layout — always desktop sidebar-shell pattern.
 // Never a mobile layout (admin/staff tooling is desktop-primary per Phase 1/9).
+// Client-side auth guard: redirects non-staff users to /dashboard.
 
 const adminNav = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -26,6 +28,30 @@ const adminNav = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: me, isLoading, error } = useMe();
+
+  // Client-side guard: only staff users may access admin pages
+  useEffect(() => {
+    if (isLoading) return;
+    if (error || !me) {
+      router.replace("/login?redirect=" + encodeURIComponent(pathname || "/admin"));
+      return;
+    }
+    if (me.type !== "staff") {
+      // Authenticated but not staff — redirect to customer dashboard
+      router.replace("/dashboard");
+    }
+  }, [isLoading, error, me, router, pathname]);
+
+  // Show loading state while checking auth
+  if (isLoading || !me || me.type !== "staff") {
+    return (
+      <div className="min-h-screen bg-paper flex items-center justify-center">
+        <LoadingState message="Verifying admin access…" />
+      </div>
+    );
+  }
 
   const isActive = (href: string) => {
     if (href === "/admin/dashboard") return pathname === "/admin/dashboard";

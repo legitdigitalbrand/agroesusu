@@ -7,7 +7,7 @@ import {
   LoadingState, ErrorState, EmptyState, Button,
 } from "@/components/yield";
 import { formatRelativeTime } from "@/lib/format";
-import { ArrowUpRight, ArrowDownLeft, PiggyBank, Landmark, TrendingUp } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, PiggyBank, Landmark, TrendingUp, ShieldCheck, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 interface WalletTransaction {
@@ -144,6 +144,31 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+
+      {/* Verification widget */}
+      {me.profile && me.profile.kyc_level < 3 && (
+        <Link href="/onboarding">
+          <Card className="bg-parchment border-indigo/30 hover:shadow-md transition cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-indigo/10 flex items-center justify-center">
+                <ShieldCheck className="h-5 w-5 text-indigo" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-ink">
+                  Verify your account — Tier {me.profile.kyc_level} of 3
+                </p>
+                <p className="text-xs text-ink-soft">
+                  {me.profile.kyc_level === 0 && "Add BVN and NIN to unlock deposits"}
+                  {me.profile.kyc_level === 1 && "Add address and occupation to unlock loans"}
+                  {me.profile.kyc_level === 2 && "Complete verification to unlock all features"}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-ink-soft" />
+            </div>
+          </Card>
+        </Link>
+      )}
 
       {/* Investment teaser */}
       {summaries?.investments && summaries.investments.count === 0 && (

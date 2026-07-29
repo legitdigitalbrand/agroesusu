@@ -23,7 +23,15 @@ export default function AdminProductsPage() {
   const { data, isLoading, error, refetch } = useQuery<{ products: Product[] }>({
     queryKey: ["admin-products", activeTab],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/products/${activeTab}`);
+      // Use public product endpoints (which have GET handlers) instead of
+      // admin-only routes (which only have POST for creation)
+      const endpointMap: Record<ProductType, string> = {
+        savings: "/api/savings/products",
+        loans: "/api/loans/products",
+        investments: "/api/investments/products",
+        "group-savings": "/api/group-savings/products",
+      };
+      const res = await fetch(endpointMap[activeTab]);
       if (!res.ok) throw new Error("Failed to load products");
       return res.json();
     },

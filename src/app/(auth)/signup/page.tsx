@@ -23,6 +23,8 @@ export default function SignupPage() {
     setError(null);
 
     const supabase = createClient();
+
+    // Step 1: Create auth user via Supabase
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -35,9 +37,30 @@ export default function SignupPage() {
       return;
     }
 
-    if (data.user) {
-      router.push("/onboarding");
+    if (!data.user) {
+      setError("Account creation failed. Please try again.");
+      setLoading(false);
+      return;
     }
+
+    // Step 2: Bootstrap — create customer record + wallet
+    // This is the progressive registration step (Tier 0 — no KYC required)
+    try {
+      const res = await fetch("/api/bootstrap", { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("[signup] Bootstrap failed:", body);
+        // Not fatal — user can still access dashboard, bootstrap will retry on next /api/me call
+      }
+    } catch (err) {
+      console.error("[signup] Bootstrap error:", err);
+      // Not fatal — proceed to dashboard
+    }
+
+    // Step 3: Go straight to dashboard (no KYC blocking)
+    // Email confirmation is disabled for sandbox; user is logged in immediately
+    router.push("/dashboard");
+    router.refresh();
   };
 
   return (
@@ -47,10 +70,11 @@ export default function SignupPage() {
           <LogoMark size={48} variant="admin" />
           <span className="font-serif text-3xl text-white">Agriqcap</span>
         </div>
+        <p className="mt-2 text-sm text-white/50">Save. Borrow. Grow Together.</p>
       </div>
 
       <div className="w-full max-w-sm bg-paper rounded-2xl p-6">
-        <h1 className="font-serif text-2xl text-ink">Create your account</h1>
+        <h1 className="font-serif text-2xl text-ink">Create your Agriqcap account</h1>
         <p className="text-sm text-ink-soft mt-1">Start saving and growing today</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -121,6 +145,12 @@ export default function SignupPage() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
           </button>
         </form>
+
+        <p className="text-xs text-ink-soft mt-4 text-center">
+          By creating an account, you agree to our{" "}
+          <Link href="/terms" className="text-indigo hover:underline">Terms</Link> and{" "}
+          <Link href="/privacy" className="text-indigo hover:underline">Privacy Policy</Link>.
+        </p>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-ink-soft">

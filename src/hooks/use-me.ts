@@ -57,7 +57,17 @@ export function useMe() {
   return useQuery<MeResponse>({
     queryKey: ["me"],
     queryFn: async () => {
-      const res = await fetch("/api/me");
+      let res = await fetch("/api/me");
+      
+      // If customer record doesn't exist, bootstrap it and retry
+      if (res.status === 404) {
+        const body = await res.json().catch(() => ({}));
+        if (body.needsBootstrap) {
+          await fetch("/api/bootstrap", { method: "POST" });
+          res = await fetch("/api/me");
+        }
+      }
+      
       if (!res.ok) {
         throw new Error("Failed to fetch profile");
       }

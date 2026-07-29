@@ -29,22 +29,37 @@ export default function LoginPage() {
       return;
     }
 
-    // Check if onboarding is complete
+    // Check if user has a customer record
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      // Check staff first
+      const { data: isStaff } = await supabase.rpc('is_staff');
+      if (isStaff) {
+        router.push("/admin/dashboard");
+        router.refresh();
+        return;
+      }
+
+      // Check if customer exists
       const { data: customer } = await supabase
         .from("customers")
-        .select("kyc_level")
+        .select("id")
         .eq("auth_id", user.id)
         .maybeSingle();
 
       if (!customer) {
-        router.push("/onboarding");
-      } else {
-        router.push("/dashboard");
+        // No customer record — bootstrap it (progressive registration)
+        try {
+          await fetch("/api/bootstrap", { method: "POST" });
+        } catch (err) {
+          console.error("[login] Bootstrap error:", err);
+        }
       }
+
+      // Always go to dashboard (progressive — no KYC blocking)
+      router.push("/dashboard");
+      router.refresh();
     }
-    router.refresh();
   };
 
   return (
@@ -55,7 +70,7 @@ export default function LoginPage() {
           <LogoMark size={48} variant="admin" />
           <span className="font-serif text-3xl text-white">Agriqcap</span>
         </div>
-        <p className="mt-2 text-sm text-white/50">Save. Borrow. Grow.</p>
+        <p className="mt-2 text-sm text-white/50">Save. Borrow. Grow Together.</p>
       </div>
 
       {/* Card */}
@@ -109,6 +124,12 @@ export default function LoginPage() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
           </button>
         </form>
+
+        <div className="mt-4 text-right">
+          <Link href="/forgot-password" className="text-xs text-ink-soft hover:text-indigo">
+            Forgot password?
+          </Link>
+        </div>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-ink-soft">
