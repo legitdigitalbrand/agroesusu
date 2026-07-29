@@ -64,7 +64,7 @@ export default function AdminStaffPage() {
         </div>
       ) : (
         <div className="ys-card overflow-x-auto">
-          <table className="w-full">
+          <div className="overflow-x-auto"><table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-track/60">
                 <th className="text-left text-xs font-medium text-ink-soft uppercase tracking-wide pb-3 pr-4">Staff #</th>
@@ -102,7 +102,7 @@ export default function AdminStaffPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 

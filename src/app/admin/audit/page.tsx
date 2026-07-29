@@ -86,7 +86,7 @@ export default function AdminAuditPage() {
 
       {/* Filter bar */}
       {showFilters && (
-        <div className="ys-card grid grid-cols-4 gap-3">
+        <div className="ys-card grid grid-cols-2 lg:grid-cols-4 gap-3">
           <input
             type="text"
             placeholder="Actor name…"
@@ -143,7 +143,7 @@ export default function AdminAuditPage() {
         </div>
       ) : (
         <div className="ys-card overflow-x-auto">
-          <table className="w-full">
+          <div className="overflow-x-auto"><table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-track/60">
                 <th className="text-left text-xs font-medium text-ink-soft uppercase tracking-wide pb-3 pr-4">Timestamp</th>
@@ -176,7 +176,7 @@ export default function AdminAuditPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
           {data?.total && data.total > entries.length && (
             <p className="text-xs text-ink-soft text-center py-3">Showing {entries.length} of {data.total} entries</p>
           )}

@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ─── 4 metric cards — matches mockup grid ─── */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
           label="Total deposits held"
           value={formatMoney(totalDeposits)}
@@ -141,11 +141,11 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ─── Two-column: portfolio + admin overview ─── */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left — portfolio summary (2 cols) */}
-        <div className="col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-5">
           {/* Savings & investments */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="border border-line rounded-[14px] bg-paper p-4">
               <div className="flex items-center gap-2 mb-3">
                 <PiggyBank className="h-4 w-4 text-loam" />

@@ -103,7 +103,7 @@ export default function SignupPage() {
             autoComplete="email"
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AuthInput
               label="Phone"
               type="tel"

@@ -137,7 +137,7 @@ export default function WalletPage() {
           )}
 
           {/* 4D balance breakdown */}
-          <div className="grid grid-cols-3 gap-3 bg-paper/8 rounded-xl p-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-paper/8 rounded-xl p-4 mb-5">
             <div>
               <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Ledger</p>
               <p className="font-mono font-medium text-[14px] text-white">
@@ -159,7 +159,7 @@ export default function WalletPage() {
           </div>
 
           {/* Action buttons */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link
               href="/wallet/deposit"
               className="flex items-center justify-center gap-2 bg-ochre py-3 rounded-xl hover:opacity-90 transition"

@@ -91,7 +91,7 @@ export default function DashboardPage() {
         />
 
         {/* Quick actions grid */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
           <QuickAction icon={PiggyBank} label="Save" href="/savings" color="bg-indigo" />
           <QuickAction icon={Landmark} label="Borrow" href="/loans" color="bg-loam" />
           <QuickAction icon={Users} label="Co-op" href="/cooperative" color="bg-indigo-deep" />
@@ -142,7 +142,7 @@ export default function DashboardPage() {
         />
 
         {/* 4 metric cards */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard icon={Wallet} label="Total balance" value={wallet ? fmtNGN(wallet.available_balance) : "—"} delta="+3.4%" deltaUp />
           <MetricCard icon={PiggyBank} label="Locked savings" value="₦0" delta="No active lock" deltaUp />
           <MetricCard icon={TrendingUp} label="Contributions" value="₦0" delta="This month" deltaUp />
@@ -150,7 +150,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom two-col: activity + right rail */}
-        <div className="grid grid-cols-[1fr_300px] gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
           {/* Left — recent activity */}
           <div className="bg-paper border border-line rounded-2xl p-5">
             <div className="flex justify-between items-center mb-4">

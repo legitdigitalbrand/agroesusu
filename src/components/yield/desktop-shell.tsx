@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 //   - Slim icon-only left rail (64px): logo, 5 nav icons, settings, avatar
 //   - Horizontal top nav bar with pill-style section links
 //   - Search/notification/avatar cluster on the right
-//   - Two-column main: left content + right rail
+//   - Two-column main: left content + right rail (lg+ only)
 //
 // The icon rail and top nav are DIFFERENT navigation systems:
 //   Rail: Home, History, Wallet, Co-op, Invest (icon-only)
@@ -121,9 +121,9 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
       <div className="flex-1 ml-16 flex flex-col min-w-0">
         {/* ─── Horizontal top nav bar ─── */}
         <header className="sticky top-0 z-30 bg-paper border-b border-line">
-          <div className="flex items-center justify-between px-7 py-4">
-            {/* Pill-style section links */}
-            <div className="flex gap-1 bg-parchment rounded-xl p-1">
+          <div className="flex items-center justify-between px-5 lg:px-7 py-4 gap-4">
+            {/* Pill-style section links — horizontally scrollable on smaller desktops */}
+            <div className="flex gap-1 bg-parchment rounded-xl p-1 overflow-x-auto no-scrollbar flex-shrink-0">
               {topNavItems.map((item) => {
                 const active = isTopNavActive(item.href);
                 return (
@@ -131,7 +131,7 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "text-[12.5px] px-3.5 py-2 rounded-lg font-medium transition",
+                      "text-[12.5px] px-3.5 py-2 rounded-lg font-medium transition whitespace-nowrap",
                       active
                         ? "bg-indigo text-white"
                         : "text-ink-soft hover:text-ink"
@@ -144,8 +144,8 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
             </div>
 
             {/* Search + notification + avatar cluster */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-parchment border border-line rounded-lg px-3 h-[34px]">
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="hidden lg:flex items-center gap-2 bg-parchment border border-line rounded-lg px-3 h-[34px]">
                 <Search className="h-3.5 w-3.5 text-ink-soft" />
                 <input
                   type="text"
@@ -163,14 +163,15 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
           </div>
         </header>
 
-        {/* ─── Main content — two-column: primary + right rail ─── */}
-        <main className="flex-1 px-7 py-6 overflow-auto">
+        {/* ─── Main content — two-column: primary + right rail ───
+            Right rail only shows on lg+ screens to avoid squeezing content on tablets */}
+        <main className="flex-1 px-5 lg:px-7 py-6 overflow-auto">
           <div className="flex gap-5 max-w-7xl">
             <div className="flex-1 min-w-0">
               {children}
             </div>
             {rightRail && (
-              <aside className="w-80 flex-shrink-0 space-y-3.5">
+              <aside className="hidden lg:block w-80 flex-shrink-0 space-y-3.5">
                 {rightRail}
               </aside>
             )}

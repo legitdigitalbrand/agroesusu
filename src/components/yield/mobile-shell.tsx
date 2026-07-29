@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 //   - Bottom floating pill nav (indigo-deep) with center FAB
 //   - Nav items: Home, History, [FAB: Quick Deposit], Wallet, Profile
 //   - The FAB is the SINGLE ochre accent per screen (design rule)
+//   - iOS safe-area-inset padding for notched devices
 // ════════════════════════════════════════════════════════════
 
 const navItems = [
@@ -39,7 +40,12 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Bottom floating pill nav with center FAB */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-2">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 px-4 pt-2"
+        style={{
+          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
+      >
         <div className="mx-auto max-w-md">
           <div className="flex items-center justify-around rounded-full bg-indigo-deep px-2 py-2.5 shadow-lg shadow-indigo-deep/30 relative">
             {/* FAB — center, floating above nav — the single ochre accent */}
@@ -74,7 +80,7 @@ function NavItem({ item, active }: { item: typeof navItems[0]; active: boolean }
     <Link
       href={item.href}
       className={cn(
-        "flex flex-col items-center gap-0.5 px-3 py-1 transition",
+        "flex flex-col items-center gap-0.5 px-3 py-1 transition min-w-[44px] min-h-[44px] justify-center",
         active ? "text-ochre" : "text-white/50 hover:text-white"
       )}
     >

@@ -118,12 +118,12 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <div className="max-w-2xl mx-auto px-6 py-12">
+      <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 justify-center mb-3">
             <ShieldCheck className="h-6 w-6 text-indigo" />
-            <h1 className="font-display text-2xl text-ink">Verify your account</h1>
+            <h1 className="font-display text-xl sm:text-2xl text-ink">Verify your account</h1>
           </div>
           <p className="text-sm text-ink-soft">
             Complete verification to unlock more features. Your dashboard is always accessible.
@@ -131,10 +131,10 @@ export default function OnboardingPage() {
         </div>
 
         {/* Tier progress */}
-        <div className="flex items-center justify-between mb-8 px-4">
+        <div className="flex items-center justify-between mb-6 sm:mb-8 px-2 sm:px-4">
           {[0, 1, 2, 3].map((tier) => (
             <div key={tier} className="flex items-center">
-              <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium ${
+              <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
                 currentTier >= tier
                   ? "bg-indigo text-white"
                   : "bg-track/20 text-ink-soft"
@@ -142,12 +142,12 @@ export default function OnboardingPage() {
                 {currentTier > tier ? <Check className="h-4 w-4" /> : tier}
               </div>
               {tier < 3 && (
-                <div className={`w-12 h-0.5 ${currentTier > tier ? "bg-indigo" : "bg-track/20"}`} />
+                <div className={`w-6 sm:w-12 h-0.5 ${currentTier > tier ? "bg-indigo" : "bg-track/20"}`} />
               )}
             </div>
           ))}
         </div>
-        <div className="flex justify-between text-xs text-ink-soft mb-8 px-2">
+        <div className="flex justify-between text-xs text-ink-soft mb-6 sm:mb-8 px-1 sm:px-2">
           <span>Basic</span>
           <span>Identity</span>
           <span>Address</span>
@@ -208,7 +208,7 @@ export default function OnboardingPage() {
                 <label className="ys-label">RESIDENTIAL ADDRESS</label>
                 <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="ys-input" placeholder="123 Farm Road, Oyo" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="ys-label">STATE</label>
                   <select value={state} onChange={(e) => setState(e.target.value)} className="ys-input">
