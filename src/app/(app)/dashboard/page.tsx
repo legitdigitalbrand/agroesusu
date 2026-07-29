@@ -2,15 +2,15 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-me";
-import {
-  LoadingState, ErrorState,
-} from "@/components/yield";
+import { LoadingState, ErrorState } from "@/components/yield";
 import { formatRelativeTime, initials } from "@/lib/format";
 import {
   PiggyBank, Landmark, Users, TrendingUp,
-  ChevronRight, Bell, Wallet,
+  Bell, Wallet, ArrowUpRight, ArrowDownLeft,
+  Plus, Send, RefreshCw, Eye, EyeOff,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 interface WalletTransaction {
   id: string;
@@ -23,14 +23,29 @@ interface WalletTransaction {
   created_at: string;
 }
 
+const fmtNGN = (v: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+  }).format(v || 0);
+
+// ════════════════════════════════════════════════════════════
+// Dashboard — Wallet-first layout
+// Mobile: balance hero card → quick actions → activity
+// Desktop: wallet hero spans left column → 4 metric cards →
+//          recent activity | right rail (Loan eligibility, Invest promo)
+// ════════════════════════════════════════════════════════════
+
 export default function DashboardPage() {
+  const [balanceVisible, setBalanceVisible] = useState(true);
   const { data: me, isLoading: meLoading, error: meError, refetch: refetchMe } = useMe();
 
   const walletId = me?.wallet?.id;
   const { data: txData, isLoading: txLoading } = useQuery<{ transactions: WalletTransaction[] }>({
     queryKey: ["wallet-transactions", walletId],
     queryFn: async () => {
-      const res = await fetch(`/api/wallets/${walletId}/transactions?limit=5`);
+      const res = await fetch(`/api/wallets/${walletId}/transactions?limit=8`);
       if (!res.ok) return { transactions: [] };
       return res.json();
     },
@@ -41,290 +56,133 @@ export default function DashboardPage() {
   if (meError || !me) return <ErrorState message="Couldn't load your dashboard" onRetry={() => refetchMe()} />;
 
   const wallet = me.wallet;
-  const fmtNGN = (v: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(v || 0);
   const transactions = txData?.transactions || [];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = me.profile.full_name?.split(" ")[0] || "there";
 
   return (
     <>
-      {/* ════════════════════════════════════════════
-          MOBILE LAYOUT (hidden on md+)
-          Matches mockup "Home" screen
-         ════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════
+          MOBILE LAYOUT
+         ══════════════════════════════════════════════ */}
       <div className="md:hidden space-y-4">
-        {/* Top bar: avatar + name + bell */}
+        {/* Top bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-[34px] w-[34px] rounded-full bg-loam-light flex items-center justify-center font-display font-medium text-indigo text-[13px]">
+            <div className="h-9 w-9 rounded-full bg-indigo flex items-center justify-center text-white font-display font-semibold text-sm">
               {initials(me.profile.full_name)}
             </div>
-            <p className="font-display font-medium text-[15px] text-ink">{me.profile.full_name}</p>
+            <div>
+              <p className="font-display font-semibold text-[16px] text-ink leading-tight">{me.profile.full_name}</p>
+              <p className="text-[11px] text-ink-soft">{greeting}</p>
+            </div>
           </div>
-          <Link href="/notifications" className="h-8 w-8 rounded-full bg-ochre-light flex items-center justify-center">
-            <Bell className="h-4 w-4 text-indigo" strokeWidth={1.8} />
+          <Link href="/notifications" className="h-9 w-9 rounded-full bg-ochre flex items-center justify-center">
+            <Bell className="h-[18px] w-[18px] text-indigo-deep" strokeWidth={2} />
           </Link>
         </div>
 
-        {/* Balance card (indigo gradient) */}
-        <div className="bg-gradient-to-br from-indigo to-[#0F4A13] rounded-2xl p-[18px] text-white relative overflow-hidden">
-          <p className="text-xs text-white/60 flex items-center gap-1.5 mb-1.5">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18" />
-            </svg>
-            Total balance
-          </p>
-          <p className="font-mono text-[27px] font-medium">
-            {wallet ? fmtNGN(wallet.available_balance) : "—"}
-          </p>
-          <div className="flex items-center justify-between mt-2.5">
-            <span className="font-mono text-[11.5px] text-white/50">
-              {wallet?.account_number ? `•••• ${wallet.account_number.slice(-4)}` : "No account"}
-            </span>
-            <Link href="/wallet" className="bg-ochre text-ink text-[11.5px] font-medium px-3.5 py-1.5 rounded-full">
-              + Add money
-            </Link>
-          </div>
+        {/* ── Wallet hero card (mobile) ── */}
+        <WalletHeroCard
+          wallet={wallet}
+          balanceVisible={balanceVisible}
+          onToggleBalance={() => setBalanceVisible(!balanceVisible)}
+        />
+
+        {/* Quick actions grid */}
+        <div className="grid grid-cols-4 gap-2">
+          <QuickAction icon={PiggyBank} label="Save" href="/savings" color="bg-indigo" />
+          <QuickAction icon={Landmark} label="Borrow" href="/loans" color="bg-loam" />
+          <QuickAction icon={Users} label="Co-op" href="/cooperative" color="bg-indigo-deep" />
+          <QuickAction icon={TrendingUp} label="Invest" href="/investments" color="bg-loam-dim" />
         </div>
 
-        {/* Quick action grid */}
-        <div className="flex gap-2.5">
-          <QuickAction icon={PiggyBank} label="Save" href="/savings" />
-          <QuickAction icon={Landmark} label="Borrow" href="/loans" />
-          <QuickAction icon={Users} label="Co-op" href="/cooperative" />
-          <QuickAction icon={TrendingUp} label="Invest" href="/investments" />
-        </div>
-
-        {/* Promo card */}
-        <div className="bg-indigo-deep text-white rounded-2xl p-3.5 flex justify-between items-center">
+        {/* Promo */}
+        <div className="bg-indigo-deep rounded-2xl p-4 flex justify-between items-center">
           <div>
-            <p className="text-[13.5px] font-medium mb-0.5">Lock savings for 90 days</p>
-            <p className="text-[11px] text-white/50">Earn 11.2% p.a. on Harvest Lock</p>
+            <p className="font-display font-semibold text-[14px] text-white">Lock savings · 90 days</p>
+            <p className="text-[12px] text-white/60 mt-0.5">Earn 11.2% p.a. on Harvest Lock</p>
           </div>
-          <ChevronRight className="w-4 h-4 text-ochre" />
+          <Link href="/savings" className="bg-ochre text-indigo-deep text-[11.5px] font-semibold px-3 py-1.5 rounded-lg">
+            Open
+          </Link>
         </div>
 
         {/* Recent activity */}
-        <p className="text-xs text-ink-soft flex justify-between">
-          <span>Recent activity</span>
-          <Link href="/statements" className="text-indigo font-medium">See all</Link>
-        </p>
-
-        <div className="flex-1">
-          {txLoading ? (
-            <LoadingState message="Loading activity…" />
-          ) : transactions.length === 0 ? (
-            <div className="border border-line rounded-2xl p-6 text-center">
-              <p className="text-sm text-ink-soft">No transactions yet</p>
-            </div>
-          ) : (
-            transactions.slice(0, 3).map((tx) => (
-              <div key={tx.id} className="flex justify-between items-center py-2.5 border-b border-line last:border-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full border-[1.4px] border-loam flex items-center justify-center flex-shrink-0">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-loam">
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[13px] text-ink">{tx.description || tx.transaction_type}</p>
-                    <p className="text-[11px] text-ink-soft mt-0.5">
-                      Confirmed · {formatRelativeTime(tx.created_at)}
-                    </p>
-                  </div>
-                </div>
-                <span className={`font-mono text-[13px] ${tx.direction === "credit" ? "text-loam" : "text-clay"}`}>
-                  {tx.direction === "credit" ? "+" : "−"}{fmtNGN(tx.amount)}
-                </span>
-              </div>
-            ))
-          )}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-display font-semibold text-[16px] text-ink">Recent activity</h2>
+            <Link href="/statements" className="text-[12.5px] text-indigo font-medium">See all</Link>
+          </div>
+          <ActivityList transactions={transactions} loading={txLoading} />
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════
-          DESKTOP LAYOUT (hidden on mobile)
-          Matches mockup "Desktop · Home" screen
-         ════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════
+          DESKTOP LAYOUT
+         ══════════════════════════════════════════════ */}
       <div className="hidden md:block space-y-5">
         {/* Greeting */}
         <div>
-          <h1 className="font-display font-bold text-[22px] text-ink">
-            Good {getGreeting()}, {me.profile.full_name.split(" ")[0]}
+          <h1 className="font-display font-bold text-[24px] text-ink">
+            {greeting}, {firstName}
           </h1>
-          <p className="text-[13px] text-ink-soft mt-1">
+          <p className="text-[14px] text-ink-soft mt-1">
             Here&apos;s what&apos;s happening across your savings, loans and cooperative today.
           </p>
         </div>
 
-        {/* 4 metric cards row */}
-        <div className="grid grid-cols-4 gap-2.5">
-          <DesktopMetric
-            icon={Wallet}
-            label="Total balance"
-            value={wallet ? fmtNGN(wallet.available_balance) : "—"}
-            delta="+3.4%"
-            deltaType="up"
-          />
-          <DesktopMetric
-            icon={PiggyBank}
-            label="Locked savings"
-            value="₦134,000"
-            delta="+1.1%"
-            deltaType="up"
-          />
-          <DesktopMetric
-            icon={TrendingUp}
-            label="Contributions this month"
-            value="₦25,000"
-            delta="+8.6%"
-            deltaType="up"
-          />
-          <DesktopMetric
-            icon={Landmark}
-            label="Repayments this month"
-            value="₦28,500"
-            delta="Due in 4d"
-            deltaType="warn"
-          />
+        {/* ── WALLET HERO — full-width, replaces chart ── */}
+        <WalletHeroCard
+          wallet={wallet}
+          balanceVisible={balanceVisible}
+          onToggleBalance={() => setBalanceVisible(!balanceVisible)}
+          desktop
+        />
+
+        {/* 4 metric cards */}
+        <div className="grid grid-cols-4 gap-3">
+          <MetricCard icon={Wallet} label="Total balance" value={wallet ? fmtNGN(wallet.available_balance) : "—"} delta="+3.4%" deltaUp />
+          <MetricCard icon={PiggyBank} label="Locked savings" value="₦0" delta="No active lock" deltaUp />
+          <MetricCard icon={TrendingUp} label="Contributions" value="₦0" delta="This month" deltaUp />
+          <MetricCard icon={Landmark} label="Repayments" value="₦0" delta="Nothing due" deltaUp />
         </div>
 
-        {/* Chart + activity grid */}
-        <div className="grid grid-cols-[1.7fr_1fr] gap-5 items-start">
-          {/* Left — chart + recent activity */}
-          <div className="space-y-4">
-            {/* Bar chart widget */}
-            <div className="border border-line rounded-2xl bg-paper p-[18px]">
-              <div className="flex justify-between items-start mb-3.5">
-                <div>
-                  <p className="text-[11.5px] text-ink-soft mb-1">Savings growth</p>
-                  <p className="font-mono text-[22px] text-ink">{wallet ? fmtNGN(wallet.available_balance) : "₦0"}</p>
-                </div>
-                <div className="flex gap-1 bg-parchment rounded-[10px] p-[3px]">
-                  <span className="text-[11px] px-2.5 py-1.5 rounded-md bg-paper text-indigo font-medium shadow-sm">1M</span>
-                  <span className="text-[11px] px-2.5 py-1.5 rounded-md text-ink-soft">3M</span>
-                  <span className="text-[11px] px-2.5 py-1.5 rounded-md text-ink-soft">6M</span>
-                  <span className="text-[11px] px-2.5 py-1.5 rounded-md text-ink-soft">1Y</span>
-                </div>
-              </div>
-              {/* Simple bar chart */}
-              <div className="flex items-end gap-2 h-[130px] px-0.5">
-                {chartBars.map((bar, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full relative">
-                    {bar.highlight && (
-                      <div className="absolute bottom-full mb-2 bg-indigo-deep text-white font-mono text-[10.5px] px-2 py-1 rounded-md whitespace-nowrap">
-                        ₦{bar.value}k
-                      </div>
-                    )}
-                    <div
-                      className={`w-full max-w-[22px] rounded-t-md rounded-b-sm ${bar.highlight ? "bg-ochre" : "bg-track"}`}
-                      style={{ height: `${bar.height}%` }}
-                    />
-                    <span className="text-[10px] text-ink-soft mt-2">{bar.label}</span>
-                  </div>
-                ))}
-              </div>
+        {/* Bottom two-col: activity + right rail */}
+        <div className="grid grid-cols-[1fr_300px] gap-5 items-start">
+          {/* Left — recent activity */}
+          <div className="bg-paper border border-line rounded-2xl p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-display font-semibold text-[17px] text-ink">Recent activity</h3>
+              <Link href="/statements" className="text-[13px] text-indigo font-medium hover:underline">
+                See all →
+              </Link>
             </div>
-
-            {/* Recent activity (desktop) */}
-            <div className="border border-line rounded-2xl bg-paper p-[18px]">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-display font-medium text-[15px] text-ink">Recent activity</h3>
-                <Link href="/statements" className="text-[12px] text-indigo font-medium hover:underline">
-                  See all →
-                </Link>
-              </div>
-              {txLoading ? (
-                <LoadingState message="Loading…" />
-              ) : transactions.length === 0 ? (
-                <p className="text-sm text-ink-soft py-4 text-center">No transactions yet</p>
-              ) : (
-                transactions.slice(0, 5).map((tx) => (
-                  <div key={tx.id} className="flex justify-between items-center py-2.5 border-b border-line last:border-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full border-[1.4px] border-loam flex items-center justify-center flex-shrink-0">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-loam">
-                          <path d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-[13px] text-ink">{tx.description || tx.transaction_type}</p>
-                        <p className="text-[11px] text-ink-soft mt-0.5">Confirmed · {formatRelativeTime(tx.created_at)}</p>
-                      </div>
-                    </div>
-                    <span className={`font-mono text-[13px] ${tx.direction === "credit" ? "text-loam" : "text-clay"}`}>
-                      {tx.direction === "credit" ? "+" : "−"}{fmtNGN(tx.amount)}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
+            <ActivityList transactions={transactions} loading={txLoading} />
           </div>
 
-          {/* Right rail — desktop (matches mockup) */}
-          <div className="space-y-3.5">
-            {/* Members avatars */}
-            <div className="border border-line rounded-2xl bg-paper p-4">
-              <h4 className="text-[12.5px] font-medium text-ink-soft mb-3">Your cooperative</h4>
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-loam-light border-2 border-paper -ml-2 first:ml-0 flex items-center justify-center text-[11px] font-semibold text-indigo">A</div>
-                <div className="w-8 h-8 rounded-full bg-loam-light border-2 border-paper -ml-2 flex items-center justify-center text-[11px] font-semibold text-indigo">C</div>
-                <div className="w-8 h-8 rounded-full bg-loam-light border-2 border-paper -ml-2 flex items-center justify-center text-[11px] font-semibold text-indigo">T</div>
-                <div className="w-8 h-8 rounded-full bg-loam-light border-2 border-paper -ml-2 flex items-center justify-center text-[11px] font-semibold text-indigo">N</div>
-                <div className="w-8 h-8 rounded-full bg-indigo border-2 border-paper -ml-2 flex items-center justify-center text-[10px] text-white">+8</div>
+          {/* Right — mini right rail inline (supplements the layout right rail) */}
+          <div className="space-y-3">
+            {/* Quick actions */}
+            <div className="bg-paper border border-line rounded-2xl p-4">
+              <h4 className="font-display font-semibold text-[14px] text-ink mb-3">Quick actions</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <QuickAction icon={PiggyBank} label="Save" href="/savings" color="bg-indigo" />
+                <QuickAction icon={Landmark} label="Borrow" href="/loans" color="bg-loam" />
+                <QuickAction icon={Users} label="Co-op" href="/cooperative" color="bg-indigo-deep" />
+                <QuickAction icon={TrendingUp} label="Invest" href="/investments" color="bg-loam-dim" />
               </div>
-            </div>
-
-            {/* Account card (dark) */}
-            <div className="bg-gradient-to-br from-indigo-deep to-[#0A2E0D] text-white rounded-2xl p-[18px]">
-              <div className="flex justify-between items-start mb-5">
-                <div>
-                  <p className="text-[9.5px] uppercase tracking-wider text-[#8FB98C] mb-1">DVA Account</p>
-                  <p className="text-[13px] font-semibold">Agriqcap Wallet</p>
-                </div>
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                  <Wallet className="w-4 h-4 text-ochre" strokeWidth={1.6} />
-                </div>
-              </div>
-              <p className="font-mono text-[15px] tracking-wider mb-3">
-                {wallet?.account_number || "— — — —"}
-              </p>
-              <div className="flex justify-between text-[9.5px] text-[#9FC79B]">
-                <div>
-                  <span>Available</span>
-                  <strong className="block text-white font-mono text-[11.5px] font-normal mt-0.5">
-                    {wallet ? fmtNGN(wallet.available_balance) : "₦0"}
-                  </strong>
-                </div>
-                <div>
-                  <span>Ledger</span>
-                  <strong className="block text-white font-mono text-[11.5px] font-normal mt-0.5">
-                    {wallet ? fmtNGN(wallet.ledger_balance) : "₦0"}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            {/* CTA row */}
-            <div className="flex gap-2.5">
-              <Link href="/wallet" className="flex-1 text-center bg-ochre text-ink font-semibold text-[12.5px] py-2.5 rounded-[11px]">
-                Add money
-              </Link>
-              <Link href="/statements" className="flex-1 text-center bg-paper border border-line text-ink font-medium text-[12.5px] py-2.5 rounded-[11px]">
-                Statement
-              </Link>
-            </div>
-
-            {/* Quick actions grid */}
-            <div className="grid grid-cols-3 gap-2">
-              <QuickTile icon={PiggyBank} label="Save" href="/savings" />
-              <QuickTile icon={Landmark} label="Borrow" href="/loans" />
-              <QuickTile icon={Users} label="Co-op" href="/cooperative" />
             </div>
 
             {/* Promo */}
-            <div className="bg-indigo text-white rounded-2xl p-4">
-              <p className="text-[13.5px] font-semibold mb-1">Lock savings for 90 days</p>
-              <p className="text-[11px] text-[#BFE0BE] mb-3">Earn 11.2% p.a. on Harvest Lock</p>
-              <Link href="/savings" className="inline-block bg-ochre text-ink text-[11.5px] font-semibold px-4 py-2 rounded-[9px]">
+            <div className="bg-indigo-deep rounded-2xl p-4">
+              <p className="font-display font-semibold text-[14px] text-white mb-1">Lock savings · 90 days</p>
+              <p className="text-[12px] text-white/60 mb-3">Earn 11.2% p.a. on Harvest Lock</p>
+              <Link
+                href="/savings"
+                className="block text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl"
+              >
                 Open account
               </Link>
             </div>
@@ -335,66 +193,201 @@ export default function DashboardPage() {
   );
 }
 
-// ─── Sub-components ───
-
-function QuickAction({ icon: Icon, label, href }: { icon: React.ElementType; label: string; href: string }) {
+// ─── Wallet Hero Card ────────────────────────────────────────
+function WalletHeroCard({
+  wallet,
+  balanceVisible,
+  onToggleBalance,
+  desktop = false,
+}: {
+  wallet: { available_balance: number; ledger_balance: number; pending_balance: number; reserved_balance: number; account_number?: string | null } | null;
+  balanceVisible: boolean;
+  onToggleBalance: () => void;
+  desktop?: boolean;
+}) {
   return (
-    <Link href={href} className="flex-1 text-center">
-      <div className="w-full aspect-square rounded-2xl bg-loam-light flex items-center justify-center mb-1.5">
-        <Icon className="w-[19px] h-[19px] text-indigo" strokeWidth={1.8} />
+    <div className="relative bg-gradient-to-br from-indigo to-indigo-deep rounded-2xl overflow-hidden text-white">
+      {/* Decorative circles */}
+      <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
+      <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+
+      <div className={`relative p-5 ${desktop ? "pb-5" : "pb-4"}`}>
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+              <Wallet className="w-4 h-4 text-ochre" />
+            </div>
+            <span className="text-[13px] text-white/80 font-medium">Agriqcap Wallet</span>
+          </div>
+          <button
+            onClick={onToggleBalance}
+            className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+            aria-label="Toggle balance visibility"
+          >
+            {balanceVisible ? <EyeOff className="w-4 h-4 text-white/70" /> : <Eye className="w-4 h-4 text-white/70" />}
+          </button>
+        </div>
+
+        {/* Balance */}
+        <div className="mb-1">
+          <p className="text-[12px] text-white/50 uppercase tracking-widest mb-1">Available Balance</p>
+          <p className="font-mono font-medium leading-tight" style={{ fontSize: desktop ? "34px" : "30px" }}>
+            {balanceVisible
+              ? (wallet ? fmtNGN(wallet.available_balance) : "₦0")
+              : "••••••"}
+          </p>
+        </div>
+
+        {/* Account number */}
+        {wallet?.account_number && (
+          <p className="font-mono text-[12px] text-white/40 mb-4">
+            •••• {wallet.account_number.slice(-4)}
+          </p>
+        )}
+
+        {/* Sub-balances row */}
+        <div className="grid grid-cols-3 gap-3 mb-5 bg-white/8 rounded-xl p-3">
+          <div>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Ledger</p>
+            <p className="font-mono text-[13px] text-white font-medium">
+              {balanceVisible ? (wallet ? fmtNGN(wallet.ledger_balance) : "₦0") : "••••"}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Pending</p>
+            <p className="font-mono text-[13px] text-white font-medium">
+              {balanceVisible ? (wallet ? fmtNGN(wallet.pending_balance) : "₦0") : "••••"}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Reserved</p>
+            <p className="font-mono text-[13px] text-white font-medium">
+              {balanceVisible ? (wallet ? fmtNGN(wallet.reserved_balance) : "₦0") : "••••"}
+            </p>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="grid grid-cols-3 gap-2">
+          <Link
+            href="/wallet/deposit"
+            className="flex flex-col items-center gap-1.5 bg-ochre rounded-xl py-2.5 hover:opacity-90 transition"
+          >
+            <Plus className="w-4 h-4 text-indigo-deep" strokeWidth={2.5} />
+            <span className="text-[11px] font-semibold text-indigo-deep">Add money</span>
+          </Link>
+          <Link
+            href="/wallet/transfer"
+            className="flex flex-col items-center gap-1.5 bg-white/15 rounded-xl py-2.5 hover:bg-white/20 transition"
+          >
+            <Send className="w-4 h-4 text-white" strokeWidth={2} />
+            <span className="text-[11px] font-medium text-white">Transfer</span>
+          </Link>
+          <Link
+            href="/wallet"
+            className="flex flex-col items-center gap-1.5 bg-white/15 rounded-xl py-2.5 hover:bg-white/20 transition"
+          >
+            <RefreshCw className="w-4 h-4 text-white" strokeWidth={2} />
+            <span className="text-[11px] font-medium text-white">History</span>
+          </Link>
+        </div>
       </div>
-      <span className="text-[11px] text-ink-soft">{label}</span>
-    </Link>
+    </div>
   );
 }
 
-function DesktopMetric({
-  icon: Icon, label, value, delta, deltaType,
+// ─── Metric card (desktop) ───────────────────────────────────
+function MetricCard({
+  icon: Icon, label, value, delta, deltaUp,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   delta: string;
-  deltaType: "up" | "warn";
+  deltaUp: boolean;
 }) {
   return (
-    <div className="border border-line rounded-[14px] bg-paper p-3.5">
-      <div className="flex justify-between items-start mb-2.5">
-        <div className="w-[30px] h-[30px] rounded-[9px] bg-loam-light flex items-center justify-center">
-          <Icon className="w-[15px] h-[15px] text-indigo" strokeWidth={1.8} />
+    <div className="bg-paper border border-line rounded-2xl p-4">
+      <div className="flex items-start justify-between mb-2">
+        <div className="w-9 h-9 rounded-xl bg-indigo flex items-center justify-center">
+          <Icon className="w-[17px] h-[17px] text-white" strokeWidth={1.8} />
         </div>
       </div>
-      <p className="text-[11px] text-ink-soft mb-1">{label}</p>
-      <p className="font-mono text-[16.5px] text-ink">
-        {value} <span className={`text-[10px] font-sans ${deltaType === "up" ? "text-loam" : "text-clay"}`}>{delta}</span>
-      </p>
+      <p className="text-[12px] text-ink-soft font-medium mb-1">{label}</p>
+      <p className="font-mono font-semibold text-[18px] text-ink leading-tight">{value}</p>
+      <p className={`text-[11px] mt-1 font-medium ${deltaUp ? "text-loam" : "text-clay"}`}>{delta}</p>
     </div>
   );
 }
 
-function QuickTile({ icon: Icon, label, href }: { icon: React.ElementType; label: string; href: string }) {
+// ─── Quick action chip ───────────────────────────────────────
+function QuickAction({
+  icon: Icon, label, href, color,
+}: {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+  color: string;
+}) {
   return (
-    <Link href={href} className="text-center bg-parchment rounded-xl p-2.5 hover:bg-loam-light/50 transition">
-      <Icon className="w-[15px] h-[15px] text-indigo mx-auto mb-1.5" strokeWidth={1.8} />
-      <span className="text-[10px] text-ink-soft">{label}</span>
+    <Link href={href} className="flex flex-col items-center gap-1.5">
+      <div className={`w-full aspect-square rounded-2xl ${color} flex items-center justify-center max-w-[52px] mx-auto`}>
+        <Icon className="w-[20px] h-[20px] text-white" strokeWidth={1.8} />
+      </div>
+      <span className="text-[11px] font-medium text-ink-soft">{label}</span>
     </Link>
   );
 }
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "morning";
-  if (h < 17) return "afternoon";
-  return "evening";
-}
+// ─── Activity list ───────────────────────────────────────────
+function ActivityList({
+  transactions,
+  loading,
+}: {
+  transactions: WalletTransaction[];
+  loading: boolean;
+}) {
+  if (loading) return <LoadingState message="Loading activity…" />;
+  if (transactions.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-12 h-12 rounded-full bg-parchment flex items-center justify-center mx-auto mb-3">
+          <Wallet className="w-6 h-6 text-ink-soft" strokeWidth={1.5} />
+        </div>
+        <p className="font-medium text-[14px] text-ink">No transactions yet</p>
+        <p className="text-[12px] text-ink-soft mt-1">Your activity will appear here</p>
+      </div>
+    );
+  }
 
-// Demo chart data (matches mockup bar heights)
-const chartBars = [
-  { label: "Jan", height: 40, value: "18", highlight: false },
-  { label: "Feb", height: 55, value: "24", highlight: false },
-  { label: "Mar", height: 48, value: "21", highlight: false },
-  { label: "Apr", height: 62, value: "28", highlight: false },
-  { label: "May", height: 70, value: "32", highlight: false },
-  { label: "Jun", height: 58, value: "26", highlight: false },
-  { label: "Jul", height: 85, value: "38", highlight: true },
-];
+  return (
+    <div>
+      {transactions.map((tx) => (
+        <div key={tx.id} className="flex items-center gap-3 py-3 border-b border-line last:border-0">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+            tx.direction === "credit" ? "bg-loam" : "bg-clay"
+          }`}>
+            {tx.direction === "credit"
+              ? <ArrowDownLeft className="w-5 h-5 text-white" strokeWidth={2} />
+              : <ArrowUpRight className="w-5 h-5 text-white" strokeWidth={2} />
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-[14px] text-ink capitalize leading-tight">
+              {(tx.description || tx.transaction_type).replace(/_/g, " ")}
+            </p>
+            <p className="text-[12px] text-ink-soft mt-0.5">{formatRelativeTime(tx.created_at)}</p>
+          </div>
+          <div className="text-right">
+            <p className={`font-mono font-semibold text-[14px] ${
+              tx.direction === "credit" ? "text-loam" : "text-clay"
+            }`}>
+              {tx.direction === "credit" ? "+" : "−"}{fmtNGN(tx.amount)}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

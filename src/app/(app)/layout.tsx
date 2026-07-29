@@ -3,75 +3,78 @@
 import React from "react";
 import { DesktopShell, MobileShell } from "@/components/yield/desktop-shell";
 import { useMe } from "@/hooks/use-me";
-import { Card, ProgressRing, Button, LoadingState } from "@/components/yield";
+import { LoadingState } from "@/components/yield";
 import { PiggyBank, Landmark, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-// App layout wraps every authenticated customer page.
-// Mobile: bottom floating pill nav + center FAB (Quick Deposit)
-// Desktop: persistent sidebar + topbar + two-column main with right rail
+// ════════════════════════════════════════════════════════════
+// App layout — right rail uses design system tokens correctly.
+// White icons on solid color backgrounds for legibility.
+// ════════════════════════════════════════════════════════════
 
 function DefaultRightRail() {
   const { data: me } = useMe();
 
   if (!me) return <LoadingState />;
 
-  const savings = me.summaries?.savings;
-  const investments = me.summaries?.investments;
-
   return (
     <>
-      {/* Savings goal progress */}
-      {savings && savings.count > 0 && (
-        <Card>
-          <div className="flex items-center gap-2 mb-3">
-            <PiggyBank className="h-4 w-4 text-loam" />
-            <h3 className="font-display text-sm text-ink">Savings Goal</h3>
+      {/* Loan eligibility card */}
+      <div className="bg-paper border border-line rounded-2xl p-4">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-indigo flex items-center justify-center">
+            <Landmark className="w-4 h-4 text-white" strokeWidth={1.8} />
           </div>
-          <div className="flex items-center justify-center py-2">
-            <ProgressRing progress={65} size={100} label="65%" sublabel="of goal" />
-          </div>
-          <div className="mt-3 text-center">
-            <p className="font-mono text-lg text-ink">
-              {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(savings.total_balance)}
-            </p>
-            <p className="text-xs text-ink-soft">across {savings.count} {savings.count === 1 ? "account" : "accounts"}</p>
-          </div>
-          <Link href="/savings" className="block mt-3">
-            <Button size="sm" variant="ghost" className="w-full">View savings →</Button>
-          </Link>
-        </Card>
-      )}
-
-      {/* Loan eligibility teaser */}
-      <Card className="bg-indigo/5 border-indigo/20">
-        <div className="flex items-center gap-2 mb-2">
-          <Landmark className="h-4 w-4 text-indigo" />
-          <h3 className="font-display text-sm text-ink">Loan Eligibility</h3>
+          <h3 className="font-display font-semibold text-[14px] text-ink">Loan Eligibility</h3>
         </div>
-        <p className="text-xs text-ink-soft mb-3">
+        <p className="text-[12.5px] text-ink-soft leading-relaxed mb-3">
           You can borrow up to 3× your eligible savings balance.
         </p>
-        <Link href="/loans">
-          <Button size="sm" className="w-full">Check eligibility</Button>
+        <Link
+          href="/loans"
+          className="block w-full text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl hover:opacity-90 transition"
+        >
+          Check eligibility
         </Link>
-      </Card>
+      </div>
 
-      {/* Investments teaser */}
-      {investments && investments.count === 0 && (
-        <Card className="bg-parchment">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-loam" />
-            <h3 className="font-display text-sm text-ink">Grow Your Money</h3>
+      {/* Grow Your Money card */}
+      <div className="bg-indigo rounded-2xl p-4 text-white">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-ochre" strokeWidth={1.8} />
           </div>
-          <p className="text-xs text-ink-soft mb-3">
-            Invest in agricultural pools from ₦10,000. Earn up to 18% returns.
-          </p>
-          <Link href="/investments">
-            <Button size="sm" variant="loam" className="w-full">Explore</Button>
-          </Link>
-        </Card>
-      )}
+          <h3 className="font-display font-semibold text-[14px] text-white">Grow Your Money</h3>
+        </div>
+        <p className="text-[12.5px] text-white/70 leading-relaxed mb-3">
+          Invest in agricultural pools from ₦10,000. Earn up to 18% returns.
+        </p>
+        <Link
+          href="/investments"
+          className="block w-full text-center bg-white/15 text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-white/20 transition"
+        >
+          Explore
+        </Link>
+      </div>
+
+      {/* Savings nudge */}
+      <div className="bg-paper border border-line rounded-2xl p-4">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-loam flex items-center justify-center">
+            <PiggyBank className="w-4 h-4 text-white" strokeWidth={1.8} />
+          </div>
+          <h3 className="font-display font-semibold text-[14px] text-ink">Savings</h3>
+        </div>
+        <p className="text-[12.5px] text-ink-soft leading-relaxed mb-3">
+          Open a savings account and start building your credit history.
+        </p>
+        <Link
+          href="/savings"
+          className="block w-full text-center bg-loam text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-loam-dim transition"
+        >
+          Open account
+        </Link>
+      </div>
     </>
   );
 }

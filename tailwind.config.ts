@@ -10,13 +10,9 @@ const config: Config = {
     extend: {
       colors: {
         // ─── Agriqcap Design System ─────────────────────────────
-        // Color roles (not just hex — the ROLE each color plays):
-        // indigo: structural/trust — navigation, hero cards, primary chrome
-        // ochre:  single sparing accent — ONE primary action/highlight per screen
-        // loam:   everyday positive/growth — positive amounts, success, secondary buttons
-        // clay:   negative amounts and alerts
-        // parchment/paper: neutral backgrounds — money always sits on these
-        // ink:    text colors
+        // All values must match the mockup tokens EXACTLY.
+        // loam-light, ochre-light, clay-light, indigo-deep, line are
+        // used throughout — they must be defined here.
 
         indigo: {
           DEFAULT: '#1B5E20',
@@ -25,26 +21,27 @@ const config: Config = {
         },
         ochre: {
           DEFAULT: '#BBDC12',
-          light: '#D4F042',
+          light: '#EEF6C4',   // very pale ochre — chip backgrounds
           dim: '#9CB810',
         },
         loam: {
           DEFAULT: '#3E8E2F',
-          light: '#5BAD4A',
+          light: '#DCEEDC',   // pale loam — icon bg, success tint
           dim: '#2D6B22',
         },
         clay: {
           DEFAULT: '#B23A2E',
-          light: '#D55648',
+          light: '#F3DCD8',   // pale clay — error tint
           dim: '#8A2D24',
         },
-        parchment: '#F5F1E8',
-        paper: '#FFFEF9',
+        parchment: '#E8F5E9', // lightest green-tinted bg
+        paper: '#FBFDF9',     // near-white surface
         ink: {
-          DEFAULT: '#1C1B17',
-          soft: '#6B6B5F',
+          DEFAULT: '#1A2417', // very dark green-black — high contrast
+          soft: '#5C6B57',    // mid-tone muted text
         },
-        track: '#E8E4D9',
+        track: '#D9E9D2',     // progress ring track, subtle dividers
+        line: '#D6E8D2',      // border/separator
 
         // shadcn/ui CSS variable mappings (kept for compatibility)
         border: 'hsl(var(--border))',
@@ -83,6 +80,7 @@ const config: Config = {
       },
       borderRadius: {
         xl: '1.25rem',
+        '2xl': '1rem',
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',

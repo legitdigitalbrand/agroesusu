@@ -5,25 +5,26 @@
 @layer base {
   :root {
     /* Agriqcap Design System — mapped to shadcn variables for compatibility */
-    --background: 40 27% 97%;       /* paper-like warm white */
-    --foreground: 40 8% 10%;        /* ink */
-    --card: 40 30% 98%;             /* slightly warmer than bg */
-    --card-foreground: 40 8% 10%;
-    --popover: 40 30% 99%;
-    --popover-foreground: 40 8% 10%;
-    --primary: 127 55% 24%;         /* indigo */
+    /* Updated to match mockup token values exactly */
+    --background: 120 30% 96%;      /* parchment #E8F5E9 */
+    --foreground: 130 16% 12%;      /* ink #1A2417 */
+    --card: 120 40% 99%;            /* paper #FBFDF9 */
+    --card-foreground: 130 16% 12%;
+    --popover: 120 40% 99%;
+    --popover-foreground: 130 16% 12%;
+    --primary: 123 55% 24%;         /* indigo #1B5E20 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 20% 93%;        /* parchment */
-    --secondary-foreground: 40 8% 10%;
-    --muted: 40 15% 95%;
-    --muted-foreground: 40 5% 40%;  /* ink-soft */
-    --accent: 70 83% 47%;           /* ochre */
-    --accent-foreground: 127 55% 24%;
-    --destructive: 7 59% 44%;       /* clay */
+    --secondary: 120 30% 92%;       /* parchment */
+    --secondary-foreground: 130 16% 12%;
+    --muted: 120 20% 94%;
+    --muted-foreground: 120 8% 40%; /* ink-soft #5C6B57 */
+    --accent: 71 80% 46%;           /* ochre #BBDC12 */
+    --accent-foreground: 13 55% 10%; /* indigo-deep */
+    --destructive: 5 57% 44%;       /* clay #B23A2E */
     --destructive-foreground: 0 0% 100%;
-    --border: 40 15% 88%;
-    --input: 40 15% 88%;
-    --ring: 127 55% 24%;
+    --border: 120 28% 84%;          /* line #D6E8D2 */
+    --input: 120 28% 84%;
+    --ring: 123 55% 24%;
     --radius: 0.75rem;
   }
 }
@@ -33,55 +34,104 @@
     @apply border-border;
   }
   body {
-    @apply bg-paper text-ink antialiased;
+    @apply bg-parchment text-ink antialiased;
+    /* Improve legibility — stronger base font weight */
+    font-weight: 400;
+  }
+  /* All headings use display (Plus Jakarta Sans) and stronger weight */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold text-ink;
+  }
+  /* All monetary figures are monospace */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer components {
   /* ─── Agriqcap shared component classes ─── */
 
-  /* Card surface — the default container */
+  /* Standard card — paper surface with line border */
   .ys-card {
-    @apply rounded-xl bg-paper border border-track/60 p-5;
+    @apply rounded-2xl bg-paper border border-line p-5;
   }
 
   /* Dark card (indigo surface for hero/balance) */
   .ys-card-dark {
-    @apply rounded-2xl bg-indigo text-white p-5;
+    @apply rounded-2xl bg-gradient-to-br from-indigo to-indigo-deep text-white p-5;
   }
 
   /* Input field */
   .ys-input {
-    @apply w-full rounded-lg border border-track bg-paper px-4 py-3 text-sm text-ink outline-none transition focus:border-indigo focus:ring-2 focus:ring-indigo/15;
+    @apply w-full rounded-xl border border-line bg-paper px-4 py-3 text-[14px] text-ink font-medium outline-none transition
+           focus:border-indigo focus:ring-2 focus:ring-indigo/15
+           placeholder:text-ink-soft placeholder:font-normal;
   }
 
-  /* Buttons */
+  /* Primary button — ochre, dark text */
   .ys-btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-ochre px-5 py-3 text-sm font-semibold text-indigo-deep transition hover:bg-ochre-light disabled:opacity-40 disabled:pointer-events-none;
-  }
-  .ys-btn-loam {
-    @apply inline-flex items-center justify-center rounded-lg bg-loam px-5 py-3 text-sm font-semibold text-white transition hover:bg-loam-light disabled:opacity-40 disabled:pointer-events-none;
-  }
-  .ys-btn-dark {
-    @apply inline-flex items-center justify-center rounded-lg bg-indigo-deep px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo disabled:opacity-40 disabled:pointer-events-none;
-  }
-  .ys-btn-ghost {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-ink-soft transition hover:bg-parchment hover:text-ink;
+    @apply inline-flex items-center justify-center rounded-xl bg-ochre px-5 py-3 text-[14px] font-semibold text-indigo-deep
+           transition hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none;
   }
 
-  /* Money text — always mono */
+  /* Loam button — green, white text */
+  .ys-btn-loam {
+    @apply inline-flex items-center justify-center rounded-xl bg-loam px-5 py-3 text-[14px] font-semibold text-white
+           transition hover:bg-loam-dim disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  /* Dark button — indigo-deep, white text */
+  .ys-btn-dark {
+    @apply inline-flex items-center justify-center rounded-xl bg-indigo-deep px-5 py-3 text-[14px] font-semibold text-white
+           transition hover:bg-indigo disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  /* Ghost button — no bg, ink text, parchment hover */
+  .ys-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-xl border border-line px-4 py-3 text-[14px] font-medium text-ink-soft
+           transition hover:bg-parchment hover:text-ink;
+  }
+
+  /* Icon button with solid background — white icon on colored bg */
+  .ys-icon-btn {
+    @apply flex items-center justify-center rounded-xl p-2 transition;
+  }
+  .ys-icon-btn-indigo {
+    @apply ys-icon-btn bg-indigo text-white hover:bg-indigo-deep;
+  }
+  .ys-icon-btn-loam {
+    @apply ys-icon-btn bg-loam text-white hover:bg-loam-dim;
+  }
+  .ys-icon-btn-ochre {
+    @apply ys-icon-btn bg-ochre text-indigo-deep hover:opacity-90;
+  }
+
+  /* Money text — always mono, always tabular */
   .ys-money {
-    @apply font-mono tabular-nums;
+    @apply font-mono tabular-nums font-semibold text-ink;
   }
   .ys-money-pos {
-    @apply font-mono tabular-nums text-loam;
+    @apply font-mono tabular-nums font-semibold text-loam;
   }
   .ys-money-neg {
-    @apply font-mono tabular-nums text-clay;
+    @apply font-mono tabular-nums font-semibold text-clay;
   }
 
-  /* Label / caption */
+  /* Section label / eyebrow text */
   .ys-label {
-    @apply text-xs font-medium text-ink-soft uppercase tracking-wide;
+    @apply text-[11px] font-semibold text-ink-soft uppercase tracking-widest;
+  }
+
+  /* Transaction row */
+  .ys-tx-row {
+    @apply flex items-center gap-3 py-3.5 border-b border-line last:border-0;
+  }
+
+  /* Activity icon — credit = loam bg, debit = clay bg, always white icon */
+  .ys-tx-icon-credit {
+    @apply w-10 h-10 rounded-full bg-loam flex items-center justify-center flex-shrink-0;
+  }
+  .ys-tx-icon-debit {
+    @apply w-10 h-10 rounded-full bg-clay flex items-center justify-center flex-shrink-0;
   }
 }
