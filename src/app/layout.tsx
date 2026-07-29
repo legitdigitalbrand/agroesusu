@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { BRAND } from "@/config/brand";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -24,13 +25,13 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Yield — Save. Borrow. Grow.",
-  description: "Cooperative savings and lending platform for Nigerian farmers, cooperatives, and agribusinesses.",
+  title: BRAND.ogTitle,
+  description: BRAND.ogDescription,
   manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1B5E20",
+  themeColor: BRAND.themeColor,
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

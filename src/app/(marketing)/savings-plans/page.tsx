@@ -80,7 +80,7 @@ const safetyGuarantees = [
   },
   {
     title: 'Regulated Custodians',
-    desc: 'All AgroEsusu user deposits are held by Safe Haven Microfinance Bank, fully licensed by the Central Bank of Nigeria (CBN).',
+    desc: 'All Agriqcap user deposits are held by Safe Haven Microfinance Bank, fully licensed by the Central Bank of Nigeria (CBN).',
   },
   {
     title: 'NDIC Insured',
@@ -95,7 +95,7 @@ export default function SavingsPlansPage() {
       <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <span className="text-sm font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
-            AgroEsusu Wealth
+            Agriqcap Wealth
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
             Agricultural Savings Plans Built to Multiply Your Wealth
@@ -176,7 +176,7 @@ export default function SavingsPlansPage() {
               Your Funds are 100% Secure
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
-              We prioritize the safety of your agricultural hard-earned money. AgroEsusu is built on 
+              We prioritize the safety of your agricultural hard-earned money. Agriqcap is built on 
               strict security and regulatory-compliant foundations.
             </p>
           </div>

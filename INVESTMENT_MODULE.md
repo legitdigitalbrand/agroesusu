@@ -30,7 +30,7 @@ The daily returns cron (`batchProcessReturns`) **skips** `variable_pool` product
 |---|---|---|---|---|---|---|---|---|
 | INV-0001 | Fixed Income Fund — 90 Day | fixed_income | 12% flat | **guaranteed** | low | ₦5,000 | 90 days | No |
 | INV-0002 | Agricultural Pool — Maize Cycle | agricultural_pool | 18% compound | **variable_pool** | high | ₦10,000 | 180 days | Yes |
-| INV-0003 | Cooperative Growth Fund — AgroEsusu | cooperative_fund | 15% compound | **variable_pool** | moderate | ₦5,000 | open-ended | Yes |
+| INV-0003 | Cooperative Growth Fund — Agriqcap | cooperative_fund | 15% compound | **variable_pool** | moderate | ₦5,000 | open-ended | Yes |
 | INV-0004 | Money Market Fund — AgroLiquid | money_market | 8% compound | **expected** | low | ₦1,000 | open-ended | No |
 
 ---

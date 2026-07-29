@@ -45,7 +45,7 @@ export default function SignupPage() {
       <div className="mb-10 text-center">
         <div className="inline-flex items-center gap-3 justify-center">
           <LogoMark size={48} variant="admin" />
-          <span className="font-serif text-3xl text-white">Yield</span>
+          <span className="font-serif text-3xl text-white">Agriqcap</span>
         </div>
       </div>
 

@@ -16,11 +16,11 @@ export default function Footer() {
                 <Sprout className="h-6 w-6" />
               </div>
               <span className="text-xl font-bold text-white tracking-tight">
-                Agro<span className="text-ochre">Esusu</span>
+                Agriq<span className="text-ochre">cap</span>
               </span>
             </Link>
             <p className="text-sm text-gray-400 max-w-sm leading-relaxed">
-              AgroEsusu is Nigeria's leading agricultural savings and lending platform. 
+              Agriqcap is Nigeria's leading agricultural savings and lending platform. 
               We empower farmers, cooperatives, and agro-businesses with digital tools 
               to save together, earn competitive interest, and access affordable credit.
             </p>
@@ -104,7 +104,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-ochre shrink-0" />
-                <span className="text-gray-400">support@agroesusu.com</span>
+                <span className="text-gray-400">support@agriqcap.com</span>
               </li>
             </ul>
           </div>
@@ -126,7 +126,7 @@ export default function Footer() {
 
           <div className="text-center md:text-right text-xs text-gray-500 max-w-sm">
             <p>
-              AgroEsusu is a financial technology platform, not a bank. 
+              Agriqcap is a financial technology platform, not a bank. 
               Savings plans interest rates are subject to market conditions. 
               Loans are subject to credit assessments.
             </p>
@@ -135,7 +135,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="border-t border-gray-800 mt-6 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
-          <p>© {currentYear} AgroEsusu. Save Together. Grow Together. All rights reserved.</p>
+          <p>© {currentYear} Agriqcap. All rights reserved.</p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
             <Link href="#" className="hover:text-gray-400">Privacy Policy</Link>
             <Link href="#" className="hover:text-gray-400">Terms of Service</Link>

@@ -33,7 +33,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between px-5 py-3.5">
           <Link href="/dashboard" className="flex items-center gap-2">
             <LogoMark size={28} variant="customer" />
-            <span className="font-serif text-lg text-ink">Yield</span>
+            <span className="font-serif text-lg text-ink">Agriqcap</span>
           </Link>
           <Link
             href="/profile"

@@ -7,16 +7,16 @@ const categories = [
     category: 'General Enquiries',
     faqs: [
       {
-        question: 'What is AgroEsusu?',
-        answer: 'AgroEsusu is a digital agricultural savings and credit platform designed specifically for Nigerian farmers, cooperatives, and agribusinesses. We help you automate your individual or group savings, earn high interest, and access fair, harvest-aligned loans.',
+        question: 'What is Agriqcap?',
+        answer: 'Agriqcap is a digital agricultural savings and credit platform designed specifically for Nigerian farmers, cooperatives, and agribusinesses. We help you automate your individual or group savings, earn high interest, and access fair, harvest-aligned loans.',
       },
       {
-        question: 'How do I access AgroEsusu without internet access?',
-        answer: 'You can easily access AgroEsusu from anywhere in Nigeria on any basic phone by dialing *347*88#. Our secure USSD channel lets you check balances, make cooperative payments, save, and apply for loans without any data or internet.',
+        question: 'How do I access Agriqcap without internet access?',
+        answer: 'You can easily access Agriqcap from anywhere in Nigeria on any basic phone by dialing *347*88#. Our secure USSD channel lets you check balances, make cooperative payments, save, and apply for loans without any data or internet.',
       },
       {
-        question: 'What are the charges for using AgroEsusu?',
-        answer: 'AgroEsusu has zero hidden maintenance fees, zero account opening fees, and zero card management fees. We keep our fees completely transparent and as low as possible to support the local food system.',
+        question: 'What are the charges for using Agriqcap?',
+        answer: 'Agriqcap has zero hidden maintenance fees, zero account opening fees, and zero card management fees. We keep our fees completely transparent and as low as possible to support the local food system.',
       },
     ],
   },
@@ -25,7 +25,7 @@ const categories = [
     faqs: [
       {
         question: 'How does the Cooperative "Esusu" Savings Plan work?',
-        answer: 'AgroEsusu digitizes traditional Esusu contribution circles. A group administrator sets up the group, adds verified member phone numbers, and defines contribution terms (daily, weekly, monthly). Members save directly, check the ledger in real-time, and payouts are distributed automatically based on the cycle calendar.',
+        answer: 'Agriqcap digitizes traditional Esusu contribution circles. A group administrator sets up the group, adds verified member phone numbers, and defines contribution terms (daily, weekly, monthly). Members save directly, check the ledger in real-time, and payouts are distributed automatically based on the cycle calendar.',
       },
       {
         question: 'What interest rates do you offer on savings?',
@@ -41,15 +41,15 @@ const categories = [
     category: 'Loans & Credit Products',
     faqs: [
       {
-        question: 'How do I qualify for an agricultural loan on AgroEsusu?',
-        answer: 'To qualify for our seed and input loans, you must be a registered member of AgroEsusu and have a verified profile (including BVN verification). Active savings history or being part of an approved, active agricultural cooperative group dramatically improves your loan approval odds.',
+        question: 'How do I qualify for an agricultural loan on Agriqcap?',
+        answer: 'To qualify for our seed and input loans, you must be a registered member of Agriqcap and have a verified profile (including BVN verification). Active savings history or being part of an approved, active agricultural cooperative group dramatically improves your loan approval odds.',
       },
       {
         question: 'What are the loan interest rates and repayment terms?',
         answer: 'Our interest rates range from 1.2% to 2.0% monthly depending on the loan type (seed input, machinery lease, cooperative, trade finance). Terms range from 3 to 18 months, with repayment calendars aligned with your actual crop harvest cycles.',
       },
       {
-        question: 'Does AgroEsusu require collateral for loans?',
+        question: 'Does Agriqcap require collateral for loans?',
         answer: 'No physical property or heavy land collateral is required for smallholder input loans (up to ₦300,000). Instead, we utilize peer-to-peer co-guarantees through cooperatives, active savings records, and digital farm validation.',
       },
     ],
@@ -58,7 +58,7 @@ const categories = [
     category: 'Security, Partners & Legals',
     faqs: [
       {
-        question: 'Is my money safe with AgroEsusu?',
+        question: 'Is my money safe with Agriqcap?',
         answer: 'Absolutely. All user funds and deposits are securely managed by our banking partner, Safe Haven Microfinance Bank, which is licensed by the Central Bank of Nigeria (CBN). Deposits are fully insured by the Nigeria Deposit Insurance Corporation (NDIC).',
       },
       {

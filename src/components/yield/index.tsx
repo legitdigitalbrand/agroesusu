@@ -22,7 +22,7 @@ export function LogoMark({ size = 40, variant = "customer", className }: LogoMar
       viewBox="0 0 48 48"
       fill="none"
       className={className}
-      aria-label="Yield logo"
+      aria-label="Agriqcap logo"
     >
       <circle cx="24" cy="24" r="20" stroke={ringColor} strokeWidth="3" fill="none" />
       <circle cx="24" cy="24" r="6" fill={dotColor} />

@@ -16,7 +16,7 @@ const loanTypes = [
     features: [
       'Fast-track approval within 48 hours',
       'Direct disbursement to verified agro-dealers or farm wallets',
-      'No collateral required for verified AgroEsusu users',
+      'No collateral required for verified Agriqcap users',
       'Flexible repayment matching harvest calendars',
     ],
   },
@@ -34,7 +34,7 @@ const loanTypes = [
       'Extremely low interest rate',
       'Shared group accountability limits individual defaults',
       'Funds can be distributed or spent on collective machines',
-      'Mentorship & training included from AgroEsusu extension officers',
+      'Mentorship & training included from Agriqcap extension officers',
     ],
   },
   {
@@ -82,7 +82,7 @@ const steps = [
   {
     num: '2',
     title: 'Join a Circle or Cooperative',
-    desc: 'Individual farmers can join existing AgroEsusu groups or verify their farm status to qualify for individual input loans.',
+    desc: 'Individual farmers can join existing Agriqcap groups or verify their farm status to qualify for individual input loans.',
   },
   {
     num: '3',
@@ -195,7 +195,7 @@ export default function LoanPlansPage() {
               Our 5-Step Digital Lending Process
             </h2>
             <p className="text-sm sm:text-base text-gray-100">
-              No long queues or endless stacks of collateral paper. AgroEsusu brings quick, 
+              No long queues or endless stacks of collateral paper. Agriqcap brings quick, 
               accountable agricultural lending directly to your fingertips.
             </p>
           </div>
@@ -223,7 +223,7 @@ export default function LoanPlansPage() {
           Trustworthy Credit Backed by Partners
         </h2>
         <p className="text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          AgroEsusu ensures all credit products comply fully with Central Bank of Nigeria guidelines. 
+          Agriqcap ensures all credit products comply fully with Central Bank of Nigeria guidelines. 
           We work closely with local crop insurance providers to offer weather index insurance, protecting 
           you against drought, crop disease, and flash flooding.
         </p>

@@ -14,7 +14,7 @@ Phase 7 makes cooperatives real. Memberships, elected leadership, committees, me
 
 Cooperatives are configurable entities with their own governance parameters (voting quorum, pass percentage, meeting frequency, self-join rules).
 
-**Seeded Example:** AgroEsusu Farmers Cooperative (COOP-0001) — agricultural cooperative with 4 executive positions: President, Vice President, Secretary, Treasurer.
+**Seeded Example:** Agriqcap Farmers Cooperative (COOP-0001) — agricultural cooperative with 4 executive positions: President, Vice President, Secretary, Treasurer.
 
 ### Membership Lifecycle
 

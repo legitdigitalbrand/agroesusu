@@ -83,7 +83,7 @@ export default function CareersPage() {
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
           <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            Cultivate Your Career at AgroEsusu
+            Cultivate Your Career at Agriqcap
           </h2>
           <p className="text-sm sm:text-base text-gray-500">
             We provide our teams with the resources, benefits, and support they need to deliver outstanding 
@@ -172,14 +172,14 @@ export default function CareersPage() {
         </h2>
         <p className="text-gray-600 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
           We are always looking for visionary agricultural enthusiasts and builders. Send us a 
-          spontaneous application detailing what you want to achieve at AgroEsusu.
+          spontaneous application detailing what you want to achieve at Agriqcap.
         </p>
         <div className="pt-2">
           <Link
-            href="mailto:careers@agroesusu.com"
+            href="mailto:careers@agriqcap.com"
             className="btn-primary py-3 px-8 text-sm font-semibold"
           >
-            Email: careers@agroesusu.com
+            Email: careers@agriqcap.com
           </Link>
         </div>
       </section>

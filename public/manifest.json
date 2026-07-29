@@ -1,0 +1,17 @@
+{
+  "name": "Agriqcap",
+  "short_name": "Agriqcap",
+  "description": "Save. Borrow. Grow Together. Digital cooperative finance for Nigerian agriculture.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1B5E20",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

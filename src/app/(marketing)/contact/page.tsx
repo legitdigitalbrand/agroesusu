@@ -82,8 +82,8 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-bold text-gray-900 text-sm">Email Our Desk</h4>
                   <p className="text-xs text-gray-500 mt-1">Submit documents or ask complex technical questions</p>
-                  <span className="text-sm font-bold text-indigo block mt-1">support@agroesusu.com</span>
-                  <span className="text-sm font-bold text-indigo block">info@agroesusu.com</span>
+                  <span className="text-sm font-bold text-indigo block mt-1">support@agriqcap.com</span>
+                  <span className="text-sm font-bold text-indigo block">info@agriqcap.com</span>
                 </div>
               </div>
 
@@ -128,7 +128,7 @@ export default function ContactPage() {
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-gray-900">Thank you! Message Sent</h3>
                     <p className="text-sm text-gray-500 max-w-sm mx-auto leading-relaxed">
-                      We have received your request successfully. An AgroEsusu representative will 
+                      We have received your request successfully. An Agriqcap representative will 
                       contact you within 2-4 working hours on your phone number or email address.
                     </p>
                   </div>

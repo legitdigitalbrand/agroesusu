@@ -60,7 +60,7 @@ const savingsFeatures = [
   },
   {
     title: 'Dedicated Virtual Accounts',
-    description: 'Get your own AgroEsusu account number to receive transfers instantly.',
+    description: 'Get your own Agriqcap account number to receive transfers instantly.',
     icon: Building2,
   },
 ];
@@ -146,7 +146,7 @@ export default function Homepage() {
             >
               <motion.div variants={fadeIn} className="inline-flex items-center space-x-2 bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
                 <span className="flex h-2 w-2 rounded-full bg-indigo animate-pulse"></span>
-                <span className="text-sm font-semibold text-indigo">AgroEsusu Savings & Loans</span>
+                <span className="text-sm font-semibold text-indigo">Agriqcap Savings & Loans</span>
               </motion.div>
 
               <motion.h1
@@ -198,7 +198,7 @@ export default function Homepage() {
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 space-y-6 relative overflow-hidden">
                   <div className="flex justify-between items-center pb-4 border-b border-gray-100">
                     <div>
-                      <p className="text-xs text-gray-400">Total Yield Balance</p>
+                      <p className="text-xs text-gray-400">Total Agriqcap Balance</p>
                       <h3 className="text-2xl font-bold text-gray-900">₦1,450,000.00</h3>
                     </div>
                     <span className="bg-indigo/10 text-indigo text-xs font-bold px-2.5 py-1 rounded-lg">
@@ -288,7 +288,7 @@ export default function Homepage() {
             {/* Left side graphics */}
             <div className="lg:col-span-5 order-2 lg:order-1">
               <div className="bg-parchment border border-ochre/10 rounded-2xl p-6 space-y-6 shadow-sm">
-                <h4 className="font-bold text-gray-900 text-lg">AgroEsusu Savings Plans</h4>
+                <h4 className="font-bold text-gray-900 text-lg">Agriqcap Savings Plans</h4>
                 <div className="space-y-4">
                   {/* Item 1 */}
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100">
@@ -352,7 +352,7 @@ export default function Homepage() {
               </h2>
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
                 Whether you're a single cash crop farmer, an import/export aggregator, or a local cooperative, 
-                AgroEsusu offers tailor-made digital accounts to pool contributions and secure your money. 
+                Agriqcap offers tailor-made digital accounts to pool contributions and secure your money. 
                 We remove the traditional hassle of high banking charges and complex paperwork.
               </p>
 
@@ -395,7 +395,7 @@ export default function Homepage() {
               </h2>
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
                 Traditional banks demand heavy collateral and impossible interest rates. 
-                AgroEsusu provides simple, responsive agricultural financing tailored to 
+                Agriqcap provides simple, responsive agricultural financing tailored to 
                 your planting, maintenance, and harvesting timelines. No hidden charges.
               </p>
 
@@ -476,7 +476,7 @@ export default function Homepage() {
               Start in 3 Easy Steps
             </h2>
             <p className="text-base sm:text-lg text-gray-600">
-              AgroEsusu is designed to be straightforward and clear. Here is how you can begin 
+              Agriqcap is designed to be straightforward and clear. Here is how you can begin 
               saving and unlocking farming capital today.
             </p>
           </div>
@@ -508,7 +508,7 @@ export default function Homepage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <div className="inline-flex items-center space-x-2 bg-indigo/10 px-3 py-1 rounded-full border border-indigo/20 text-indigo text-sm font-semibold">
-              <span>Why AgroEsusu</span>
+              <span>Why Agriqcap</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
               Built Specifically for Agriculture
@@ -555,7 +555,7 @@ export default function Homepage() {
             </h2>
             <p className="text-lg sm:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
               Join thousands of Nigerian farmers and agricultural cooperative groups who are 
-              saving smarter and growing their food businesses with AgroEsusu.
+              saving smarter and growing their food businesses with Agriqcap.
             </p>
           </motion.div>
 

@@ -1,4 +1,4 @@
-# AgroEsusu — Local Development Setup
+# Agriqcap — Local Development Setup
 
 ## Prerequisites
 

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Yield Design System — mapped to shadcn variables for compatibility */
+    /* Agriqcap Design System — mapped to shadcn variables for compatibility */
     --background: 40 27% 97%;       /* paper-like warm white */
     --foreground: 40 8% 10%;        /* ink */
     --card: 40 30% 98%;             /* slightly warmer than bg */
@@ -38,7 +38,7 @@
 }
 
 @layer components {
-  /* ─── Yield shared component classes ─── */
+  /* ─── Agriqcap shared component classes ─── */
 
   /* Card surface — the default container */
   .ys-card {

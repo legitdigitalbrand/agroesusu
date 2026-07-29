@@ -69,7 +69,7 @@ export default function AboutPage() {
             Empowering the Hands that Feed Nigeria
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            AgroEsusu was founded to bring digital security, automation, and fair interest rates 
+            Agriqcap was founded to bring digital security, automation, and fair interest rates 
             to the traditional "Esusu" cooperative savings culture across Nigeria.
           </p>
         </div>
@@ -80,7 +80,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Why We Started AgroEsusu
+              Why We Started Agriqcap
             </h2>
             <p className="text-base text-gray-600 leading-relaxed">
               Nigeria is home to over 38 million smallholder farmers. However, they continue to face 
@@ -89,7 +89,7 @@ export default function AboutPage() {
               groups, though highly supportive, suffer from physical security vulnerabilities, human error, and manual tracking.
             </p>
             <p className="text-base text-gray-600 leading-relaxed">
-              AgroEsusu bridges this gap. By building custom-tailored mobile and offline USSD tools, we 
+              Agriqcap bridges this gap. By building custom-tailored mobile and offline USSD tools, we 
               empower local cooperative circles to digitize their rotational funds, enjoy high interest yields, 
               and unlock fair, non-collateralized credit matching their seasonal harvests.
             </p>
@@ -128,7 +128,7 @@ export default function AboutPage() {
               Values That Keep Us Grounded
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
-              At AgroEsusu, we are guided by a core set of beliefs that define how we build products and 
+              At Agriqcap, we are guided by a core set of beliefs that define how we build products and 
               treat our rural agribusiness communities.
             </p>
           </div>

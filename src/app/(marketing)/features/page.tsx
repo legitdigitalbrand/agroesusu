@@ -38,7 +38,7 @@ const mainFeatures = [
     title: 'Verified Inputs Marketplace',
     icon: ShoppingBag,
     color: 'bg-purple-50 text-purple-800 border-purple-100',
-    description: 'Purchase premium certified seeds, organic fertilizers, pesticides, and tractor rental hours directly from partnered agro-dealers using your AgroEsusu wallet. Get exclusive discounts and quality guarantees.',
+    description: 'Purchase premium certified seeds, organic fertilizers, pesticides, and tractor rental hours directly from partnered agro-dealers using your Agriqcap wallet. Get exclusive discounts and quality guarantees.',
   },
   {
     id: 'climate-tips',
@@ -76,7 +76,7 @@ export default function FeaturesPage() {
             Digital Financial Tools Tailored for Nigerian Agribusiness
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            AgroEsusu merges traditional community cooperative values with cutting-edge mobile 
+            Agriqcap merges traditional community cooperative values with cutting-edge mobile 
             banking technology. Grow your agribusiness with tools built specifically for your success.
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function FeaturesPage() {
               </h2>
               <p className="text-base text-gray-600 leading-relaxed">
                 Nigerian agricultural cooperatives have operated on mutual trust for centuries. 
-                AgroEsusu respects this legacy and uses modern software engineering to provide 
+                Agriqcap respects this legacy and uses modern software engineering to provide 
                 co-guarantee features and real-time ledger records. No single individual can tamper 
                 with cooperative funds.
               </p>
@@ -185,7 +185,7 @@ export default function FeaturesPage() {
       {/* CTA Section */}
       <section className="py-20 text-center max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
         <h2 className="text-3xl font-extrabold text-gray-900">
-          Ready to experience the power of AgroEsusu?
+          Ready to experience the power of Agriqcap?
         </h2>
         <p className="text-gray-600 max-w-xl mx-auto text-sm sm:text-base">
           Sign up today to create your individual or cooperative account. Experience modern agriculture finance.

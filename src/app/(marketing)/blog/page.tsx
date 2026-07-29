@@ -20,7 +20,7 @@ const posts = [
   {
     id: 'weather-insurance-harvest',
     title: 'Understanding Weather-Index Crop Insurance: Protecting Your Yield Against Drought',
-    excerpt: 'A comprehensive guide explaining how AgroEsusu partners with insurance companies to automatically protect farmers from rainfall deficits and sudden flash flooding.',
+    excerpt: 'A comprehensive guide explaining how Agriqcap partners with insurance companies to automatically protect farmers from rainfall deficits and sudden flash flooding.',
     category: 'Agro-Fintech',
     date: 'July 10, 2026',
     readTime: '8 min read',
@@ -72,7 +72,7 @@ const posts = [
     category: 'Success Stories',
     date: 'May 20, 2026',
     readTime: '6 min read',
-    author: 'AgroEsusu Outreach',
+    author: 'Agriqcap Outreach',
     authorRole: 'Field Success Team',
     initials: 'AE',
     bg: 'bg-pink-50 text-pink-800',
@@ -89,7 +89,7 @@ export default function BlogPage() {
             Insights & Guides
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
-            The AgroEsusu Agribusiness & Finance Blog
+            The Agriqcap Agribusiness & Finance Blog
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Stay up to date with agriculture sector trends, cooperative growth strategies, micro-credit guides, 

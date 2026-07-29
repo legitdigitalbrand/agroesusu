@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ─── Yield Design System ─────────────────────────────
+        // ─── Agriqcap Design System ─────────────────────────────
         // Color roles (not just hex — the ROLE each color plays):
         // indigo: structural/trust — navigation, hero cards, primary chrome
         // ochre:  single sparing accent — ONE primary action/highlight per screen

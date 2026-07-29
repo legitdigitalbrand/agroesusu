@@ -53,7 +53,7 @@ export default function LoginPage() {
       <div className="mb-12 text-center">
         <div className="inline-flex items-center gap-3 justify-center">
           <LogoMark size={48} variant="admin" />
-          <span className="font-serif text-3xl text-white">Yield</span>
+          <span className="font-serif text-3xl text-white">Agriqcap</span>
         </div>
         <p className="mt-2 text-sm text-white/50">Save. Borrow. Grow.</p>
       </div>
@@ -112,7 +112,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-ink-soft">
-            New to Yield?{" "}
+            New to Agriqcap?{" "}
             <Link href="/signup" className="text-loam font-medium hover:underline">
               Create an account
             </Link>

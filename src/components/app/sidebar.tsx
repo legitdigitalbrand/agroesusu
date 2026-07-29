@@ -78,11 +78,10 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
         <div className="flex items-center justify-between px-2 pb-8">
           <Link href="/dashboard" className="flex items-center gap-2" onClick={onClose}>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo text-white font-bold text-lg shadow-sm">
-              Æ
+              A
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-indigo">Agro</span>
-              <span className="text-xl font-bold tracking-tight text-ochre">Esusu</span>
+              <span className="text-xl font-bold tracking-tight text-indigo">Agriq</span><span className="text-xl font-bold tracking-tight text-ochre">cap</span>
             </div>
           </Link>
           <button
@@ -133,7 +132,7 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">
-                {profile?.full_name || "AgroEsusu User"}
+                {profile?.full_name || "Agriqcap User"}
               </p>
               <p className="text-xs text-gray-500 truncate">
                 {profile?.kyc_tier === "tier_0"

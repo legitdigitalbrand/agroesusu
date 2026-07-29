@@ -45,7 +45,7 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-indigo-deep flex flex-col">
         <div className="flex items-center gap-2.5 px-6 py-6">
           <LogoMark size={32} variant="admin" />
-          <span className="font-serif text-xl text-white">Yield</span>
+          <span className="font-serif text-xl text-white">Agriqcap</span>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5">

@@ -43,7 +43,7 @@ export default function Topbar({
       case "notifications":
         return "Notifications";
       default:
-        return "AgroEsusu";
+        return "Agriqcap";
     }
   };
 

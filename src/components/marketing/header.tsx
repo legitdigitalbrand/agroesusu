@@ -46,9 +46,7 @@ export default function Header() {
             <div className="bg-indigo p-2 rounded-xl text-white group-hover:bg-indigo-deep transition-colors">
               <Sprout className="h-6 w-6" />
             </div>
-            <span className="text-xl font-bold text-indigo tracking-tight">
-              Agro<span className="text-ochre">Esusu</span>
-            </span>
+            <span className="text-xl font-bold text-indigo tracking-tight">Agriq<span className="text-ochre">cap</span></span>
           </Link>
 
           {/* Desktop Nav Links */}

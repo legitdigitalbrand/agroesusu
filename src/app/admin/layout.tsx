@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center gap-2.5 px-6 py-6">
           <LogoMark size={32} variant="admin" />
           <div>
-            <span className="font-serif text-xl text-white block leading-tight">Yield</span>
+            <span className="font-serif text-xl text-white block leading-tight">Agriqcap</span>
             <span className="text-[10px] text-white/40 uppercase tracking-wider">Admin Console</span>
           </div>
         </div>

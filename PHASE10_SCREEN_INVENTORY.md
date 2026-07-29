@@ -1,5 +1,5 @@
 # Phase 10 — Screen Inventory & Flow Map
-## AgroEsusu Customer & Admin Frontend
+## Agriqcap Customer & Admin Frontend
 
 **Status:** AWAITING CTO APPROVAL — no UI code has been written.  
 **Date:** 2026-07-28
