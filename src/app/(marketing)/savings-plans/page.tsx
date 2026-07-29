@@ -92,9 +92,9 @@ export default function SavingsPlansPage() {
   return (
     <div className="bg-white">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-brand-cream/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <span className="text-sm font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-4 py-1.5 rounded-full border border-brand-primary/20">
+          <span className="text-sm font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             AgroEsusu Wealth
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
@@ -115,7 +115,7 @@ export default function SavingsPlansPage() {
             return (
               <div
                 key={plan.id}
-                className="card-surface flex flex-col justify-between border border-gray-100 hover:border-brand-primary/20 hover:shadow-lg transition-all"
+                className="card-surface flex flex-col justify-between border border-gray-100 hover:border-indigo/20 hover:shadow-lg transition-all"
               >
                 <div className="space-y-6">
                   {/* Badge & Title */}
@@ -130,7 +130,7 @@ export default function SavingsPlansPage() {
 
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
-                    <p className="text-sm text-brand-gold-dark font-medium">{plan.tagline}</p>
+                    <p className="text-sm text-ochre-dim font-medium">{plan.tagline}</p>
                   </div>
 
                   <p className="text-sm text-gray-600 leading-relaxed">{plan.description}</p>
@@ -141,7 +141,7 @@ export default function SavingsPlansPage() {
                     <ul className="space-y-2">
                       {plan.features.map((feat, idx) => (
                         <li key={idx} className="flex items-start space-x-2 text-sm text-gray-600">
-                          <CheckCircle2 className="h-4.5 w-4.5 text-brand-primary shrink-0 mt-0.5" />
+                          <CheckCircle2 className="h-4.5 w-4.5 text-indigo shrink-0 mt-0.5" />
                           <span>{feat}</span>
                         </li>
                       ))}
@@ -157,7 +157,7 @@ export default function SavingsPlansPage() {
                   </div>
                   <Link
                     href={`/signup?plan=${plan.id}`}
-                    className="btn-primary flex items-center gap-1 bg-brand-primary hover:bg-brand-primary-dark font-bold text-sm px-5 py-2.5 rounded-lg"
+                    className="btn-primary flex items-center gap-1 bg-indigo hover:bg-indigo-deep font-bold text-sm px-5 py-2.5 rounded-lg"
                   >
                     Start Saving <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -184,7 +184,7 @@ export default function SavingsPlansPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {safetyGuarantees.map((item, idx) => (
               <div key={idx} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                <div className="bg-brand-primary/10 text-brand-primary w-10 h-10 rounded-full flex items-center justify-center">
+                <div className="bg-indigo/10 text-indigo w-10 h-10 rounded-full flex items-center justify-center">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
                 <h4 className="font-bold text-lg text-gray-900">{item.title}</h4>
@@ -206,7 +206,7 @@ export default function SavingsPlansPage() {
             available 24/7 in English, Yoruba, Hausa, Igbo, and Pidgin.
           </p>
           <div className="flex justify-center gap-4">
-            <Link href="/faqs" className="btn-secondary bg-brand-cream text-brand-primary-dark border border-brand-primary/10 py-3 px-6 hover:bg-brand-primary/5 font-semibold text-sm">
+            <Link href="/faqs" className="btn-secondary bg-parchment text-indigo-deep border border-indigo/10 py-3 px-6 hover:bg-indigo/5 font-semibold text-sm">
               Read FAQs
             </Link>
             <Link href="/signup" className="btn-primary py-3 px-6 font-semibold text-sm">

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createServiceClient } from '@/lib/supabase/service';
 import { reconcileWallet } from '@/modules/wallet';
 
 // POST /api/wallets/[walletId]/reconcile
 // Triggers an on-demand reconciliation for a specific wallet.
 // Staff only — requires 'wallet.read' permission (reconciliation access).
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { walletId: string } }
 ) {
   try {

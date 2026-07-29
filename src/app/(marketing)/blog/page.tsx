@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Sprout, Calendar, Clock, ArrowRight, BookOpen, Users, MessageSquare } from 'lucide-react';
+import { Clock, ArrowRight, BookOpen } from 'lucide-react';
 
 const categories = ['All', 'Agro-Fintech', 'Cooperative Savings', 'Farming Loans', 'Market Updates', 'Success Stories'];
 
@@ -83,9 +83,9 @@ export default function BlogPage() {
   return (
     <div className="bg-white">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-brand-cream/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <span className="text-xs font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-4 py-1.5 rounded-full border border-brand-primary/20">
+          <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Insights & Guides
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
@@ -107,8 +107,8 @@ export default function BlogPage() {
                 key={idx}
                 className={`px-4 py-1.5 rounded-full transition-all shrink-0 ${
                   idx === 0
-                    ? 'bg-brand-primary text-white'
-                    : 'bg-white border border-gray-200 hover:border-brand-primary/30'
+                    ? 'bg-indigo text-white'
+                    : 'bg-white border border-gray-200 hover:border-indigo/30'
                 }`}
               >
                 {cat}
@@ -124,12 +124,12 @@ export default function BlogPage() {
           {posts.map((post) => (
             <article
               key={post.id}
-              className="card-surface border border-gray-100 flex flex-col justify-between hover:shadow-md transition-all hover:border-brand-primary/10 group"
+              className="card-surface border border-gray-100 flex flex-col justify-between hover:shadow-md transition-all hover:border-indigo/10 group"
             >
               <div className="space-y-4">
                 {/* Meta details */}
                 <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-                  <span className="text-brand-primary font-bold bg-brand-primary/5 px-2.5 py-1 rounded-lg">
+                  <span className="text-indigo font-bold bg-indigo/5 px-2.5 py-1 rounded-lg">
                     {post.category}
                   </span>
                   <div className="flex items-center space-x-2">
@@ -139,7 +139,7 @@ export default function BlogPage() {
                 </div>
 
                 <Link href={`/blog/${post.id}`}>
-                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-primary transition-colors leading-snug">
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo transition-colors leading-snug">
                     {post.title}
                   </h3>
                 </Link>
@@ -163,7 +163,7 @@ export default function BlogPage() {
 
                 <Link
                   href={`/blog/${post.id}`}
-                  className="text-brand-primary font-bold text-xs flex items-center gap-1 hover:text-brand-primary-dark transition-colors"
+                  className="text-indigo font-bold text-xs flex items-center gap-1 hover:text-indigo-deep transition-colors"
                 >
                   Read <ArrowRight className="h-3 w-3" />
                 </Link>
@@ -174,9 +174,9 @@ export default function BlogPage() {
       </section>
 
       {/* CTA Box */}
-      <section className="bg-brand-cream border-t border-b border-brand-gold/10 py-16">
+      <section className="bg-parchment border-t border-b border-ochre/10 py-16">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
-          <BookOpen className="h-10 w-10 text-brand-gold mx-auto" />
+          <BookOpen className="h-10 w-10 text-ochre mx-auto" />
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
             Subscribe to our Agribusiness Newsletter
           </h2>

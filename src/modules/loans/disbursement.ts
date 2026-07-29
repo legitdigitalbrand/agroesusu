@@ -10,7 +10,6 @@ import { createClient } from '@supabase/supabase-js';
 import { initiate } from '@/modules/orchestrator';
 import { generateSchedule } from './schedule';
 import { getLoan } from './aggregate';
-import type { Loan } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -118,7 +117,7 @@ export async function disburseLoan(loanId: string): Promise<{
       description: `Loan disbursement for ${loan.loan_number}`,
       idempotency_key: `loan_disbursement:${loanId}`,
       wallet_id: loan.wallet_id,
-      product_account_id: productAccountId,
+      product_account_id: productAccountId ?? undefined,
       metadata: {
         loan_id: loanId,
         product_id: loan.product_id,
@@ -146,7 +145,7 @@ export async function disburseLoan(loanId: string): Promise<{
       loan.approved_amount,
       loan.interest_rate,
       loan.term_months,
-      loan.interest_method,
+      loan.interest_method as "flat" | "reducing_balance",
       new Date(),
     );
 

@@ -4,7 +4,7 @@ import { disburseLoan } from '@/modules/loans';
 
 // POST /api/loans/[loanId]/disburse — disburse an approved loan (staff only)
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { loanId: string } }
 ) {
   try {

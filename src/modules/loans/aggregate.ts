@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getProduct } from './products';
 import { evaluateEligibility, logEligibilityDecision } from './eligibility';
 import { calculateTotalInterest } from './schedule';
-import type { Loan, ApplyLoanRequest, LoanProduct } from './types';
+import type { Loan, ApplyLoanRequest } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

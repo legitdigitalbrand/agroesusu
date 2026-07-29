@@ -17,8 +17,8 @@ import { createClient } from '@supabase/supabase-js';
 import { getProduct } from './products';
 import { getCooperativeParticipation as getCoopParticipation } from '@/modules/cooperative';
 import type {
-  LoanProduct, EligibilityResult, EligibilityFactor,
   CooperativeParticipation, ApplyLoanRequest,
+  EligibilityResult, EligibilityFactor,
 } from './types';
 
 function getServiceClient() {
@@ -140,8 +140,7 @@ export async function evaluateEligibility(
 
   const defaultedLoans = riskProfile ? Number(riskProfile.defaulted_loans) : 0;
   const lateRepayments = riskProfile ? Number(riskProfile.late_repayments) : 0;
-  const activeLoans = riskProfile ? Number(riskProfile.active_loans) : 0;
-  const riskLevel = riskProfile ? riskProfile.risk_level : 'low';
+    const riskLevel = riskProfile ? riskProfile.risk_level : 'low';
 
   // 4. Check cooperative participation (STUB)
   const cooperativeParticipation = await getCooperativeParticipation(request.customer_id);

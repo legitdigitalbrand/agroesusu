@@ -21,7 +21,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { initiate } from '@/modules/orchestrator';
 import { getAccountBalance } from '@/modules/ledger';
-import type { SavingsAccount } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

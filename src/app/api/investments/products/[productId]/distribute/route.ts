@@ -4,7 +4,7 @@ import { distributePoolReturns } from '@/modules/investments';
 
 export async function POST(
   request: NextRequest,
-  context: { params: { productId: string } }
+  _context: { params: { productId: string } }
 ) {
   try {
     const supabase = createClient();

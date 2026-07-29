@@ -12,12 +12,12 @@ export interface ISafeHavenClient {
   verifyBVN(bvn: string): Promise<{ valid: boolean; firstName: string; lastName: string; phone: string; dob: string }>;
   transferFunds(params: { fromAccount: string; toAccount: string; amount: number; narration: string }): Promise<{ reference: string; status: string }>;
   disburseLoan(params: { toAccount: string; amount: number; narration: string }): Promise<{ reference: string; status: string }>;
-  verifyWebhookSignature(signature: string, body: string): boolean;
+  verifyWebhookSignature(_signature: string, _body: string): boolean;
 }
 
 // Mock implementation for development
 export class MockSafeHavenClient implements ISafeHavenClient {
-  async createCustomer(params: { firstName: string; lastName: string; email: string; phone: string; bvn?: string }) {
+  async createCustomer(_params: { firstName: string; lastName: string; email: string; phone: string; bvn?: string }) {
     await this.delay();
     return { customerId: `SHC${Date.now()}` };
   }
@@ -40,12 +40,12 @@ export class MockSafeHavenClient implements ISafeHavenClient {
     };
   }
 
-  async getAccountBalance(accountNumber: string) {
+  async getAccountBalance(_accountNumber: string) {
     await this.delay();
     return { balance: Math.floor(Math.random() * 1000000) };
   }
 
-  async getAccountTransactions(accountNumber: string) {
+  async getAccountTransactions(_accountNumber: string) {
     await this.delay();
     return [];
   }
@@ -61,17 +61,17 @@ export class MockSafeHavenClient implements ISafeHavenClient {
     };
   }
 
-  async transferFunds(params: { fromAccount: string; toAccount: string; amount: number; narration: string }) {
+  async transferFunds(_params: { fromAccount: string; toAccount: string; amount: number; narration: string }) {
     await this.delay();
     return { reference: `TXN${Date.now()}`, status: "success" };
   }
 
-  async disburseLoan(params: { toAccount: string; amount: number; narration: string }) {
+  async disburseLoan(_params: { toAccount: string; amount: number; narration: string }) {
     await this.delay();
     return { reference: `DBT${Date.now()}`, status: "success" };
   }
 
-  verifyWebhookSignature(signature: string, body: string) {
+  verifyWebhookSignature(_signature: string, _body: string) {
     return true;
   }
 

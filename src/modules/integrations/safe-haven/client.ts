@@ -40,7 +40,7 @@ interface LoggedResponse {
 export class SafeHavenClient {
   private config: SafeHavenClientConfig;
   private tokenCache: TokenCache | null = null;
-  private supabase: ReturnType<typeof createClient> | null = null;
+  private supabase: any = null;
 
   constructor(config: SafeHavenClientConfig) {
     this.config = config;
@@ -292,7 +292,7 @@ export class SafeHavenClient {
   }): Promise<void> {
     try {
       const client = this.getSupabase();
-      await client.from('safe_haven_api_calls').insert({
+      await client.from("safe_haven_api_calls").insert({
         call_type: entry.callType,
         request_method: entry.request.method,
         request_url: entry.request.url,
@@ -305,14 +305,14 @@ export class SafeHavenClient {
         error_message: entry.errorMessage,
         latency_ms: entry.latencyMs,
         correlation_id: crypto.randomUUID(),
-      });
+      } as Record<string, unknown>);
     } catch (e) {
       // Logging failure should not block the operation
       console.error('[SafeHavenClient] Failed to log API call:', e);
     }
   }
 
-  private getSupabase() {
+  private getSupabase(): any {
     if (!this.supabase) {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -321,7 +321,7 @@ export class SafeHavenClient {
       }
       this.supabase = createClient(url, key, {
         auth: { persistSession: false, autoRefreshToken: false },
-      });
+      }) as any;
     }
     return this.supabase;
   }

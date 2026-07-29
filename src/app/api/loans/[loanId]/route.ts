@@ -4,7 +4,7 @@ import { getLoan, getSchedule, acceptAgreement } from '@/modules/loans';
 
 // GET /api/loans/[loanId] — loan details + schedule
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { loanId: string } }
 ) {
   try {

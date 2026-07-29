@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getInvestmentAccount, getAccountTransactions } from '@/modules/investments';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { accountId: string } }
 ) {
   try {

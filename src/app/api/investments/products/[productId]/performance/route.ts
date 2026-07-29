@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { recordPoolPerformance, getPoolPerformanceRecords } from '@/modules/investments';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { productId: string } }
 ) {
   try {

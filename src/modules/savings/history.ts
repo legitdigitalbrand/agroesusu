@@ -77,7 +77,7 @@ export async function computeSavingsSignal(customerId: string): Promise<void> {
       totalBalance += await getAccountBalance(ledgerAccountId as string);
     }
     if ((account as { savings_products?: { product_type?: string } }).savings_products) {
-      productTypes.add((account as { savings_products: { product_type: string } }).savings_products.product_type);
+      productTypes.add((account as unknown as { savings_products: { product_type: string } }).savings_products.product_type);
     }
   }
 

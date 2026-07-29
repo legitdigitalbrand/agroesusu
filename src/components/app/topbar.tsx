@@ -91,10 +91,10 @@ export default function Topbar({
             <img
               src={profile.avatar_url}
               alt={profile.full_name || "Profile"}
-              className="h-10 w-10 rounded-xl object-cover border border-brand-primary/10"
+              className="h-10 w-10 rounded-xl object-cover border border-indigo/10"
             />
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary font-bold text-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo/10 text-indigo font-bold text-sm">
               {initials(profile?.full_name || "User")}
             </div>
           )}

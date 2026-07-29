@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { HelpCircle, ChevronRight, HelpCircle as HelpIcon, ArrowRight } from 'lucide-react';
+import { ChevronRight, HelpCircle as HelpIcon, ArrowRight } from 'lucide-react';
 
 const categories = [
   {
@@ -73,9 +73,9 @@ export default function FaqsPage() {
   return (
     <div className="bg-white">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-brand-cream/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <span className="text-xs font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-4 py-1.5 rounded-full border border-brand-primary/20">
+          <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Frequently Asked Questions
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
@@ -103,10 +103,10 @@ export default function FaqsPage() {
                     className="group border border-gray-100 rounded-2xl bg-white p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
                   >
                     <summary className="flex items-center justify-between cursor-pointer focus:outline-none list-none">
-                      <h4 className="text-base font-bold text-gray-900 group-open:text-brand-primary pr-4 transition-colors">
+                      <h4 className="text-base font-bold text-gray-900 group-open:text-indigo pr-4 transition-colors">
                         {faq.question}
                       </h4>
-                      <span className="bg-gray-50 text-gray-400 group-open:bg-brand-primary/10 group-open:text-brand-primary p-1.5 rounded-lg shrink-0 transition-all">
+                      <span className="bg-gray-50 text-gray-400 group-open:bg-indigo/10 group-open:text-indigo p-1.5 rounded-lg shrink-0 transition-all">
                         <ChevronRight className="h-4 w-4 transform group-open:rotate-90 transition-transform duration-200" />
                       </span>
                     </summary>
@@ -124,7 +124,7 @@ export default function FaqsPage() {
       {/* Support Info */}
       <section className="bg-gray-50 border-t border-b border-gray-100 py-16">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
-          <HelpIcon className="h-12 w-12 text-brand-gold mx-auto" />
+          <HelpIcon className="h-12 w-12 text-ochre mx-auto" />
           <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             Still have questions?
           </h2>

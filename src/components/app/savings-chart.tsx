@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { formatNaira, formatDate } from "@/lib/format";
+import { formatNaira, } from "@/lib/format";
 import { SavingsPlan, SavingsContribution } from "@/lib/types";
 
 interface SavingsChartProps {
@@ -92,7 +92,7 @@ export default function SavingsChart({ contributions, savingsPlans }: SavingsCha
           <h3 className="text-base font-bold text-gray-900">Savings Growth</h3>
           <p className="text-xs text-gray-500">Historical view of your active agricultural savings</p>
         </div>
-        <div className="flex items-center gap-1.5 bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-center">
+        <div className="flex items-center gap-1.5 bg-indigo/10 text-indigo px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-center">
           Total: {formatNaira(totalSavings)}
         </div>
       </div>

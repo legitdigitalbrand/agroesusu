@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, CheckCircle2, MessageSquare, Landmark, UserPlus } from 'lucide-react';
+import { Mail, Phone, MapPin, CheckCircle2 } from 'lucide-react';
 
 export default function ContactPage() {
   const [formData, setForm] = useState({
@@ -34,9 +34,9 @@ export default function ContactPage() {
   return (
     <div className="bg-white">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-brand-cream/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <span className="text-xs font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-4 py-1.5 rounded-full border border-brand-primary/20">
+          <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Get In Touch
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
@@ -64,31 +64,31 @@ export default function ContactPage() {
             {/* Direct Channels */}
             <div className="space-y-6">
               <div className="flex gap-4">
-                <div className="bg-brand-primary/10 text-brand-primary p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
+                <div className="bg-indigo/10 text-indigo p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
                   <Phone className="h-6 w-6" />
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-900 text-sm">Call Us Directly</h4>
                   <p className="text-xs text-gray-500 mt-1">General enquiries & cooperative setup support</p>
-                  <span className="text-sm font-bold text-brand-primary block mt-1">+234 (0) 1 234 5678</span>
-                  <span className="text-sm font-bold text-brand-primary block">+234 (0) 803 123 4567</span>
+                  <span className="text-sm font-bold text-indigo block mt-1">+234 (0) 1 234 5678</span>
+                  <span className="text-sm font-bold text-indigo block">+234 (0) 803 123 4567</span>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="bg-brand-primary/10 text-brand-primary p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
+                <div className="bg-indigo/10 text-indigo p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
                   <Mail className="h-6 w-6" />
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-900 text-sm">Email Our Desk</h4>
                   <p className="text-xs text-gray-500 mt-1">Submit documents or ask complex technical questions</p>
-                  <span className="text-sm font-bold text-brand-primary block mt-1">support@agroesusu.com</span>
-                  <span className="text-sm font-bold text-brand-primary block">info@agroesusu.com</span>
+                  <span className="text-sm font-bold text-indigo block mt-1">support@agroesusu.com</span>
+                  <span className="text-sm font-bold text-indigo block">info@agroesusu.com</span>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="bg-brand-primary/10 text-brand-primary p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
+                <div className="bg-indigo/10 text-indigo p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
                   <MapPin className="h-6 w-6" />
                 </div>
                 <div>
@@ -123,7 +123,7 @@ export default function ContactPage() {
               {isSubmitted ? (
                 <div className="text-center py-12 space-y-6 animate-in fade-in duration-300">
                   <div className="bg-emerald-100 text-emerald-700 h-16 w-14 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="h-10 w-10 text-brand-primary" />
+                    <CheckCircle2 className="h-10 w-10 text-indigo" />
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-gray-900">Thank you! Message Sent</h3>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { listMeetings } from '@/modules/cooperative';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { coopId: string } }
 ) {
   try {

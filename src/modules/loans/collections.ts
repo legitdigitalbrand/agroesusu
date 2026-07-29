@@ -15,7 +15,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { initiate } from '@/modules/orchestrator';
-import type { Loan, Installment } from './types';
+import type { Installment } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

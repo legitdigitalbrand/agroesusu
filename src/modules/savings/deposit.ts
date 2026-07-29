@@ -11,7 +11,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { initiate } from '@/modules/orchestrator';
-import { getAccount, getSavingsBalance, activateAccount } from './accounts';
+import { getAccount, activateAccount } from './accounts';
 import type { DepositRequest } from './types';
 
 function getServiceClient() {

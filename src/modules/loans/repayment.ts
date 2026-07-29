@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 import { initiate } from '@/modules/orchestrator';
 import { getLoan } from './aggregate';
 import { getSchedule } from './schedule';
-import type { RepaymentRequest, Loan, Installment } from './types';
+import type { RepaymentRequest, Loan, LoanStatus } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -180,7 +180,7 @@ export async function repay(request: RepaymentRequest): Promise<{
     const totalPayable = Number(loan.total_payable) + Number(loan.total_penalty_charged);
 
     // Check if loan is fully repaid
-    let loanStatus = loan.status;
+    let loanStatus: LoanStatus = loan.status;
     if (newTotalRepaid + newTotalInterestPaid >= totalPayable) {
       loanStatus = 'closed';
     }

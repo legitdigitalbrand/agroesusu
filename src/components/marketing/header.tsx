@@ -43,11 +43,11 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <div className="bg-brand-primary p-2 rounded-xl text-white group-hover:bg-brand-primary-dark transition-colors">
+            <div className="bg-indigo p-2 rounded-xl text-white group-hover:bg-indigo-deep transition-colors">
               <Sprout className="h-6 w-6" />
             </div>
-            <span className="text-xl font-bold text-brand-primary tracking-tight">
-              Agro<span className="text-brand-gold">Esusu</span>
+            <span className="text-xl font-bold text-indigo tracking-tight">
+              Agro<span className="text-ochre">Esusu</span>
             </span>
           </Link>
 
@@ -59,8 +59,8 @@ export default function Header() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`text-sm font-medium transition-colors hover:text-brand-primary ${
-                    isActive ? 'text-brand-primary font-semibold' : 'text-gray-600'
+                  className={`text-sm font-medium transition-colors hover:text-indigo ${
+                    isActive ? 'text-indigo font-semibold' : 'text-gray-600'
                   }`}
                 >
                   {link.name}
@@ -73,7 +73,7 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-4">
             <Link
               href="/login"
-              className="text-sm font-semibold text-gray-700 hover:text-brand-primary transition-colors px-3 py-2"
+              className="text-sm font-semibold text-gray-700 hover:text-indigo transition-colors px-3 py-2"
             >
               Login
             </Link>
@@ -86,7 +86,7 @@ export default function Header() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 hover:text-brand-primary focus:outline-none p-1"
+              className="text-gray-600 hover:text-indigo focus:outline-none p-1"
               aria-label="Toggle menu"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -108,8 +108,8 @@ export default function Header() {
                   onClick={() => setIsOpen(false)}
                   className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors ${
                     isActive
-                      ? 'bg-brand-cream text-brand-primary font-semibold'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-brand-primary'
+                      ? 'bg-parchment text-indigo font-semibold'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-indigo'
                   }`}
                 >
                   {link.name}
@@ -120,7 +120,7 @@ export default function Header() {
               <Link
                 href="/login"
                 onClick={() => setIsOpen(false)}
-                className="text-center font-semibold text-gray-700 hover:text-brand-primary py-2"
+                className="text-center font-semibold text-gray-700 hover:text-indigo py-2"
               >
                 Login
               </Link>

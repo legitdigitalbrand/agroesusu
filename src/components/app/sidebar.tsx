@@ -77,12 +77,12 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
         {/* Header / Logo */}
         <div className="flex items-center justify-between px-2 pb-8">
           <Link href="/dashboard" className="flex items-center gap-2" onClick={onClose}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary text-white font-bold text-lg shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo text-white font-bold text-lg shadow-sm">
               Æ
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-brand-primary">Agro</span>
-              <span className="text-xl font-bold tracking-tight text-brand-gold">Esusu</span>
+              <span className="text-xl font-bold tracking-tight text-indigo">Agro</span>
+              <span className="text-xl font-bold tracking-tight text-ochre">Esusu</span>
             </div>
           </Link>
           <button
@@ -106,11 +106,11 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
                 onClick={onClose}
                 className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
                   active
-                    ? "bg-brand-primary text-white shadow-md shadow-brand-primary/10"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-brand-primary"
+                    ? "bg-indigo text-white shadow-md shadow-indigo/10"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-indigo"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${active ? "text-white" : "text-gray-400 group-hover:text-brand-primary"}`} />
+                <Icon className={`h-5 w-5 ${active ? "text-white" : "text-gray-400 group-hover:text-indigo"}`} />
                 {item.name}
               </Link>
             );
@@ -124,10 +124,10 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
               <img
                 src={profile.avatar_url}
                 alt={profile.full_name || "User"}
-                className="h-10 w-10 rounded-full object-cover border border-brand-primary/10"
+                className="h-10 w-10 rounded-full object-cover border border-indigo/10"
               />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary font-semibold text-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo/10 text-indigo font-semibold text-sm">
                 {initials(profile?.full_name || "User")}
               </div>
             )}

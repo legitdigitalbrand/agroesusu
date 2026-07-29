@@ -86,7 +86,7 @@ export async function reconcileWallet(walletId: string): Promise<ReconciliationR
       return sum + (tx.direction === 'credit' ? tx.amount : -tx.amount);
     }, 0);
   } else {
-    ourBalance = txSum;
+    ourBalance = txSum as number;
   }
 
   // 3. Internal consistency check: cached_balance vs computed sum

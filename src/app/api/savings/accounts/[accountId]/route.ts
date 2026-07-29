@@ -4,7 +4,7 @@ import { getAccount, getSavingsBalance } from '@/modules/savings';
 
 // GET /api/savings/accounts/[accountId] — get account details + balance
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { accountId: string } }
 ) {
   try {

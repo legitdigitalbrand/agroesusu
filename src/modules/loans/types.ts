@@ -51,6 +51,9 @@ export interface Loan {
   principal_amount: number | null;
   total_interest: number;
   total_payable: number;
+  interest_rate: number;
+  interest_method: string;
+  term_months: number;
   status: LoanStatus;
   applied_at: string;
   approved_at: string | null;

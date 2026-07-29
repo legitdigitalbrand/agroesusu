@@ -14,7 +14,6 @@ interface AppShellProps {
 
 export default function AppShell({
   profile,
-  wallet,
   unreadNotificationsCount,
   children,
 }: AppShellProps) {

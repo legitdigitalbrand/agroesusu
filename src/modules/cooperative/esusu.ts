@@ -11,7 +11,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { initiate } from '@/modules/orchestrator';
 import { getGroupPoolBalance, getGroupMembers } from './group-savings';
-import type { EsusuGroup, EsusuPayout, GroupSavingsMembership } from './types';
+import type { EsusuGroup, EsusuPayout } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

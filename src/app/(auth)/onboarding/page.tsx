@@ -11,7 +11,6 @@ import {
   Loader2, 
   ShieldCheck, 
   User, 
-  MapPin, 
   Sprout, 
   Users, 
   ArrowRight, 
@@ -282,7 +281,7 @@ export default function OnboardingPage() {
   if (loadingUser) {
     return (
       <div className="flex flex-col items-center justify-center py-12 min-h-[300px]">
-        <Loader2 className="w-10 h-10 text-brand-primary animate-spin" />
+        <Loader2 className="w-10 h-10 text-indigo animate-spin" />
         <p className="text-sm text-gray-500 mt-3 font-medium">Setting up your onboarding portal...</p>
       </div>
     );
@@ -302,13 +301,12 @@ export default function OnboardingPage() {
         {/* Progress line */}
         <div className="absolute top-5 left-4 right-4 h-0.5 bg-gray-100 -z-10" />
         <div 
-          className="absolute top-5 left-4 h-0.5 bg-brand-primary transition-all duration-300 -z-10" 
+          className="absolute top-5 left-4 h-0.5 bg-indigo transition-all duration-300 -z-10" 
           style={{ width: `${((currentStep - 1) / (stepsList.length - 1)) * 100}%` }}
         />
 
         <div className="flex justify-between items-center">
           {stepsList.map((step) => {
-            const Icon = step.icon;
             const isActive = currentStep === step.number;
             const isCompleted = currentStep > step.number;
 
@@ -317,16 +315,16 @@ export default function OnboardingPage() {
                 <div 
                   className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-bold text-sm ${
                     isCompleted 
-                      ? 'bg-brand-primary border-brand-primary text-white' 
+                      ? 'bg-indigo border-indigo text-white' 
                       : isActive 
-                        ? 'bg-white border-brand-primary text-brand-primary shadow-md shadow-brand-primary/10 scale-110' 
+                        ? 'bg-white border-indigo text-indigo shadow-md shadow-indigo/10 scale-110' 
                         : 'bg-white border-gray-200 text-gray-400'
                   }`}
                 >
                   {isCompleted ? <Check className="w-5 h-5 stroke-[3]" /> : step.number}
                 </div>
                 <span className={`text-[10px] font-bold mt-1.5 uppercase tracking-wider ${
-                  isActive ? 'text-brand-primary' : isCompleted ? 'text-gray-700' : 'text-gray-400'
+                  isActive ? 'text-indigo' : isCompleted ? 'text-gray-700' : 'text-gray-400'
                 }`}>
                   {step.label}
                 </span>
@@ -362,7 +360,7 @@ export default function OnboardingPage() {
               maxLength={11}
               placeholder="11-digit BVN"
               {...regStep1('bvn')}
-              className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+              className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                 errStep1.bvn ? 'border-red-300 ring-red-100' : ''
               }`}
               disabled={submitting}
@@ -384,7 +382,7 @@ export default function OnboardingPage() {
               maxLength={11}
               placeholder="11-digit NIN"
               {...regStep1('nin')}
-              className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+              className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                 errStep1.nin ? 'border-red-300 ring-red-100' : ''
               }`}
               disabled={submitting}
@@ -399,7 +397,7 @@ export default function OnboardingPage() {
 
           <button
             type="submit"
-            className="btn-primary w-full py-3 mt-4 bg-brand-primary hover:bg-brand-primary-dark text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
+            className="btn-primary w-full py-3 mt-4 bg-indigo hover:bg-indigo-deep text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
             disabled={submitting}
           >
             {submitting ? (
@@ -434,7 +432,7 @@ export default function OnboardingPage() {
             <textarea
               placeholder="e.g. 12, Agodi Gate, Ibadan"
               {...regStep2('residential_address')}
-              className={`input-field h-20 py-2 focus:border-brand-primary focus:ring-brand-primary/20 ${
+              className={`input-field h-20 py-2 focus:border-indigo focus:ring-indigo/20 ${
                 errStep2.residential_address ? 'border-red-300 ring-red-100' : ''
               }`}
               disabled={submitting}
@@ -451,7 +449,7 @@ export default function OnboardingPage() {
               </label>
               <select
                 {...regStep2('state')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 bg-white ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 bg-white ${
                   errStep2.state ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -474,7 +472,7 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="e.g. Ibadan North"
                 {...regStep2('lga')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                   errStep2.lga ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -491,7 +489,7 @@ export default function OnboardingPage() {
             </label>
             <select
               {...regStep2('occupation')}
-              className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 bg-white ${
+              className={`input-field focus:border-indigo focus:ring-indigo/20 bg-white ${
                 errStep2.occupation ? 'border-red-300 ring-red-100' : ''
               }`}
               disabled={submitting}
@@ -524,7 +522,7 @@ export default function OnboardingPage() {
             </button>
             <button
               type="submit"
-              className="btn-primary w-2/3 py-3 bg-brand-primary hover:bg-brand-primary-dark text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
+              className="btn-primary w-2/3 py-3 bg-indigo hover:bg-indigo-deep text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
               disabled={submitting}
             >
               {submitting ? (
@@ -560,7 +558,7 @@ export default function OnboardingPage() {
               </label>
               <select
                 {...regStep3('farm_type')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 bg-white ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 bg-white ${
                   errStep3.farm_type ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -588,7 +586,7 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="e.g. 2.5 (or 0 if none)"
                 {...regStep3('farm_size')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                   errStep3.farm_size ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -608,7 +606,7 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="e.g. 5"
                 {...regStep3('years_farming')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                   errStep3.years_farming ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -624,7 +622,7 @@ export default function OnboardingPage() {
               </label>
               <select
                 {...regStep3('expected_harvest')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 bg-white ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 bg-white ${
                   errStep3.expected_harvest ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -651,7 +649,7 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="e.g. Maize, Cassava"
                 {...regStep3('primary_produce')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                   errStep3.primary_produce ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -669,7 +667,7 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="e.g. 1500000"
                 {...regStep3('annual_revenue')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                   errStep3.annual_revenue ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -691,7 +689,7 @@ export default function OnboardingPage() {
                   type="text"
                   placeholder="e.g. Akin Farms Ltd"
                   {...regStep3('business_name')}
-                  className="input-field focus:border-brand-primary focus:ring-brand-primary/20"
+                  className="input-field focus:border-indigo focus:ring-indigo/20"
                   disabled={submitting}
                 />
               </div>
@@ -704,7 +702,7 @@ export default function OnboardingPage() {
                   type="text"
                   placeholder="e.g. Sole Proprietor"
                   {...regStep3('business_type')}
-                  className="input-field focus:border-brand-primary focus:ring-brand-primary/20"
+                  className="input-field focus:border-indigo focus:ring-indigo/20"
                   disabled={submitting}
                 />
               </div>
@@ -723,7 +721,7 @@ export default function OnboardingPage() {
             </button>
             <button
               type="submit"
-              className="btn-primary w-2/3 py-3 bg-brand-primary hover:bg-brand-primary-dark text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
+              className="btn-primary w-2/3 py-3 bg-indigo hover:bg-indigo-deep text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
               disabled={submitting}
             >
               {submitting ? (
@@ -752,8 +750,8 @@ export default function OnboardingPage() {
             </p>
           </div>
 
-          <div className="p-4 rounded-xl border border-gray-100 bg-brand-cream/40 space-y-3">
-            <h4 className="text-xs font-bold text-brand-primary uppercase tracking-wider">Next of Kin Details</h4>
+          <div className="p-4 rounded-xl border border-gray-100 bg-parchment/40 space-y-3">
+            <h4 className="text-xs font-bold text-indigo uppercase tracking-wider">Next of Kin Details</h4>
             
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1.5">
@@ -763,7 +761,7 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="e.g. Grace Akinola"
                 {...regStep4('nok_name')}
-                className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+                className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                   errStep4.nok_name ? 'border-red-300 ring-red-100' : ''
                 }`}
                 disabled={submitting}
@@ -782,7 +780,7 @@ export default function OnboardingPage() {
                   type="tel"
                   placeholder="e.g. 08012345678"
                   {...regStep4('nok_phone')}
-                  className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 ${
+                  className={`input-field focus:border-indigo focus:ring-indigo/20 ${
                     errStep4.nok_phone ? 'border-red-300 ring-red-100' : ''
                   }`}
                   disabled={submitting}
@@ -798,7 +796,7 @@ export default function OnboardingPage() {
                 </label>
                 <select
                   {...regStep4('nok_relationship')}
-                  className={`input-field focus:border-brand-primary focus:ring-brand-primary/20 bg-white ${
+                  className={`input-field focus:border-indigo focus:ring-indigo/20 bg-white ${
                     errStep4.nok_relationship ? 'border-red-300 ring-red-100' : ''
                   }`}
                   disabled={submitting}
@@ -841,7 +839,7 @@ export default function OnboardingPage() {
                   value={digit}
                   onChange={(e) => handlePinChange(idx, e.target.value)}
                   onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                  className="w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-xl focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 transition outline-none"
+                  className="w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-xl focus:border-indigo focus:ring-4 focus:ring-indigo/10 transition outline-none"
                   disabled={submitting}
                 />
               ))}
@@ -860,7 +858,7 @@ export default function OnboardingPage() {
             </button>
             <button
               type="submit"
-              className="btn-primary w-2/3 py-3 bg-brand-primary hover:bg-brand-primary-dark text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
+              className="btn-primary w-2/3 py-3 bg-indigo hover:bg-indigo-deep text-white rounded-xl shadow-md font-semibold transition flex items-center justify-center gap-2"
               disabled={submitting}
             >
               {submitting ? (

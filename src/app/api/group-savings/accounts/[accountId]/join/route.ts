@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { joinGroupSavings } from '@/modules/cooperative';
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { accountId: string } }
 ) {
   try {

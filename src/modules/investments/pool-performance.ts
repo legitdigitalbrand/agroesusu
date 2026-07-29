@@ -133,7 +133,7 @@ export async function distributePoolReturns(
     // Get all active investment accounts for this product
     const { data: accounts, error: accountsError } = await supabase
       .from('investment_accounts')
-      .select('id, customer_id, current_value, terms_snapshot')
+      .select('id, customer_id, current_value, terms_snapshot, returns_earned, returns_paid_out')
       .eq('product_id', perfRecord.product_id)
       .eq('status', 'active');
     if (accountsError) return { success: false, performance_record_id: performanceRecordId, total_distributed: 0, contributor_count: 0, distributions: [], error: `Failed to get accounts: ${accountsError.message}` };

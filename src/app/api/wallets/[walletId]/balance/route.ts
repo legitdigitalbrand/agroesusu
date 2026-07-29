@@ -7,7 +7,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 // Customer: can only see their own wallet (RLS enforced).
 // Staff: needs 'wallet.read' permission.
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { walletId: string } }
 ) {
   try {

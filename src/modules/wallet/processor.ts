@@ -86,7 +86,7 @@ function extractDirection(payload: SafeHavenWebhookPayload): 'credit' | 'debit' 
   return 'credit';
 }
 
-function extractTransactionType(payload: SafeHavenWebhookPayload, direction: 'credit' | 'debit'): 'wallet_deposit' | 'wallet_withdrawal' {
+function extractTransactionType(_payload: SafeHavenWebhookPayload, direction: 'credit' | 'debit'): 'wallet_deposit' | 'wallet_withdrawal' {
   return direction === 'credit' ? 'wallet_deposit' : 'wallet_withdrawal';
 }
 

@@ -28,10 +28,16 @@ import { createClient } from '@supabase/supabase-js';
  * Idempotency: Every call checks the idempotency_keys table before executing.
  * On retry (network timeout, mobile refresh), the stored result is returned.
  */
+
+interface IdempotencyRecord {
+  status: string;
+  response: unknown;
+}
+
 export class SafeHavenAdapter implements IBankingProvider {
   private client: SafeHavenClient;
   private config: SafeHavenConfig;
-  private supabase: ReturnType<typeof createClient> | null = null;
+  private supabase: any = null;
 
   constructor(config: SafeHavenConfig) {
     this.config = config;
@@ -208,7 +214,7 @@ export class SafeHavenAdapter implements IBankingProvider {
       const data = response.data as Record<string, unknown>;
 
       return {
-        reference: data.reference || params.paymentReference,
+        reference: (data.reference as string) || params.paymentReference,
         status: data.status === 'success' ? 'success' : data.status === 'pending' ? 'pending' : 'failed',
         message: data.message as string | undefined,
       };
@@ -285,19 +291,21 @@ export class SafeHavenAdapter implements IBankingProvider {
       .eq('key', key)
       .maybeSingle();
 
-    if (existing) {
-      if (existing.status === 'completed') {
+    const existingRecord = existing as IdempotencyRecord | null;
+
+    if (existingRecord) {
+      if (existingRecord.status === 'completed') {
         // Return stored result — no duplicate execution
-        return existing.response as T;
+        return existingRecord.response as T;
       }
-      if (existing.status === 'in_progress') {
+      if (existingRecord.status === 'in_progress') {
         throw new IntegrationError(
           'Operation already in progress',
           'IDEMPOTENCY_IN_PROGRESS',
           true,
         );
       }
-      if (existing.status === 'failed') {
+      if (existingRecord.status === 'failed') {
         // Previous attempt failed — allow retry by deleting old key
         await supabase.from('idempotency_keys').delete().eq('key', key);
       }
@@ -310,7 +318,7 @@ export class SafeHavenAdapter implements IBankingProvider {
       entity_id: key.split(':')[1],
       request_hash: key.split(':')[2],
       status: 'in_progress',
-    });
+    } as Record<string, unknown>);
 
     // Execute the operation
     try {
@@ -323,7 +331,7 @@ export class SafeHavenAdapter implements IBankingProvider {
           status: 'completed',
           response: result as Record<string, unknown>,
           completed_at: new Date().toISOString(),
-        })
+        } as Record<string, unknown>)
         .eq('key', key);
 
       return result;
@@ -335,7 +343,7 @@ export class SafeHavenAdapter implements IBankingProvider {
         .update({
           status: 'failed',
           completed_at: new Date().toISOString(),
-        })
+        } as Record<string, unknown>)
         .eq('key', key);
 
       throw error;
@@ -346,17 +354,22 @@ export class SafeHavenAdapter implements IBankingProvider {
   // Supabase client
   // ===========================================================================
 
-  private getSupabase() {
+  private getSupabase(): any {
     if (!this.supabase) {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+      
       if (!url || !key) {
-        throw new Error('Missing Supabase environment variables');
+        throw new IntegrationError(
+          'Missing Supabase configuration for idempotency storage',
+          'CONFIG_ERROR',
+          false,
+        );
       }
-      this.supabase = createClient(url, key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
+
+      this.supabase = createClient(url, key);
     }
+
     return this.supabase;
   }
 }

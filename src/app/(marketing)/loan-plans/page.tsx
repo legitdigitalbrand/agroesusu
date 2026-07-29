@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Sprout, Users, Tractor, ShoppingBag, ArrowRight, CheckCircle2, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Sprout, Users, Tractor, ShoppingBag, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 const loanTypes = [
   {
@@ -105,9 +105,9 @@ export default function LoanPlansPage() {
   return (
     <div className="bg-white">
       {/* Header Banner */}
-      <section className="bg-gradient-to-b from-brand-cream/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <span className="text-sm font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-4 py-1.5 rounded-full border border-brand-gold/20">
+          <span className="text-sm font-bold text-ochre uppercase tracking-widest bg-ochre/10 px-4 py-1.5 rounded-full border border-ochre/20">
             Agricultural Credit
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
@@ -126,14 +126,14 @@ export default function LoanPlansPage() {
           {loanTypes.map((loan) => {
             const Icon = loan.icon;
             return (
-              <div key={loan.id} className="card-surface flex flex-col justify-between border border-gray-100 hover:border-brand-primary/20 hover:shadow-lg transition-all">
+              <div key={loan.id} className="card-surface flex flex-col justify-between border border-gray-100 hover:border-indigo/20 hover:shadow-lg transition-all">
                 <div className="space-y-6">
                   {/* Badge & Rate */}
                   <div className="flex items-center justify-between">
                     <div className={`${loan.iconBg} p-3 rounded-2xl`}>
                       <Icon className="h-6 w-6" />
                     </div>
-                    <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-3 py-1 rounded-full">
+                    <span className="text-xs font-bold text-indigo bg-indigo/10 border border-indigo/20 px-3 py-1 rounded-full">
                       Rate: {loan.rate}
                     </span>
                   </div>
@@ -141,7 +141,7 @@ export default function LoanPlansPage() {
                   {/* Copy */}
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-gray-900">{loan.name}</h3>
-                    <p className="text-sm text-brand-gold-dark font-medium">{loan.tagline}</p>
+                    <p className="text-sm text-ochre-dim font-medium">{loan.tagline}</p>
                   </div>
 
                   <p className="text-sm text-gray-600 leading-relaxed">{loan.description}</p>
@@ -164,7 +164,7 @@ export default function LoanPlansPage() {
                     <ul className="space-y-2">
                       {loan.features.map((feat, index) => (
                         <li key={index} className="flex items-start space-x-2 text-sm text-gray-600">
-                          <CheckCircle2 className="h-4.5 w-4.5 text-brand-gold shrink-0 mt-0.5" />
+                          <CheckCircle2 className="h-4.5 w-4.5 text-ochre shrink-0 mt-0.5" />
                           <span>{feat}</span>
                         </li>
                       ))}
@@ -185,10 +185,10 @@ export default function LoanPlansPage() {
       </section>
 
       {/* 5-Step Application Process */}
-      <section className="bg-brand-primary text-white py-20">
+      <section className="bg-indigo text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
-            <span className="text-xs font-bold text-brand-gold bg-white/10 px-3 py-1 rounded-full uppercase tracking-widest">
+            <span className="text-xs font-bold text-ochre bg-white/10 px-3 py-1 rounded-full uppercase tracking-widest">
               Simple Application
             </span>
             <h2 className="text-3xl font-extrabold text-white tracking-tight">
@@ -203,9 +203,9 @@ export default function LoanPlansPage() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
             {steps.map((step, idx) => (
               <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-6 relative flex flex-col justify-between">
-                <span className="text-4xl font-extrabold text-brand-gold/30 block mb-4">{step.num}</span>
+                <span className="text-4xl font-extrabold text-ochre/30 block mb-4">{step.num}</span>
                 <div>
-                  <h4 className="font-bold text-base text-brand-gold mb-2">{step.title}</h4>
+                  <h4 className="font-bold text-base text-ochre mb-2">{step.title}</h4>
                   <p className="text-xs text-gray-300 leading-relaxed">{step.desc}</p>
                 </div>
               </div>
@@ -216,7 +216,7 @@ export default function LoanPlansPage() {
 
       {/* FAQ call-out or guarantee */}
       <section className="py-20 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
-        <div className="mx-auto bg-brand-gold/10 text-brand-gold w-12 h-12 rounded-full flex items-center justify-center mb-2">
+        <div className="mx-auto bg-ochre/10 text-ochre w-12 h-12 rounded-full flex items-center justify-center mb-2">
           <ShieldCheck className="h-6 w-6" />
         </div>
         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">

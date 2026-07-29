@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Sprout, Users, Award, ShieldCheck, Heart, ArrowRight } from 'lucide-react';
+import { Sprout, Users, ShieldCheck, Heart } from 'lucide-react';
 
 const values = [
   {
@@ -60,9 +60,9 @@ export default function AboutPage() {
   return (
     <div className="bg-white">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-brand-cream/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <span className="text-xs font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-4 py-1.5 rounded-full border border-brand-primary/20">
+          <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Our Story
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
@@ -97,8 +97,8 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-1 gap-6">
             {/* Mission Card */}
-            <div className="bg-brand-cream p-8 rounded-2xl border border-brand-gold/10 space-y-3">
-              <span className="text-xs font-bold text-brand-gold uppercase tracking-wider block">Our Mission</span>
+            <div className="bg-parchment p-8 rounded-2xl border border-ochre/10 space-y-3">
+              <span className="text-xs font-bold text-ochre uppercase tracking-wider block">Our Mission</span>
               <h3 className="text-2xl font-bold text-gray-900">Nurture Agricultural Wealth</h3>
               <p className="text-sm text-gray-600 leading-relaxed">
                 To equip Nigerian farmers and agricultural cooperatives with highly secure, automated wealth building tools 
@@ -107,9 +107,9 @@ export default function AboutPage() {
             </div>
 
             {/* Vision Card */}
-            <div className="bg-brand-primary text-white p-8 rounded-2xl space-y-3 relative overflow-hidden">
+            <div className="bg-indigo text-white p-8 rounded-2xl space-y-3 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
-              <span className="text-xs font-bold text-brand-gold uppercase tracking-wider block">Our Vision</span>
+              <span className="text-xs font-bold text-ochre uppercase tracking-wider block">Our Vision</span>
               <h3 className="text-2xl font-bold text-white">Universal Inclusive Finance</h3>
               <p className="text-sm text-gray-100 leading-relaxed">
                 An ecosystem where every smallholder farmer, cooperative member, and agricultural merchant in Africa 
@@ -138,7 +138,7 @@ export default function AboutPage() {
               const Icon = val.icon;
               return (
                 <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                  <div className="bg-brand-primary/10 text-brand-primary w-10 h-10 rounded-xl flex items-center justify-center">
+                  <div className="bg-indigo/10 text-indigo w-10 h-10 rounded-xl flex items-center justify-center">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h4 className="font-bold text-base text-gray-900">{val.title}</h4>
@@ -172,7 +172,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h4 className="font-bold text-lg text-gray-900">{member.name}</h4>
-                  <p className="text-xs text-brand-primary font-semibold">{member.role}</p>
+                  <p className="text-xs text-indigo font-semibold">{member.role}</p>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed">{member.bio}</p>
               </div>
@@ -182,7 +182,7 @@ export default function AboutPage() {
       </section>
 
       {/* Trust Call to Action */}
-      <section className="bg-gradient-to-r from-brand-primary to-brand-primary-dark text-white py-16 text-center">
+      <section className="bg-gradient-to-r from-indigo to-indigo-deep text-white py-16 text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
           <h2 className="text-3xl font-extrabold text-white tracking-tight">
             Partnered with Licensed Financial Institutions
@@ -192,7 +192,7 @@ export default function AboutPage() {
             Microfinance Bank, regulated by the Central Bank of Nigeria (CBN).
           </p>
           <div className="pt-2">
-            <Link href="/signup" className="btn-secondary bg-brand-gold text-gray-900 font-bold hover:bg-brand-gold-light py-3 px-8 text-sm">
+            <Link href="/signup" className="btn-secondary bg-ochre text-gray-900 font-bold hover:bg-ochre-light py-3 px-8 text-sm">
               Create Your Account Now
             </Link>
           </div>

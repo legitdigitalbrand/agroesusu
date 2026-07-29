@@ -64,9 +64,9 @@ export default function CareersPage() {
   return (
     <div className="bg-white">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-brand-cream/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <span className="text-xs font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-4 py-1.5 rounded-full border border-brand-primary/20">
+          <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Join Our Team
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
@@ -95,8 +95,8 @@ export default function CareersPage() {
           {benefits.map((benefit, idx) => {
             const Icon = benefit.icon;
             return (
-              <div key={idx} className="bg-brand-cream border border-brand-gold/10 p-8 rounded-2xl flex gap-4">
-                <div className="bg-brand-primary text-white p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
+              <div key={idx} className="bg-parchment border border-ochre/10 p-8 rounded-2xl flex gap-4">
+                <div className="bg-indigo text-white p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center">
                   <Icon className="h-6 w-6" />
                 </div>
                 <div className="space-y-2">
@@ -125,12 +125,12 @@ export default function CareersPage() {
             {jobs.map((job) => (
               <div
                 key={job.id}
-                className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-brand-primary/10 transition-all flex flex-col md:flex-row justify-between gap-6"
+                className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo/10 transition-all flex flex-col md:flex-row justify-between gap-6"
               >
                 <div className="space-y-4 max-w-3xl">
                   {/* Meta details */}
                   <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                    <span className="bg-brand-primary/5 text-brand-primary px-2.5 py-1 rounded-lg">
+                    <span className="bg-indigo/5 text-indigo px-2.5 py-1 rounded-lg">
                       {job.department}
                     </span>
                     <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg flex items-center gap-1">
@@ -166,7 +166,7 @@ export default function CareersPage() {
 
       {/* General Application Callout */}
       <section className="py-20 text-center max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
-        <Briefcase className="h-12 w-12 text-brand-gold mx-auto" />
+        <Briefcase className="h-12 w-12 text-ochre mx-auto" />
         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
           Don’t see your dream role listed?
         </h2>

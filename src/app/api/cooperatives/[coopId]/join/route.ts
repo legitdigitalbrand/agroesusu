@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { joinCooperative } from '@/modules/cooperative';
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: { coopId: string } }
 ) {
   try {
