@@ -30,6 +30,7 @@ const publicRoutes = [
   '/terms',
   '/privacy',
   '/help',
+  '/welcome',
 ];
 
 // Routes that require staff/admin privileges (checked server-side)
