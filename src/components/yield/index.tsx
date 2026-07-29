@@ -260,7 +260,7 @@ export function ScreenHeader({ title, subtitle, action, className }: ScreenHeade
   return (
     <div className={cn("flex items-start justify-between", className)}>
       <div>
-        <h1 className="font-serif text-2xl text-ink leading-tight">{title}</h1>
+        <h1 className="font-display text-2xl text-ink leading-tight">{title}</h1>
         {subtitle && <p className="text-sm text-ink-soft mt-0.5">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
@@ -297,7 +297,7 @@ export function ErrorState({ message = "Something went wrong", onRetry, classNam
 export function EmptyState({ title, message, action, className }: { title: string; message?: string; action?: React.ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col items-center justify-center py-16 text-center", className)}>
-      <h3 className="font-serif text-lg text-ink">{title}</h3>
+      <h3 className="font-display text-lg text-ink">{title}</h3>
       {message && <p className="mt-1 text-sm text-ink-soft max-w-xs">{message}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>

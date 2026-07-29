@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-serif text-2xl text-ink">Operational Dashboard</h1>
+        <h1 className="font-display text-2xl text-ink">Operational Dashboard</h1>
         <p className="text-sm text-ink-soft mt-0.5">Real-time platform metrics</p>
       </div>
 
@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
           {/* Loan portfolio */}
           <div className="ys-card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-lg text-ink">Loan Portfolio</h2>
+              <h2 className="font-display text-lg text-ink">Loan Portfolio</h2>
               <Link href="/admin/loans" className="text-sm text-indigo hover:underline">Review queue →</Link>
             </div>
             <div className="grid grid-cols-3 gap-4">
@@ -100,14 +100,14 @@ export default function AdminDashboardPage() {
             <div className="ys-card">
               <div className="flex items-center gap-2 mb-3">
                 <PiggyBank className="h-4 w-4 text-loam" />
-                <h3 className="font-serif text-base text-ink">Savings Portfolio</h3>
+                <h3 className="font-display text-base text-ink">Savings Portfolio</h3>
               </div>
               <p className="font-mono text-2xl text-ink">{formatMoney(op.total_savings_balance)}</p>
             </div>
             <div className="ys-card">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-indigo" />
-                <h3 className="font-serif text-base text-ink">Investments</h3>
+                <h3 className="font-display text-base text-ink">Investments</h3>
               </div>
               <p className="font-mono text-2xl text-ink">{formatMoney(op.total_investments_value)}</p>
               <p className="text-xs text-ink-soft mt-1">{op.active_investment_accounts} active accounts</p>
@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
           <div className="ys-card">
             <div className="flex items-center gap-2 mb-3">
               <Users className="h-4 w-4 text-indigo" />
-              <h3 className="font-serif text-base text-ink">Group Savings Pools</h3>
+              <h3 className="font-display text-base text-ink">Group Savings Pools</h3>
             </div>
             <p className="font-mono text-2xl text-ink">{formatMoney(op.total_group_savings || 0)}</p>
           </div>
@@ -128,7 +128,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-4">
           {/* Staff & roles */}
           <div className="ys-card">
-            <h3 className="font-serif text-base text-ink mb-3">Staff & Roles</h3>
+            <h3 className="font-display text-base text-ink mb-3">Staff & Roles</h3>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-ink-soft">Total staff</span>
@@ -148,7 +148,7 @@ export default function AdminDashboardPage() {
 
           {/* Product counts */}
           <div className="ys-card">
-            <h3 className="font-serif text-base text-ink mb-3">Products Configured</h3>
+            <h3 className="font-display text-base text-ink mb-3">Products Configured</h3>
             <div className="space-y-2">
               {overview.product_counts &&
                 Object.entries(overview.product_counts).map(([type, count]) => (
@@ -165,7 +165,7 @@ export default function AdminDashboardPage() {
 
           {/* Quick links */}
           <div className="ys-card">
-            <h3 className="font-serif text-base text-ink mb-3">Quick Actions</h3>
+            <h3 className="font-display text-base text-ink mb-3">Quick Actions</h3>
             <div className="space-y-2">
               <Link href="/admin/loans" className="block text-sm text-indigo hover:underline">
                 → Review pending loans ({op.pending_loans})

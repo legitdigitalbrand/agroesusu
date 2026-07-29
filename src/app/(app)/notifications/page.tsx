@@ -18,7 +18,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-serif text-2xl text-ink">Notifications</h1>
+        <h1 className="font-display text-2xl text-ink">Notifications</h1>
         <p className="text-sm text-ink-soft">Stay updated on your account activity</p>
       </div>
 

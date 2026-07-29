@@ -13,7 +13,7 @@ export default function StatementsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-serif text-2xl text-ink">Statements</h1>
+        <h1 className="font-display text-2xl text-ink">Statements</h1>
         <p className="text-sm text-ink-soft">Download your monthly account statements</p>
       </div>
 

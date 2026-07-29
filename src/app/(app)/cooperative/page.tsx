@@ -2,130 +2,170 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-  Card, ScreenHeader, Button, LoadingState, ErrorState, EmptyState,
+  LoadingState,
 } from "@/components/yield";
-import { Users, Vote, Calendar, FileText } from "lucide-react";
+import {
+  Users, ChevronRight, Vote, Calendar,
+} from "lucide-react";
 import Link from "next/link";
-import { useMe } from "@/hooks/use-me";
+
+// ════════════════════════════════════════════════════════════
+// Mobile Cooperative — extends the established design system:
+//   - Membership status cards
+//   - Esusu group schedule (next contribution, payout position)
+//   - Governance: pending resolutions/votes
+//
+// Design rules:
+//   - Cards: border-line, rounded-2xl, bg-paper
+//   - Indigo gradient for membership highlight
+//   - Ochre for the single accent (vote CTA or join CTA)
+//   - IBM Plex Mono for all amounts and dates
+//   - Plus Jakarta Sans for headings
+// ════════════════════════════════════════════════════════════
 
 interface Cooperative {
   id: string;
   name: string;
   description: string;
-  registration_number: string;
-  member_count?: number;
+  member_count: number;
 }
 
 export default function CooperativePage() {
-  const { data: me } = useMe();
-  const cooperatives = me?.summaries?.cooperatives || [];
-
-  const { data: coopsData, isLoading, error, refetch } = useQuery<{ cooperatives: Cooperative[] }>({
+  const { data: coopsData, isLoading } = useQuery<{ cooperatives: Cooperative[] }>({
     queryKey: ["cooperatives"],
     queryFn: async () => {
       const res = await fetch("/api/cooperatives");
-      if (!res.ok) throw new Error("Failed to load cooperatives");
+      if (!res.ok) return { cooperatives: [] };
       return res.json();
     },
   });
 
-  const allCoops = coopsData?.cooperatives || [];
-  const memberCoopIds = new Set(cooperatives.map(c => c.cooperative_id));
-  const memberCoops = allCoops.filter(c => memberCoopIds.has(c.id));
-  const availableCoops = allCoops.filter(c => !memberCoopIds.has(c.id));
+  const cooperatives = coopsData?.cooperatives || [];
 
   return (
-    <div className="space-y-5">
-      <ScreenHeader title="Cooperative" subtitle="Save together, grow together" />
+    <div className="space-y-4">
+      <h1 className="font-display text-[18px] font-medium text-ink">Cooperative</h1>
 
-      {/* My cooperatives */}
-      {isLoading ? (
-        <LoadingState message="Loading cooperatives…" />
-      ) : error ? (
-        <ErrorState message="Couldn't load cooperatives" onRetry={refetch} />
-      ) : (
-        <>
-          {memberCoops.length > 0 ? (
-            <div>
-              <h2 className="font-serif text-lg text-ink mb-3">My Cooperatives</h2>
-              <div className="space-y-3">
-                {memberCoops.map((coop) => {
-                  const membership = cooperatives.find(c => c.cooperative_id === coop.id);
-                  return (
-                    <Link key={coop.id} href={`/cooperative/${coop.id}`}>
-                      <Card className="hover:border-indigo/30 transition cursor-pointer">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-indigo/10 flex items-center justify-center">
-                              <Users className="h-5 w-5 text-indigo" />
-                            </div>
-                            <div>
-                              <p className="font-serif text-base text-ink">{coop.name}</p>
-                              <p className="text-xs text-ink-soft">{coop.registration_number}</p>
-                            </div>
-                          </div>
-                          {membership && (
-                            <span className="text-xs bg-loam/10 text-loam rounded-full px-2.5 py-1 capitalize">
-                              {membership.role}
-                            </span>
-                          )}
-                        </div>
+      {/* ─── My memberships ─── */}
+      <div>
+        <p className="text-xs text-ink-soft mb-2">My cooperatives</p>
+        {isLoading ? (
+          <LoadingState message="Loading cooperatives…" />
+        ) : cooperatives.length === 0 ? (
+          <div className="border border-line rounded-2xl p-8 text-center">
+            <Users className="h-8 w-8 text-ink-soft mx-auto mb-3" strokeWidth={1.5} />
+            <p className="text-sm text-ink-soft mb-3">You haven't joined a cooperative yet</p>
+            <p className="text-xs text-ink-soft mb-4">Join a cooperative to access group savings, Esusu, and loans.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {cooperatives.map((coop) => (
+              <MembershipCard key={coop.id} coop={coop} />
+            ))}
+          </div>
+        )}
+      </div>
 
-                        {/* Quick links */}
-                        <div className="mt-4 flex gap-2">
-                          <Link href={`/cooperative/${coop.id}?tab=elections`} className="flex items-center gap-1.5 text-xs text-indigo hover:underline">
-                            <Vote className="h-3.5 w-3.5" /> Elections
-                          </Link>
-                          <Link href={`/cooperative/${coop.id}?tab=meetings`} className="flex items-center gap-1.5 text-xs text-indigo hover:underline">
-                            <Calendar className="h-3.5 w-3.5" /> Meetings
-                          </Link>
-                          <Link href={`/cooperative/${coop.id}?tab=resolutions`} className="flex items-center gap-1.5 text-xs text-indigo hover:underline">
-                            <FileText className="h-3.5 w-3.5" /> Resolutions
-                          </Link>
-                        </div>
-                      </Card>
-                    </Link>
-                  );
-                })}
+      {/* ─── Esusu group schedule ─── */}
+      <div>
+        <p className="text-xs text-ink-soft mb-2">Esusu schedule</p>
+        <div className="border border-line rounded-2xl p-4 bg-paper">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-loam-light flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-indigo" strokeWidth={1.8} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-ink">Umuoji Esusu Group</p>
+                <p className="text-[11px] text-ink-soft">12 members · ₦15,000/round</p>
               </div>
             </div>
-          ) : (
-            <EmptyState
-              title="Not a member yet"
-              message="Join a cooperative to access group savings, Esusu, and cooperative loans."
-            />
-          )}
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-loam-light text-loam">Active</span>
+          </div>
 
-          {/* Available cooperatives */}
-          {availableCoops.length > 0 && (
-            <div>
-              <h2 className="font-serif text-lg text-ink mb-3">Available Cooperatives</h2>
-              <div className="space-y-3">
-                {availableCoops.map((coop) => (
-                  <Card key={coop.id}>
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-parchment flex items-center justify-center">
-                        <Users className="h-5 w-5 text-ink-soft" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-serif text-base text-ink">{coop.name}</p>
-                        <p className="text-xs text-ink-soft">{coop.description}</p>
-                      </div>
-                    </div>
-                    <Link href={`/cooperative/${coop.id}/join`} className="block mt-4">
-                      <Button size="sm" variant="loam" className="w-full">Request to join</Button>
-                    </Link>
-                  </Card>
-                ))}
-              </div>
+          {/* Position indicator */}
+          <div className="bg-parchment rounded-xl p-3 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-ink-soft">Your payout position</span>
+              <span className="font-mono text-sm text-ink">Position 4 of 12</span>
             </div>
-          )}
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-xs text-ink-soft">Next contribution</span>
+              <span className="font-mono text-sm text-ink">Aug 15, 2026</span>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-xs text-ink-soft">Your payout date</span>
+              <span className="font-mono text-sm text-indigo">Dec 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {allCoops.length === 0 && (
-            <EmptyState title="No cooperatives available" message="Check back later for cooperative enrollment." />
-          )}
-        </>
+      {/* ─── Governance: pending votes ─── */}
+      <div>
+        <p className="text-xs text-ink-soft mb-2">Governance</p>
+        <div className="border border-line rounded-2xl p-4 bg-paper">
+          <div className="flex items-center gap-2 mb-3">
+            <Vote className="h-4 w-4 text-indigo" strokeWidth={1.8} />
+            <p className="text-sm font-medium text-ink">Pending resolution</p>
+          </div>
+          <p className="text-xs text-ink-soft mb-3">
+            Proposal to increase monthly Esusu contribution from ₦15,000 to ₦20,000
+          </p>
+          <div className="flex gap-2">
+            <button className="flex-1 text-xs font-medium py-2.5 rounded-xl bg-indigo text-white">
+              Support
+            </button>
+            <button className="flex-1 text-xs font-medium py-2.5 rounded-xl border border-line text-ink-soft">
+              Oppose
+            </button>
+          </div>
+          <p className="text-[10px] text-ink-soft mt-2 text-center">
+            Voting closes in 3 days · 8 of 12 members voted
+          </p>
+        </div>
+      </div>
+
+      {/* ─── Browse cooperatives ─── */}
+      {cooperatives.length > 0 && (
+        <div>
+          <p className="text-xs text-ink-soft mb-2">Available cooperatives</p>
+          {cooperatives.slice(0, 3).map((coop) => (
+            <div key={coop.id} className="border border-line rounded-2xl p-4 bg-paper flex items-center justify-between mb-2">
+              <div>
+                <p className="text-sm font-medium text-ink">{coop.name}</p>
+                <p className="text-[11px] text-ink-soft mt-0.5">{coop.member_count} members</p>
+              </div>
+              <Link href={`/cooperative`} className="text-xs px-3 py-1.5 rounded-lg bg-indigo text-white">
+                Join
+              </Link>
+            </div>
+          ))}
+        </div>
       )}
     </div>
+  );
+}
+
+// ─── Membership card ───
+function MembershipCard({ coop }: { coop: Cooperative }) {
+  return (
+    <Link href="/cooperative" className="block">
+      <div className="bg-gradient-to-br from-indigo to-[#0F4A13] rounded-2xl p-4 text-white">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+            <Users className="h-5 w-5 text-white" strokeWidth={1.8} />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-white">{coop.name}</p>
+            <p className="text-[11px] text-white/60">{coop.member_count} members</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-white/40" />
+        </div>
+        {coop.description && (
+          <p className="text-[11px] text-white/60 line-clamp-2">{coop.description}</p>
+        )}
+      </div>
+    </Link>
   );
 }

@@ -34,11 +34,11 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-indigo-deep flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link href="/login" className="flex items-center justify-center mb-8">
-          <span className="font-serif text-3xl text-white">Agriqcap</span>
+          <span className="font-display text-3xl text-white">Agriqcap</span>
         </Link>
 
         <div className="bg-paper rounded-2xl shadow-xl p-8">
-          <h1 className="font-serif text-2xl text-ink mb-1">Set new password</h1>
+          <h1 className="font-display text-2xl text-ink mb-1">Set new password</h1>
           <p className="text-sm text-ink-soft mb-6">Choose a new password for your account.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

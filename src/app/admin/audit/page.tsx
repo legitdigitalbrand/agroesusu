@@ -61,7 +61,7 @@ export default function AdminAuditPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl text-ink">Audit Log</h1>
+          <h1 className="font-display text-2xl text-ink">Audit Log</h1>
           <p className="text-sm text-ink-soft mt-0.5">Immutable, append-only audit trail</p>
         </div>
         <Button variant="ghost" onClick={() => setShowFilters(!showFilters)}>

@@ -30,11 +30,11 @@ export default function VerifyPhonePage() {
     <div className="min-h-screen bg-indigo-deep flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link href="/" className="flex items-center justify-center mb-8">
-          <span className="font-serif text-3xl text-white">Agriqcap</span>
+          <span className="font-display text-3xl text-white">Agriqcap</span>
         </Link>
 
         <div className="bg-paper rounded-2xl shadow-xl p-8">
-          <h1 className="font-serif text-2xl text-ink mb-1">Verify your phone</h1>
+          <h1 className="font-display text-2xl text-ink mb-1">Verify your phone</h1>
           <p className="text-sm text-ink-soft mb-6">
             Enter the 6-digit code sent to your phone.
           </p>

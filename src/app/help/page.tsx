@@ -17,7 +17,7 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-paper">
       <div className="max-w-3xl mx-auto px-6 py-16">
-        <h1 className="font-serif text-3xl text-ink mb-2">Help & Support</h1>
+        <h1 className="font-display text-3xl text-ink mb-2">Help & Support</h1>
         <p className="text-sm text-ink-soft mb-8">How can we help you?</p>
 
         <div className="space-y-4 mb-12">
@@ -31,7 +31,7 @@ export default function HelpPage() {
           </div>
         </div>
 
-        <h2 className="font-serif text-xl text-ink mb-4">Frequently Asked Questions</h2>
+        <h2 className="font-display text-xl text-ink mb-4">Frequently Asked Questions</h2>
         <div className="space-y-3">
           {faqs.map((faq, i) => (
             <details key={i} className="bg-parchment rounded-xl p-5 group">

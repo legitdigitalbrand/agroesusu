@@ -47,7 +47,7 @@ export default function AdminReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl text-ink">Compliance & Reports</h1>
+          <h1 className="font-display text-2xl text-ink">Compliance & Reports</h1>
           <p className="text-sm text-ink-soft mt-0.5">On-demand regulatory and risk reports — traceable to the Ledger</p>
         </div>
         <div className="flex gap-2">
@@ -138,7 +138,7 @@ function ReportRenderer({ reportType, data }: { reportType: string; data: unknow
 
   return (
     <div className="ys-card">
-      <h2 className="font-serif text-lg text-ink mb-4 capitalize">
+      <h2 className="font-display text-lg text-ink mb-4 capitalize">
         {reportType.replace(/_/g, " ")} Report
       </h2>
       <div className="space-y-3">
@@ -166,7 +166,7 @@ function RiskReportRenderer({ data }: { data: unknown }) {
   return (
     <div className="space-y-4">
       <div className="ys-card">
-        <h2 className="font-serif text-lg text-ink mb-4">Portfolio Risk Overview</h2>
+        <h2 className="font-display text-lg text-ink mb-4">Portfolio Risk Overview</h2>
         <div className="space-y-3">
           {report && typeof report === "object" && Object.entries(report).map(([key, value]) => (
             <div key={key} className="flex justify-between border-b border-track/30 pb-2">

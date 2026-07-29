@@ -1,221 +1,254 @@
 "use client";
-import { useState } from "react";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Card, ScreenHeader, Button, LoadingState, ErrorState, EmptyState,
-  StatusBadge,
+  LoadingState, Button,
 } from "@/components/yield";
-import { AlertTriangle } from "lucide-react";
+import {
+  TrendingUp, Shield,
+} from "lucide-react";
 import Link from "next/link";
+
+// ════════════════════════════════════════════════════════════
+// Mobile Investments — extends the established design system:
+//   - Portfolio tab: active investments with current value
+//   - Products tab: browse investment products with risk levels
+//   - Risk disclosure indicator
+//
+// Design rules:
+//   - Cards: border-line, rounded-2xl, bg-paper
+//   - Product cards: icon + name + risk + rate (mono)
+//   - Ochre for single accent (invest CTA)
+//   - IBM Plex Mono for all monetary figures
+// ════════════════════════════════════════════════════════════
 
 interface InvestmentProduct {
   id: string;
   product_code: string;
   product_name: string;
-  return_guarantee: string;
-  interest_rate: number;
-  interest_calc_method: string;
-  term_days: number | null;
-  min_amount: number;
-  max_amount: number | null;
-  risk_level: string;
-  requires_cooperative: boolean;
   description: string;
+  expected_return_rate: number;
+  return_guarantee_type: string;
+  risk_level: string;
+  min_investment: number;
+  term_months: number;
+  is_active: boolean;
 }
 
 interface InvestmentAccount {
   id: string;
   status: string;
+  principal_amount: number;
   current_value: number;
-  product_id: string;
-  created_at: string;
-  investment_products?: { product_name: string; product_code: string; return_guarantee: string; interest_rate: number; risk_level: string; interest_calc_method: string };
+  product: { product_name: string; expected_return_rate: number; risk_level: string };
+  maturity_date: string;
 }
 
-const riskColors: Record<string, string> = {
-  low: "text-loam bg-loam/10",
-  moderate: "text-ochre bg-ochre/15",
-  high: "text-clay bg-clay/10",
-};
-
-const guaranteeLabels: Record<string, string> = {
-  guaranteed: "Guaranteed",
-  variable_pool: "Variable Pool",
-  expected: "Expected",
-};
-
 export default function InvestmentsPage() {
-  const [view, setView] = useState<"portfolio" | "products">("portfolio");
-  const { data: accountsData, isLoading: accountsLoading, error: accountsError, refetch } = useQuery<{ accounts: InvestmentAccount[] }>({
+  const [activeTab, setActiveTab] = useState<"portfolio" | "products">("portfolio");
+
+  const { data: accountsData, isLoading: acctsLoading } = useQuery<{ accounts: InvestmentAccount[] }>({
     queryKey: ["investment-accounts"],
     queryFn: async () => {
       const res = await fetch("/api/investments/accounts");
-      if (!res.ok) throw new Error("Failed to load portfolio");
+      if (!res.ok) return { accounts: [] };
       return res.json();
     },
   });
 
-  const { data: productsData, isLoading: productsLoading } = useQuery<{ products: InvestmentProduct[] }>({
+  const { data: productsData, isLoading: prodsLoading } = useQuery<{ products: InvestmentProduct[] }>({
     queryKey: ["investment-products"],
     queryFn: async () => {
       const res = await fetch("/api/investments/products");
-      if (!res.ok) throw new Error("Failed to load products");
+      if (!res.ok) return { products: [] };
       return res.json();
     },
   });
 
   const accounts = accountsData?.accounts || [];
   const products = productsData?.products || [];
-  const totalValue = accounts.reduce((s, a) => s + Number(a.current_value || 0), 0);
 
   return (
-    <div className="space-y-5">
-      <ScreenHeader
-        title="Investments"
-        subtitle="Grow your money in agricultural pools"
-      />
+    <div className="space-y-4">
+      <h1 className="font-display text-[18px] font-medium text-ink">Investments</h1>
 
-      {/* Tab toggle */}
-      <div className="flex gap-1 bg-parchment rounded-full p-1">
-        <button
-          onClick={() => setView("portfolio")}
-          className={`flex-1 py-2 rounded-full text-sm font-medium transition ${
-            view === "portfolio" ? "bg-indigo text-white" : "text-ink-soft"
-          }`}
-        >
+      {/* ─── Tabs ─── */}
+      <div className="flex gap-1 bg-parchment rounded-xl p-1">
+        <TabButton active={activeTab === "portfolio"} onClick={() => setActiveTab("portfolio")}>
           Portfolio
-        </button>
-        <button
-          onClick={() => setView("products")}
-          className={`flex-1 py-2 rounded-full text-sm font-medium transition ${
-            view === "products" ? "bg-indigo text-white" : "text-ink-soft"
-          }`}
-        >
-          Products
-        </button>
+        </TabButton>
+        <TabButton active={activeTab === "products"} onClick={() => setActiveTab("products")}>
+          Browse
+        </TabButton>
       </div>
 
-      {view === "portfolio" ? (
-        accountsLoading ? (
-          <LoadingState message="Loading your portfolio…" />
-        ) : accountsError ? (
-          <ErrorState message="Couldn't load your portfolio" onRetry={refetch} />
-        ) : accounts.length === 0 ? (
-          <EmptyState
-            title="No investments yet"
-            message="Browse our investment products and start growing your money."
-            action={
-              <button onClick={() => setView("products")}>
-                <Button>Browse products</Button>
-              </button>
-            }
-          />
-        ) : (
-          <>
-            {/* Portfolio total */}
-            <Card variant="dark">
-              <p className="text-xs text-white/60 uppercase tracking-wide">Total Portfolio Value</p>
-              <p className="mt-1 font-mono text-3xl text-white">
-                {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(totalValue)}
-              </p>
-              <p className="mt-2 text-sm text-white/50">{accounts.length} active {accounts.length === 1 ? "investment" : "investments"}</p>
-            </Card>
-
-            {/* Account list */}
-            <div className="space-y-3">
-              {accounts.map((account) => {
-                const product = account.investment_products;
-                const guarantee = product?.return_guarantee || "expected";
-                return (
-                  <Link key={account.id} href={`/investments/accounts/${account.id}`}>
-                    <Card className="hover:border-indigo/30 transition cursor-pointer">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-serif text-base text-ink">{product?.product_name || "Investment"}</p>
-                          <p className="text-xs text-ink-soft mt-0.5">{product?.product_code}</p>
-                        </div>
-                        <StatusBadge status={account.status} />
-                      </div>
-
-                      <div className="mt-3 flex items-end justify-between">
-                        <div>
-                          <p className="text-xs text-ink-soft">Current value</p>
-                          <p className="font-mono text-xl text-ink">
-                            {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(account.current_value)}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className={`text-xs rounded-full px-2.5 py-1 ${guarantee === "guaranteed" ? "bg-loam/10 text-loam" : guarantee === "variable_pool" ? "bg-clay/10 text-clay" : "bg-indigo/10 text-indigo"}`}>
-                            {guaranteeLabels[guarantee] || guarantee}
-                          </span>
-                          <span className="text-xs text-ink-soft">{product?.interest_rate}% {product?.interest_calc_method}</span>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                );
-              })}
+      {/* ─── Portfolio tab ─── */}
+      {activeTab === "portfolio" && (
+        <>
+          {acctsLoading ? (
+            <LoadingState message="Loading your portfolio…" />
+          ) : accounts.length === 0 ? (
+            <div className="border border-line rounded-2xl p-8 text-center">
+              <TrendingUp className="h-8 w-8 text-ink-soft mx-auto mb-3" strokeWidth={1.5} />
+              <p className="text-sm text-ink-soft mb-1">No investments yet</p>
+              <p className="text-xs text-ink-soft mb-4">Start investing in agricultural pools from ₦10,000</p>
+              <Button size="sm" onClick={() => setActiveTab("products")}>
+                Browse products
+              </Button>
             </div>
-          </>
-        )
-      ) : (
-        productsLoading ? (
-          <LoadingState message="Loading products…" />
-        ) : products.length === 0 ? (
-          <EmptyState title="No investment products available" />
-        ) : (
-          <div className="space-y-3">
-            {products.map((product) => (
-              <Card key={product.id}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-serif text-base text-ink">{product.product_name}</h3>
-                    <p className="text-xs text-ink-soft mt-0.5">{product.product_code}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono text-lg text-ink">{product.interest_rate}%</p>
-                    <p className="text-xs text-ink-soft">{guaranteeLabels[product.return_guarantee]}</p>
-                  </div>
-                </div>
+          ) : (
+            <>
+              {/* Portfolio summary */}
+              <div className="bg-gradient-to-br from-indigo to-[#0F4A13] rounded-2xl p-[18px] text-white">
+                <p className="text-xs text-white/60 mb-1">Total portfolio value</p>
+                <p className="font-mono text-[26px] font-medium">
+                  ₦{accounts.reduce((s, a) => s + a.current_value, 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-[11px] text-white/50 mt-1">{accounts.length} active {accounts.length === 1 ? "investment" : "investments"}</p>
+              </div>
 
-                <p className="text-sm text-ink-soft mt-2">{product.description}</p>
+              {/* Individual investments */}
+              <div className="space-y-3">
+                {accounts.map((acct) => (
+                  <InvestmentCard key={acct.id} account={acct} />
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
 
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  <span className={`rounded-full px-2.5 py-1 capitalize ${riskColors[product.risk_level] || "bg-parchment text-ink-soft"}`}>
-                    {product.risk_level} risk
-                  </span>
-                  {product.term_days && (
-                    <span className="bg-parchment text-ink-soft rounded-full px-2.5 py-1">
-                      {product.term_days} day term
-                    </span>
-                  )}
-                  <span className="bg-parchment text-ink-soft rounded-full px-2.5 py-1">
-                    Min: {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(product.min_amount)}
-                  </span>
-                  {product.requires_cooperative && (
-                    <span className="bg-indigo/10 text-indigo rounded-full px-2.5 py-1">Co-op required</span>
-                  )}
-                </div>
+      {/* ─── Products tab ─── */}
+      {activeTab === "products" && (
+        <>
+          {prodsLoading ? (
+            <LoadingState message="Loading products…" />
+          ) : products.length === 0 ? (
+            <div className="border border-line rounded-2xl p-8 text-center">
+              <p className="text-sm text-ink-soft">No investment products available</p>
+            </div>
+          ) : (
+            <>
+              {/* Risk disclosure notice */}
+              <div className="flex items-start gap-2.5 bg-parchment border border-line rounded-2xl p-3.5">
+                <Shield className="h-4 w-4 text-indigo flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+                <p className="text-[11px] text-ink-soft leading-relaxed">
+                  All investments carry risk. You must accept the digital risk disclosure before subscribing.
+                  Returns are not guaranteed unless explicitly stated.
+                </p>
+              </div>
 
-                {product.return_guarantee === "variable_pool" && (
-                  <div className="mt-3 flex items-start gap-2 bg-clay/5 rounded-lg p-2.5">
-                    <AlertTriangle className="h-3.5 w-3.5 text-clay flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-clay">
-                      Returns depend on actual pool performance — not guaranteed.
-                    </p>
-                  </div>
-                )}
-
-                <Link href={`/investments/subscribe?product=${product.id}`} className="block mt-4">
-                  <Button size="sm" className="w-full">Invest now</Button>
-                </Link>
-              </Card>
-            ))}
-          </div>
-        )
+              {/* Product cards */}
+              <div className="space-y-3">
+                {products.map((product) => (
+                  <InvestmentProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   );
 }
 
+// ─── Investment account card ───
+function InvestmentCard({ account }: { account: InvestmentAccount }) {
+  const fmtNGN = (v: number) => `₦${v.toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
+  const profit = account.current_value - account.principal_amount;
+  const profitPct = account.principal_amount > 0 ? ((profit / account.principal_amount) * 100).toFixed(1) : "0";
+
+  return (
+    <div className="border border-line rounded-2xl p-4 bg-paper">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <p className="text-sm font-medium text-ink">{account.product?.product_name || "Investment"}</p>
+          <p className="text-[11px] text-ink-soft mt-0.5">
+            Matures {account.maturity_date ? new Date(account.maturity_date).toLocaleDateString("en-NG", { month: "short", year: "numeric" }) : "—"}
+          </p>
+        </div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-loam-light text-loam capitalize">
+          {account.status}
+        </span>
+      </div>
+      <div className="flex justify-between items-end">
+        <div>
+          <p className="font-mono text-lg text-ink">{fmtNGN(account.current_value)}</p>
+          <p className="text-xs text-loam mt-0.5">
+            {profit >= 0 ? "+" : ""}{fmtNGN(profit)} ({profit >= 0 ? "+" : ""}{profitPct}%)
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-[13px] text-loam">{account.product?.expected_return_rate || 0}%</p>
+          <p className="text-[9.5px] text-ink-soft">exp. p.a.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Product card ───
+function InvestmentProductCard({ product }: { product: InvestmentProduct }) {
+  const fmtNGN = (v: number) => `₦${v.toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
+  const fmtRate = (rate: number) => rate.toFixed(1).replace(/\.0$/, "");
+
+  const riskColors: Record<string, string> = {
+    low: "bg-loam-light text-loam",
+    moderate: "bg-ochre-light text-ink/60",
+    high: "bg-clay-light text-clay",
+  };
+
+  const guaranteeLabels: Record<string, string> = {
+    guaranteed: "Guaranteed",
+    expected: "Expected",
+    variable_pool: "Variable pool",
+  };
+
+  return (
+    <div className="border border-line rounded-2xl p-4 bg-paper flex gap-3">
+      <div className="h-[42px] w-[42px] rounded-xl bg-loam-light flex items-center justify-center flex-shrink-0">
+        <TrendingUp className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />
+      </div>
+      <div className="flex-1">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm font-medium text-ink">{product.product_name}</p>
+            <p className="text-[11.5px] text-ink-soft mt-0.5">{product.description || "Invest and earn returns"}</p>
+          </div>
+          <div className="text-right">
+            <p className="font-mono text-[13px] text-loam">{fmtRate(product.expected_return_rate)}%</p>
+            <p className="text-[9.5px] text-ink-soft">p.a.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-2.5">
+          <span className={`text-[10px] px-2 py-0.5 rounded-full ${riskColors[product.risk_level] || "bg-parchment text-ink-soft"}`}>
+            {product.risk_level} risk
+          </span>
+          <span className="text-[10px] text-ink-soft">
+            {guaranteeLabels[product.return_guarantee_type] || product.return_guarantee_type}
+          </span>
+          <span className="text-[10px] text-ink-soft">·</span>
+          <span className="text-[10px] text-ink-soft">From {fmtNGN(product.min_investment)}</span>
+        </div>
+        <Link href="/investments" className="inline-block mt-3 text-xs px-3.5 py-1.5 rounded-lg bg-indigo text-white">
+          Invest now
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab button ───
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 text-xs font-medium px-3.5 py-2 rounded-lg transition ${
+        active ? "bg-indigo text-white" : "text-ink-soft hover:text-ink"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}

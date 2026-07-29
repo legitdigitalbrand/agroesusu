@@ -39,7 +39,7 @@ export default function AdminStaffPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl text-ink">Staff & RBAC</h1>
+          <h1 className="font-display text-2xl text-ink">Staff & RBAC</h1>
           <p className="text-sm text-ink-soft mt-0.5">Manage staff accounts and role assignments</p>
         </div>
         <div className="flex gap-3">
@@ -159,7 +159,7 @@ function CreateStaffModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-paper rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-ink">Add Staff Member</h2>
+          <h2 className="font-display text-xl text-ink">Add Staff Member</h2>
           <button onClick={onClose} className="text-ink-soft hover:text-ink">
             <X className="h-5 w-5" />
           </button>

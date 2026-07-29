@@ -28,7 +28,7 @@ export default function AdminInvestmentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-2xl text-ink">Investment Products</h1>
+        <h1 className="font-display text-2xl text-ink">Investment Products</h1>
         <p className="text-sm text-ink-soft">Manage investment products and pool performance</p>
       </div>
 

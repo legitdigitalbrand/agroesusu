@@ -123,7 +123,7 @@ export default function OnboardingPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 justify-center mb-3">
             <ShieldCheck className="h-6 w-6 text-indigo" />
-            <h1 className="font-serif text-2xl text-ink">Verify your account</h1>
+            <h1 className="font-display text-2xl text-ink">Verify your account</h1>
           </div>
           <p className="text-sm text-ink-soft">
             Complete verification to unlock more features. Your dashboard is always accessible.
@@ -166,7 +166,7 @@ export default function OnboardingPage() {
         {/* Tier 1: BVN + NIN */}
         {currentTier < 1 && (
           <Card className="mb-4">
-            <h2 className="font-serif text-lg text-ink mb-1">Tier 1 — Identity Verification</h2>
+            <h2 className="font-display text-lg text-ink mb-1">Tier 1 — Identity Verification</h2>
             <p className="text-xs text-ink-soft mb-4">Required for deposits above ₦50,000</p>
             <div className="space-y-3">
               <div>
@@ -201,7 +201,7 @@ export default function OnboardingPage() {
         {/* Tier 2: Address + Occupation */}
         {currentTier >= 1 && currentTier < 2 && (
           <Card className="mb-4">
-            <h2 className="font-serif text-lg text-ink mb-1">Tier 2 — Address & Occupation</h2>
+            <h2 className="font-display text-lg text-ink mb-1">Tier 2 — Address & Occupation</h2>
             <p className="text-xs text-ink-soft mb-4">Required for loan applications</p>
             <div className="space-y-3">
               <div>
@@ -235,7 +235,7 @@ export default function OnboardingPage() {
         {/* Tier 3: Farm details + Next of Kin */}
         {currentTier >= 2 && currentTier < 3 && (
           <Card className="mb-4">
-            <h2 className="font-serif text-lg text-ink mb-1">Tier 3 — Full Verification</h2>
+            <h2 className="font-display text-lg text-ink mb-1">Tier 3 — Full Verification</h2>
             <p className="text-xs text-ink-soft mb-4">Unlocks all features and higher limits</p>
             <div className="space-y-3">
               <div>
@@ -290,7 +290,7 @@ export default function OnboardingPage() {
         {currentTier >= 3 && (
           <Card className="text-center py-12">
             <ShieldCheck className="h-12 w-12 text-loam mx-auto mb-3" />
-            <h2 className="font-serif text-xl text-ink">Fully verified</h2>
+            <h2 className="font-display text-xl text-ink">Fully verified</h2>
             <p className="text-sm text-ink-soft mt-1">You have access to all Agriqcap features.</p>
             <Button className="mt-6" onClick={() => router.push("/dashboard")}>
               Go to dashboard <ArrowRight className="h-4 w-4 ml-2" />

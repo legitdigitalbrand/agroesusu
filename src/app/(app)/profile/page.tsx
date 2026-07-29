@@ -40,7 +40,7 @@ export default function ProfilePage() {
         <div className="inline-flex h-16 w-16 rounded-full bg-indigo/10 items-center justify-center mx-auto">
           <User className="h-7 w-7 text-indigo" />
         </div>
-        <h2 className="mt-3 font-serif text-xl text-ink">{profile.full_name}</h2>
+        <h2 className="mt-3 font-display text-xl text-ink">{profile.full_name}</h2>
         <p className="text-sm text-ink-soft">{profile.email}</p>
       </Card>
 
@@ -65,7 +65,7 @@ export default function ProfilePage() {
 
       {/* Personal info */}
       <Card>
-        <h3 className="font-serif text-base text-ink mb-3">Personal Information</h3>
+        <h3 className="font-display text-base text-ink mb-3">Personal Information</h3>
         <div className="space-y-3">
           <InfoRow icon={Phone} label="Phone" value={profile.phone} />
           <InfoRow icon={Mail} label="Email" value={profile.email || "—"} />
@@ -81,7 +81,7 @@ export default function ProfilePage() {
       {/* Next of kin */}
       {profile.nok_name && (
         <Card>
-          <h3 className="font-serif text-base text-ink mb-3">Next of Kin</h3>
+          <h3 className="font-display text-base text-ink mb-3">Next of Kin</h3>
           <div className="space-y-3">
             <InfoRow icon={User} label="Name" value={profile.nok_name} />
             {profile.nok_phone && <InfoRow icon={Phone} label="Phone" value={profile.nok_phone} />}

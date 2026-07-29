@@ -68,13 +68,13 @@ export default function SignupPage() {
       <div className="mb-10 text-center">
         <div className="inline-flex items-center gap-3 justify-center">
           <LogoMark size={48} variant="admin" />
-          <span className="font-serif text-3xl text-white">Agriqcap</span>
+          <span className="font-display text-3xl text-white">Agriqcap</span>
         </div>
         <p className="mt-2 text-sm text-white/50">Save. Borrow. Grow Together.</p>
       </div>
 
       <div className="w-full max-w-sm bg-paper rounded-2xl p-6">
-        <h1 className="font-serif text-2xl text-ink">Create your Agriqcap account</h1>
+        <h1 className="font-display text-2xl text-ink">Create your Agriqcap account</h1>
         <p className="text-sm text-ink-soft mt-1">Start saving and growing today</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">

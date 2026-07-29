@@ -15,7 +15,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-serif text-2xl text-ink">Settings</h1>
+        <h1 className="font-display text-2xl text-ink">Settings</h1>
         <p className="text-sm text-ink-soft">Manage your account preferences</p>
       </div>
 

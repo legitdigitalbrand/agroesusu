@@ -47,7 +47,7 @@ export default function WalletPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-serif text-2xl text-ink">Agriqcap Wallet</h1>
+        <h1 className="font-display text-2xl text-ink">Agriqcap Wallet</h1>
         <p className="text-sm text-ink-soft">Your digital wallet for all transactions</p>
       </div>
 
@@ -87,7 +87,7 @@ export default function WalletPage() {
 
       {/* Transactions */}
       <div>
-        <h2 className="font-serif text-lg text-ink mb-3">Transaction History</h2>
+        <h2 className="font-display text-lg text-ink mb-3">Transaction History</h2>
         {txLoading ? (
           <LoadingState message="Loading transactions…" />
         ) : txError ? (

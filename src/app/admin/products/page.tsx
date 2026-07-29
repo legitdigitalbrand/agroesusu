@@ -50,7 +50,7 @@ export default function AdminProductsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl text-ink">Product Configuration</h1>
+          <h1 className="font-display text-2xl text-ink">Product Configuration</h1>
           <p className="text-sm text-ink-soft mt-0.5">Configure savings, loan, investment, and group savings products</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
@@ -171,7 +171,7 @@ function CreateProductModal({ productType, onClose }: { productType: ProductType
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-paper rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-ink">New {productType.replace("-", " ")} product</h2>
+          <h2 className="font-display text-xl text-ink">New {productType.replace("-", " ")} product</h2>
           <button onClick={onClose} className="text-ink-soft hover:text-ink">
             <X className="h-5 w-5" />
           </button>

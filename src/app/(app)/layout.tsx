@@ -26,7 +26,7 @@ function DefaultRightRail() {
         <Card>
           <div className="flex items-center gap-2 mb-3">
             <PiggyBank className="h-4 w-4 text-loam" />
-            <h3 className="font-serif text-sm text-ink">Savings Goal</h3>
+            <h3 className="font-display text-sm text-ink">Savings Goal</h3>
           </div>
           <div className="flex items-center justify-center py-2">
             <ProgressRing progress={65} size={100} label="65%" sublabel="of goal" />
@@ -47,7 +47,7 @@ function DefaultRightRail() {
       <Card className="bg-indigo/5 border-indigo/20">
         <div className="flex items-center gap-2 mb-2">
           <Landmark className="h-4 w-4 text-indigo" />
-          <h3 className="font-serif text-sm text-ink">Loan Eligibility</h3>
+          <h3 className="font-display text-sm text-ink">Loan Eligibility</h3>
         </div>
         <p className="text-xs text-ink-soft mb-3">
           You can borrow up to 3× your eligible savings balance.
@@ -62,7 +62,7 @@ function DefaultRightRail() {
         <Card className="bg-parchment">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-loam" />
-            <h3 className="font-serif text-sm text-ink">Grow Your Money</h3>
+            <h3 className="font-display text-sm text-ink">Grow Your Money</h3>
           </div>
           <p className="text-xs text-ink-soft mb-3">
             Invest in agricultural pools from ₦10,000. Earn up to 18% returns.
