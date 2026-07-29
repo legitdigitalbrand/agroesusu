@@ -157,7 +157,7 @@ export default function BlogPage() {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-gray-900 leading-none">{post.author}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5 leading-none">{post.authorRole}</p>
+                    <p className="text-[12px] text-gray-500 mt-0.5 leading-none">{post.authorRole}</p>
                   </div>
                 </div>
 
@@ -195,7 +195,7 @@ export default function BlogPage() {
               Subscribe
             </button>
           </div>
-          <span className="text-[10px] text-gray-400 block">We respect your privacy. Unsubscribe anytime.</span>
+          <span className="text-[12px] text-gray-400 block">We respect your privacy. Unsubscribe anytime.</span>
         </div>
       </section>
     </div>

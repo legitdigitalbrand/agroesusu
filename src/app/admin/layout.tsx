@@ -67,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <LogoMark size={32} variant="admin" />
           <div>
             <span className="font-display text-xl text-white block leading-tight">Agriqcap</span>
-            <span className="text-[10px] text-white/40 uppercase tracking-wider">Admin Console</span>
+            <span className="text-[12px] text-white/40 uppercase tracking-wider">Admin Console</span>
           </div>
         </div>
 

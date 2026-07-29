@@ -79,7 +79,7 @@ function NavItem({ item, active }: { item: typeof navItems[0]; active: boolean }
       )}
     >
       <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 1.8} />
-      <span className="text-[10px] font-medium">{item.name}</span>
+      <span className="text-[12px] font-medium">{item.name}</span>
     </Link>
   );
 }

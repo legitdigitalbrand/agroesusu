@@ -67,20 +67,20 @@ export default function WelcomePage() {
       <div className="w-full max-w-[280px] mt-7 space-y-2.5">
         <Link
           href="/signup"
-          className="block text-center bg-ochre text-ink font-medium text-[14.5px] py-3.5 rounded-[14px] transition hover:bg-ochre-light"
+          className="block text-center bg-ochre text-ink font-medium text-[15px] py-3.5 rounded-[14px] transition hover:bg-ochre-light"
         >
           Create account
         </Link>
         <Link
           href="/login"
-          className="block text-center bg-transparent text-white/90 font-medium text-[14.5px] py-3 rounded-[14px] border-[1.4px] border-white/40 transition hover:bg-white/5"
+          className="block text-center bg-transparent text-white/90 font-medium text-[15px] py-3 rounded-[14px] border-[1.4px] border-white/40 transition hover:bg-white/5"
         >
           Sign in
         </Link>
       </div>
 
       {/* Fineprint */}
-      <p className="text-[10.5px] text-white/40 text-center mt-6 max-w-[240px] leading-relaxed">
+      <p className="text-[12px] text-white/40 text-center mt-6 max-w-[240px] leading-relaxed">
         By continuing, you agree to our{" "}
         <Link href="/terms" className="text-white/60 underline">Terms</Link>
         {" "}&{" "}

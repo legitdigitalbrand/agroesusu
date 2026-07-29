@@ -139,19 +139,19 @@ export default function WalletPage() {
           {/* 4D balance breakdown */}
           <div className="grid grid-cols-3 gap-3 bg-white/8 rounded-xl p-4 mb-5">
             <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Ledger</p>
+              <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Ledger</p>
               <p className="font-mono font-medium text-[14px] text-white">
                 {balanceVisible ? fmtNGN(wallet.ledger_balance) : "••••"}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Pending</p>
+              <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Pending</p>
               <p className="font-mono font-medium text-[14px] text-white">
                 {balanceVisible ? fmtNGN(wallet.pending_balance) : "••••"}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Reserved</p>
+              <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Reserved</p>
               <p className="font-mono font-medium text-[14px] text-white">
                 {balanceVisible ? fmtNGN(wallet.reserved_balance) : "••••"}
               </p>
@@ -230,7 +230,7 @@ export default function WalletPage() {
                   }`}>
                     {tx.direction === "credit" ? "+" : "−"}{fmtNGN(tx.amount)}
                   </p>
-                  <p className="text-[10px] text-ink-soft mt-0.5 uppercase tracking-wider">
+                  <p className="text-[12px] text-ink-soft mt-0.5 uppercase tracking-wider">
                     {tx.transaction_type.replace(/_/g, " ")}
                   </p>
                 </div>

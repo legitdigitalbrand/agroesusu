@@ -80,7 +80,7 @@ export default function AdminDashboardPage() {
       {/* Header — matches mockup */}
       <div>
         <h1 className="font-display font-bold text-xl text-ink">Platform overview</h1>
-        <p className="text-[12.5px] text-ink-soft mt-1">
+        <p className="text-[14px] text-ink-soft mt-1">
           {overview.product_counts ? "AgroEsusu Platform" : "Platform"} · last updated just now
         </p>
       </div>
@@ -116,8 +116,8 @@ export default function AdminDashboardPage() {
       {/* ─── Pending loan reviews — matches mockup panel ─── */}
       <div className="border border-line rounded-[14px] bg-paper overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-line">
-          <h3 className="text-[13.5px] font-medium text-ink">Pending loan reviews</h3>
-          <span className="text-[11.5px] text-ink-soft">
+          <h3 className="text-[15px] font-medium text-ink">Pending loan reviews</h3>
+          <span className="text-[13px] text-ink-soft">
             {pendingLoans.length} awaiting decision
           </span>
         </div>
@@ -132,7 +132,7 @@ export default function AdminDashboardPage() {
               <ReviewRow key={loan.id} loan={loan} />
             ))}
             <div className="px-4 py-2.5 border-t border-line border-dashed">
-              <p className="text-[10.5px] text-ink-soft leading-relaxed">
+              <p className="text-[12px] text-ink-soft leading-relaxed">
                 Every approve/deny decision requires a logged reason, visible to the applicant and stored in the audit trail.
               </p>
             </div>
@@ -228,7 +228,7 @@ function MetricCard({
 }) {
   return (
     <div className="border border-line rounded-[14px] bg-paper p-4">
-      <p className="text-[11.5px] text-ink-soft mb-1.5">{label}</p>
+      <p className="text-[13px] text-ink-soft mb-1.5">{label}</p>
       <p className="font-mono text-xl text-ink">{value}</p>
       <p className={`text-[11px] mt-1.5 ${deltaType === "up" ? "text-loam" : "text-clay"}`}>
         {deltaType === "warn" && <AlertTriangle className="inline h-3 w-3 mr-1" />}
@@ -241,7 +241,7 @@ function MetricCard({
 // ─── Review row — matches mockup's .review-row ───
 function ReviewRow({ loan }: { loan: PendingLoan }) {
   return (
-    <div className="flex justify-between items-center px-4 py-3 border-b border-line text-[12.5px] last:border-0">
+    <div className="flex justify-between items-center px-4 py-3 border-b border-line text-[14px] last:border-0">
       <div>
         <p className="font-medium text-ink">
           {loan.applicant_name || "Applicant"} · {loan.product_name || "Loan"} · {formatMoney(loan.principal_amount)}
@@ -254,13 +254,13 @@ function ReviewRow({ loan }: { loan: PendingLoan }) {
       <div className="flex gap-1.5">
         <Link
           href={`/admin/loans`}
-          className="text-[11.5px] px-3 py-1.5 rounded-lg border border-line bg-paper text-ink-soft hover:bg-parchment transition"
+          className="text-[13px] px-3 py-1.5 rounded-lg border border-line bg-paper text-ink-soft hover:bg-parchment transition"
         >
           Deny
         </Link>
         <Link
           href={`/admin/loans`}
-          className="text-[11.5px] px-3 py-1.5 rounded-lg border border-loam bg-loam-light text-ink hover:opacity-80 transition font-medium"
+          className="text-[13px] px-3 py-1.5 rounded-lg border border-loam bg-loam-light text-ink hover:opacity-80 transition font-medium"
         >
           Approve
         </Link>

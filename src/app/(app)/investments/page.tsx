@@ -71,7 +71,7 @@ export default function InvestmentsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-display text-[18px] font-medium text-ink">Investments</h1>
+      <h1 className="font-display text-[22px] font-medium text-ink">Investments</h1>
 
       {/* ─── Tabs ─── */}
       <div className="flex gap-1 bg-parchment rounded-xl p-1">
@@ -168,7 +168,7 @@ function InvestmentCard({ account }: { account: InvestmentAccount }) {
             Matures {account.maturity_date ? new Date(account.maturity_date).toLocaleDateString("en-NG", { month: "short", year: "numeric" }) : "—"}
           </p>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-loam-light text-loam capitalize">
+        <span className="text-[12px] px-2 py-0.5 rounded-full bg-loam-light text-loam capitalize">
           {account.status}
         </span>
       </div>
@@ -181,7 +181,7 @@ function InvestmentCard({ account }: { account: InvestmentAccount }) {
         </div>
         <div className="text-right">
           <p className="font-mono text-[13px] text-loam">{account.product?.expected_return_rate || 0}%</p>
-          <p className="text-[9.5px] text-ink-soft">exp. p.a.</p>
+          <p className="text-[12px] text-ink-soft">exp. p.a.</p>
         </div>
       </div>
     </div>
@@ -214,22 +214,22 @@ function InvestmentProductCard({ product }: { product: InvestmentProduct }) {
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-medium text-ink">{product.product_name}</p>
-            <p className="text-[11.5px] text-ink-soft mt-0.5">{product.description || "Invest and earn returns"}</p>
+            <p className="text-[13px] text-ink-soft mt-0.5">{product.description || "Invest and earn returns"}</p>
           </div>
           <div className="text-right">
             <p className="font-mono text-[13px] text-loam">{fmtRate(product.expected_return_rate)}%</p>
-            <p className="text-[9.5px] text-ink-soft">p.a.</p>
+            <p className="text-[12px] text-ink-soft">p.a.</p>
           </div>
         </div>
         <div className="flex items-center gap-2 mt-2.5">
-          <span className={`text-[10px] px-2 py-0.5 rounded-full ${riskColors[product.risk_level] || "bg-parchment text-ink-soft"}`}>
+          <span className={`text-[12px] px-2 py-0.5 rounded-full ${riskColors[product.risk_level] || "bg-parchment text-ink-soft"}`}>
             {product.risk_level} risk
           </span>
-          <span className="text-[10px] text-ink-soft">
+          <span className="text-[12px] text-ink-soft">
             {guaranteeLabels[product.return_guarantee_type] || product.return_guarantee_type}
           </span>
-          <span className="text-[10px] text-ink-soft">·</span>
-          <span className="text-[10px] text-ink-soft">From {fmtNGN(product.min_investment)}</span>
+          <span className="text-[12px] text-ink-soft">·</span>
+          <span className="text-[12px] text-ink-soft">From {fmtNGN(product.min_investment)}</span>
         </div>
         <Link href="/investments" className="inline-block mt-3 text-xs px-3.5 py-1.5 rounded-lg bg-indigo text-white">
           Invest now

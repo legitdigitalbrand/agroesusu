@@ -66,7 +66,7 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-display text-[18px] font-medium text-ink">Loans</h1>
+      <h1 className="font-display text-[22px] font-medium text-ink">Loans</h1>
 
       {/* ─── Tabs ─── */}
       <div className="flex gap-1 bg-parchment rounded-xl p-1">
@@ -183,7 +183,7 @@ function ProductEligibility({ product }: { product: LoanProduct }) {
             <div key={i} className="flex justify-between items-center py-2 border-b border-line text-xs last:border-0">
               <span className="text-ink">{item.dueDate}</span>
               <span className="font-mono text-ink">{fmtNGN(item.amount)}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-ochre-light text-ink/60">
+              <span className="text-[12px] px-2 py-0.5 rounded-full bg-ochre-light text-ink/60">
                 Upcoming
               </span>
             </div>
@@ -192,7 +192,7 @@ function ProductEligibility({ product }: { product: LoanProduct }) {
       </div>
 
       {/* ─── Apply button (ochre — single accent) ─── */}
-      <Link href="/loans" className="block bg-ochre text-ink text-center font-medium text-[13.5px] py-3 rounded-[14px]">
+      <Link href="/loans" className="block bg-ochre text-ink text-center font-medium text-[15px] py-3 rounded-[14px]">
         Continue application
       </Link>
     </div>
@@ -202,7 +202,7 @@ function ProductEligibility({ product }: { product: LoanProduct }) {
 // ─── Factor row in eligibility card ───
 function FactorRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between text-[11.5px] py-1.5 border-t border-white/15 first:border-t-0">
+    <div className="flex justify-between text-[13px] py-1.5 border-t border-white/15 first:border-t-0">
       <span className="text-white/60">{label}</span>
       <span className="font-mono text-white/80">{value}</span>
     </div>
@@ -228,7 +228,7 @@ function LoanCard({ loan }: { loan: Loan }) {
             {loan.status === "pending" ? "Awaiting review" : `Next due: ${loan.next_due_date ? new Date(loan.next_due_date).toLocaleDateString("en-NG", { day: "numeric", month: "short" }) : "—"}`}
           </p>
         </div>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusColor[loan.status] || "bg-parchment text-ink-soft"}`}>
+        <span className={`text-[12px] px-2 py-0.5 rounded-full ${statusColor[loan.status] || "bg-parchment text-ink-soft"}`}>
           {loan.status}
         </span>
       </div>

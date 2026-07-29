@@ -27,7 +27,7 @@ function DefaultRightRail() {
           </div>
           <h3 className="font-display font-semibold text-[14px] text-ink">Loan Eligibility</h3>
         </div>
-        <p className="text-[12.5px] text-ink-soft leading-relaxed mb-3">
+        <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
           You can borrow up to 3× your eligible savings balance.
         </p>
         <Link
@@ -46,7 +46,7 @@ function DefaultRightRail() {
           </div>
           <h3 className="font-display font-semibold text-[14px] text-white">Grow Your Money</h3>
         </div>
-        <p className="text-[12.5px] text-white/70 leading-relaxed mb-3">
+        <p className="text-[14px] text-white/70 leading-relaxed mb-3">
           Invest in agricultural pools from ₦10,000. Earn up to 18% returns.
         </p>
         <Link
@@ -65,7 +65,7 @@ function DefaultRightRail() {
           </div>
           <h3 className="font-display font-semibold text-[14px] text-ink">Savings</h3>
         </div>
-        <p className="text-[12.5px] text-ink-soft leading-relaxed mb-3">
+        <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
           Open a savings account and start building your credit history.
         </p>
         <Link

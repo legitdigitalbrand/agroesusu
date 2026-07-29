@@ -66,7 +66,7 @@ export default function SavingsPage() {
   return (
     <div className="space-y-4">
       {/* Title */}
-      <h1 className="font-display text-[18px] font-medium text-ink">Savings products</h1>
+      <h1 className="font-display text-[22px] font-medium text-ink">Savings products</h1>
 
       {/* ─── Goal card with progress ring ─── */}
       {accounts.length > 0 && activeTab === "accounts" && (
@@ -140,13 +140,13 @@ function GoalCard({ account }: { account: SavingsAccount }) {
       {/* Progress ring — track behind ochre fill */}
       <ProgressRing progress={progress} size={88} strokeWidth={8} label={`${progress}%`} />
       <div>
-        <p className="text-[13.5px] font-medium text-ink">{account.product?.product_name || "Savings goal"}</p>
+        <p className="text-[15px] font-medium text-ink">{account.product?.product_name || "Savings goal"}</p>
         <p className="text-xs text-ink-soft mt-1">
           {account.maturity_date
             ? `Matures ${new Date(account.maturity_date).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}`
             : "Flexible withdrawal"}
         </p>
-        <p className="font-mono text-[12.5px] mt-1.5">
+        <p className="font-mono text-[14px] mt-1.5">
           <strong className="text-ink">{fmtNGN(balance)}</strong>{" "}
           <span className="text-ink-soft">of {fmtNGN(target)}</span>
         </p>
@@ -172,7 +172,7 @@ function AccountCard({ account }: { account: SavingsAccount }) {
         </div>
         <div className="text-right">
           <p className="font-mono text-[13px] text-loam">{account.product?.interest_rate || 0}%</p>
-          <p className="text-[9.5px] text-ink-soft">p.a.</p>
+          <p className="text-[12px] text-ink-soft">p.a.</p>
         </div>
       </div>
     </Link>
@@ -194,11 +194,11 @@ function ProductCard({ product }: { product: SavingsProduct }) {
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-medium text-ink">{product.product_name}</p>
-            <p className="text-[11.5px] text-ink-soft mt-0.5">{product.description || "Save and earn interest"}</p>
+            <p className="text-[13px] text-ink-soft mt-0.5">{product.description || "Save and earn interest"}</p>
           </div>
           <div className="text-right">
             <p className="font-mono text-[13px] text-loam">{fmtRate(product.interest_rate)}%</p>
-            <p className="text-[9.5px] text-ink-soft">p.a.</p>
+            <p className="text-[12px] text-ink-soft">p.a.</p>
           </div>
         </div>
         <Link href="/savings" className="inline-block mt-3 text-xs px-3.5 py-1.5 rounded-lg bg-indigo text-white">

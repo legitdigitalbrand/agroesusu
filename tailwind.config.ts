@@ -85,6 +85,15 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      fontSize: {
+        'xs': ['13px', { lineHeight: '1.4' }],
+        'sm': ['15px', { lineHeight: '1.5' }],
+        'base': ['16px', { lineHeight: '1.6' }],
+        'lg': ['18px', { lineHeight: '1.6' }],
+        'xl': ['22px', { lineHeight: '1.4' }],
+        '2xl': ['26px', { lineHeight: '1.3' }],
+        '3xl': ['30px', { lineHeight: '1.2' }],
+      },
       fontFamily: {
         display: ['var(--font-jakarta)', 'system-ui', 'sans-serif'],
         sans: ['var(--font-ibm-plex-sans)', 'system-ui', 'sans-serif'],

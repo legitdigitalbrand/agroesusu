@@ -44,7 +44,7 @@ export default function CooperativePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-display text-[18px] font-medium text-ink">Cooperative</h1>
+      <h1 className="font-display text-[22px] font-medium text-ink">Cooperative</h1>
 
       {/* ─── My memberships ─── */}
       <div>
@@ -80,7 +80,7 @@ export default function CooperativePage() {
                 <p className="text-[11px] text-ink-soft">12 members · ₦15,000/round</p>
               </div>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-loam-light text-loam">Active</span>
+            <span className="text-[12px] px-2 py-0.5 rounded-full bg-loam-light text-loam">Active</span>
           </div>
 
           {/* Position indicator */}
@@ -120,7 +120,7 @@ export default function CooperativePage() {
               Oppose
             </button>
           </div>
-          <p className="text-[10px] text-ink-soft mt-2 text-center">
+          <p className="text-[12px] text-ink-soft mt-2 text-center">
             Voting closes in 3 days · 8 of 12 members voted
           </p>
         </div>

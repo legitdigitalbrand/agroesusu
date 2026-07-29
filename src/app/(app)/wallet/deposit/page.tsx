@@ -99,7 +99,7 @@ export default function DepositPage() {
 
       {/* Notice */}
       <div className="bg-loam-light rounded-xl p-4">
-        <p className="text-[12.5px] text-ink leading-relaxed">
+        <p className="text-[14px] text-ink leading-relaxed">
           <strong>Instant settlement.</strong> Transfers from all Nigerian banks settle immediately.
           Funds will appear in your Available Balance as soon as they arrive.
         </p>

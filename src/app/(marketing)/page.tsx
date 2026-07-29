@@ -29,7 +29,7 @@ export default function LandingPage() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 px-6 md:px-10 py-14 md:py-20 items-center max-w-[1180px] mx-auto">
         {/* Left — copy */}
         <div>
-          <span className="inline-block bg-loam-light text-indigo text-[11.5px] font-semibold px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-block bg-loam-light text-indigo text-[13px] font-semibold px-3.5 py-1.5 rounded-full mb-4">
             Savings-first cooperative finance
           </span>
           <h1 className="font-display font-bold text-[34px] md:text-[38px] leading-[1.15] text-ink mb-4">
@@ -37,7 +37,7 @@ export default function LandingPage() {
             <span className="text-indigo">Grow</span> together.<br />
             Borrow with <span className="text-loam">confidence.</span>
           </h1>
-          <p className="text-[14.5px] text-ink-soft leading-relaxed max-w-[420px] mb-6">
+          <p className="text-[15px] text-ink-soft leading-relaxed max-w-[420px] mb-6">
             Agriqcap helps farmers, cooperatives and small businesses build savings discipline,
             unlock fair loans, and grow through group investment — all in one secure platform.
           </p>
@@ -55,7 +55,7 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
-          <div className="flex items-center gap-2 text-[11.5px] text-ink-soft">
+          <div className="flex items-center gap-2 text-[13px] text-ink-soft">
             <Check className="w-3.5 h-3.5 text-loam" />
             Powered by a CBN-licensed banking partner · deposits safeguarded
           </div>
@@ -71,7 +71,7 @@ export default function LandingPage() {
           <div className="absolute top-4 right-2 w-[230px] bg-gradient-to-br from-indigo to-[#0F4A13] text-white rounded-[14px] p-4 shadow-[0_20px_40px_rgba(18,61,21,0.25)]">
             <p className="text-[12px] text-[#BFE0BE] mb-1.5">Dry season fund</p>
             <p className="font-mono text-[22px] font-medium">₦134,000</p>
-            <p className="text-[10.5px] text-[#9FC79B] mt-1.5">67% of ₦200,000 goal</p>
+            <p className="text-[12px] text-[#9FC79B] mt-1.5">67% of ₦200,000 goal</p>
           </div>
 
           {/* Floating stat card */}
@@ -80,7 +80,7 @@ export default function LandingPage() {
               <TrendingUp className="w-[18px] h-[18px] text-ochre" />
             </div>
             <div>
-              <p className="text-[10px] text-ink-soft m-0">Avg. member growth</p>
+              <p className="text-[12px] text-ink-soft m-0">Avg. member growth</p>
               <p className="font-mono text-[14px] text-ink m-0">+18.4%/yr</p>
             </div>
           </div>
@@ -91,15 +91,15 @@ export default function LandingPage() {
       <section className="bg-indigo-deep flex flex-wrap justify-around py-8 px-6 text-center">
         <div>
           <p className="font-mono text-ochre text-[26px] m-0">50,000+</p>
-          <p className="text-[11.5px] text-[#9FC79B] m-0 mt-1">Farmers &amp; members served</p>
+          <p className="text-[13px] text-[#9FC79B] m-0 mt-1">Farmers &amp; members served</p>
         </div>
         <div>
           <p className="font-mono text-ochre text-[26px] m-0">₦2.5B+</p>
-          <p className="text-[11.5px] text-[#9FC79B] m-0 mt-1">Saved through Agriqcap</p>
+          <p className="text-[13px] text-[#9FC79B] m-0 mt-1">Saved through Agriqcap</p>
         </div>
         <div>
           <p className="font-mono text-ochre text-[26px] m-0">₦1.8B+</p>
-          <p className="text-[11.5px] text-[#9FC79B] m-0 mt-1">Loaned to members</p>
+          <p className="text-[13px] text-[#9FC79B] m-0 mt-1">Loaned to members</p>
         </div>
       </section>
 
@@ -110,7 +110,7 @@ export default function LandingPage() {
             Everything you need to save, borrow and grow with your{" "}
             <span className="text-indigo">cooperative</span> — nothing you don&apos;t.
           </h2>
-          <span className="text-[12.5px] text-ink-soft whitespace-nowrap">Features</span>
+          <span className="text-[14px] text-ink-soft whitespace-nowrap">Features</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Image card */}
@@ -139,11 +139,11 @@ export default function LandingPage() {
       {/* ═══ Savings detail ═══ */}
       <section id="savings" className="grid grid-cols-1 lg:grid-cols-2 gap-11 px-6 md:px-10 py-10 max-w-[1180px] mx-auto items-center">
         <div>
-          <p className="text-loam text-[11.5px] font-semibold mb-2">Savings</p>
+          <p className="text-loam text-[13px] font-semibold mb-2">Savings</p>
           <h3 className="font-display font-bold text-[23px] text-ink mb-3">
             Secure your future. Earn industry-leading rates.
           </h3>
-          <p className="text-[13.5px] text-ink-soft leading-relaxed mb-5">
+          <p className="text-[15px] text-ink-soft leading-relaxed mb-5">
             Whether you&apos;re saving toward next season&apos;s inputs or building a long-term
             cooperative fund, Agriqcap&apos;s savings products are built around real agricultural
             cycles — not generic bank terms.
@@ -168,11 +168,11 @@ export default function LandingPage() {
             <p className="text-[12px] text-[#BFE0BE] mb-1">You could be eligible to borrow up to</p>
             <p className="font-mono text-[28px] font-medium mb-3">₦375,000</p>
             <div className="space-y-2">
-              <div className="flex justify-between text-[12.5px]">
+              <div className="flex justify-between text-[14px]">
                 <span className="text-[#9FC79B]">Savings consistency</span>
                 <span className="text-white">Excellent</span>
               </div>
-              <div className="flex justify-between text-[12.5px]">
+              <div className="flex justify-between text-[14px]">
                 <span className="text-[#9FC79B]">Cooperative participation</span>
                 <span className="text-white">Active</span>
               </div>
@@ -180,11 +180,11 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="order-2 lg:order-2">
-          <p className="text-loam text-[11.5px] font-semibold mb-2">Loans</p>
+          <p className="text-loam text-[13px] font-semibold mb-2">Loans</p>
           <h3 className="font-display font-bold text-[23px] text-ink mb-3">
             Affordable credit to fund your farming season.
           </h3>
-          <p className="text-[13.5px] text-ink-soft leading-relaxed mb-5">
+          <p className="text-[15px] text-ink-soft leading-relaxed mb-5">
             Whether you&apos;re a single farmer or an aggregator sourcing for a cooperative,
             Agriqcap offers simple, transparent loans sized to your savings and repayment
             schedules that match your harvest cycle.
@@ -265,11 +265,11 @@ function LandingProductCard({ name, desc, rate }: { name: string; desc: string; 
         <div className="flex justify-between items-start">
           <div>
             <p className="text-[14px] font-medium text-ink mb-0.5">{name}</p>
-            <p className="text-[11.5px] text-ink-soft">{desc}</p>
+            <p className="text-[13px] text-ink-soft">{desc}</p>
           </div>
           <div className="text-right">
             <p className="font-mono text-[13px] text-loam">{rate}</p>
-            <p className="text-[9.5px] text-ink-soft">p.a.</p>
+            <p className="text-[12px] text-ink-soft">p.a.</p>
           </div>
         </div>
       </div>

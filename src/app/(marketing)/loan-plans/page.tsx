@@ -149,11 +149,11 @@ export default function LoanPlansPage() {
                   {/* Financial Stats Bar */}
                   <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <div>
-                      <span className="block text-[10px] text-gray-400 uppercase font-bold">Funding Limits</span>
+                      <span className="block text-[12px] text-gray-400 uppercase font-bold">Funding Limits</span>
                       <span className="text-sm font-bold text-gray-900">{loan.amountRange}</span>
                     </div>
                     <div>
-                      <span className="block text-[10px] text-gray-400 uppercase font-bold">Repayment Term</span>
+                      <span className="block text-[12px] text-gray-400 uppercase font-bold">Repayment Term</span>
                       <span className="text-sm font-bold text-gray-900">{loan.term}</span>
                     </div>
                   </div>

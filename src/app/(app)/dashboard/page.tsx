@@ -104,7 +104,7 @@ export default function DashboardPage() {
             <p className="font-display font-semibold text-[14px] text-white">Lock savings · 90 days</p>
             <p className="text-[12px] text-white/60 mt-0.5">Earn 11.2% p.a. on Harvest Lock</p>
           </div>
-          <Link href="/savings" className="bg-ochre text-indigo-deep text-[11.5px] font-semibold px-3 py-1.5 rounded-lg">
+          <Link href="/savings" className="bg-ochre text-indigo-deep text-[13px] font-semibold px-3 py-1.5 rounded-lg">
             Open
           </Link>
         </div>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-display font-semibold text-[16px] text-ink">Recent activity</h2>
-            <Link href="/statements" className="text-[12.5px] text-indigo font-medium">See all</Link>
+            <Link href="/statements" className="text-[14px] text-indigo font-medium">See all</Link>
           </div>
           <ActivityList transactions={transactions} loading={txLoading} />
         </div>
@@ -249,19 +249,19 @@ function WalletHeroCard({
         {/* Sub-balances row */}
         <div className="grid grid-cols-3 gap-3 mb-5 bg-white/8 rounded-xl p-3">
           <div>
-            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Ledger</p>
+            <p className="text-[12px] text-white/50 uppercase tracking-wider mb-0.5">Ledger</p>
             <p className="font-mono text-[13px] text-white font-medium">
               {balanceVisible ? (wallet ? fmtNGN(wallet.ledger_balance) : "₦0") : "••••"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Pending</p>
+            <p className="text-[12px] text-white/50 uppercase tracking-wider mb-0.5">Pending</p>
             <p className="font-mono text-[13px] text-white font-medium">
               {balanceVisible ? (wallet ? fmtNGN(wallet.pending_balance) : "₦0") : "••••"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Reserved</p>
+            <p className="text-[12px] text-white/50 uppercase tracking-wider mb-0.5">Reserved</p>
             <p className="font-mono text-[13px] text-white font-medium">
               {balanceVisible ? (wallet ? fmtNGN(wallet.reserved_balance) : "₦0") : "••••"}
             </p>
@@ -315,7 +315,7 @@ function MetricCard({
         </div>
       </div>
       <p className="text-[12px] text-ink-soft font-medium mb-1">{label}</p>
-      <p className="font-mono font-semibold text-[18px] text-ink leading-tight">{value}</p>
+      <p className="font-mono font-semibold text-[22px] text-ink leading-tight">{value}</p>
       <p className={`text-[11px] mt-1 font-medium ${deltaUp ? "text-loam" : "text-clay"}`}>{delta}</p>
     </div>
   );

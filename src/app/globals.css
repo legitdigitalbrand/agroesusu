@@ -35,8 +35,10 @@
   }
   body {
     @apply bg-parchment text-ink antialiased;
-    /* Improve legibility — stronger base font weight */
-    font-weight: 400;
+    /* Improve legibility — stronger base font weight + size */
+    font-weight: 450;
+    font-size: 15px;
+    line-height: 1.6;
   }
   /* All headings use display (Plus Jakarta Sans) and stronger weight */
   h1, h2, h3, h4, h5, h6 {
@@ -63,32 +65,32 @@
 
   /* Input field */
   .ys-input {
-    @apply w-full rounded-xl border border-line bg-paper px-4 py-3 text-[14px] text-ink font-medium outline-none transition
+    @apply w-full rounded-xl border border-line bg-paper px-4 py-3 text-[15px] text-ink font-medium outline-none transition
            focus:border-indigo focus:ring-2 focus:ring-indigo/15
            placeholder:text-ink-soft placeholder:font-normal;
   }
 
   /* Primary button — ochre, dark text */
   .ys-btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-ochre px-5 py-3 text-[14px] font-semibold text-indigo-deep
+    @apply inline-flex items-center justify-center rounded-xl bg-ochre px-5 py-3 text-[15px] font-semibold text-indigo-deep
            transition hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none;
   }
 
   /* Loam button — green, white text */
   .ys-btn-loam {
-    @apply inline-flex items-center justify-center rounded-xl bg-loam px-5 py-3 text-[14px] font-semibold text-white
+    @apply inline-flex items-center justify-center rounded-xl bg-loam px-5 py-3 text-[15px] font-semibold text-white
            transition hover:bg-loam-dim disabled:opacity-40 disabled:pointer-events-none;
   }
 
   /* Dark button — indigo-deep, white text */
   .ys-btn-dark {
-    @apply inline-flex items-center justify-center rounded-xl bg-indigo-deep px-5 py-3 text-[14px] font-semibold text-white
+    @apply inline-flex items-center justify-center rounded-xl bg-indigo-deep px-5 py-3 text-[15px] font-semibold text-white
            transition hover:bg-indigo disabled:opacity-40 disabled:pointer-events-none;
   }
 
   /* Ghost button — no bg, ink text, parchment hover */
   .ys-btn-ghost {
-    @apply inline-flex items-center justify-center rounded-xl border border-line px-4 py-3 text-[14px] font-medium text-ink-soft
+    @apply inline-flex items-center justify-center rounded-xl border border-line px-4 py-3 text-[15px] font-medium text-ink-soft
            transition hover:bg-parchment hover:text-ink;
   }
 
@@ -119,12 +121,12 @@
 
   /* Section label / eyebrow text */
   .ys-label {
-    @apply text-[11px] font-semibold text-ink-soft uppercase tracking-widest;
+    @apply text-[12px] font-semibold text-ink-soft uppercase tracking-widest;
   }
 
   /* Transaction row */
   .ys-tx-row {
-    @apply flex items-center gap-3 py-3.5 border-b border-line last:border-0;
+    @apply flex items-center gap-3 py-4 border-b border-line last:border-0;
   }
 
   /* Activity icon — credit = loam bg, debit = clay bg, always white icon */
