@@ -73,12 +73,12 @@ export default function LoginPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.15 }}
+        transition={{ duration: 0.35, delay: 0.15 }}
       >
-        <h2 className="font-display text-[24px] font-extrabold text-ink leading-tight mb-1">
+        <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
           Welcome back.
         </h2>
-        <p className="text-[13px] text-ink-soft mb-6">
+        <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
           Sign in to manage your savings &amp; loans
         </p>
 
@@ -108,7 +108,7 @@ export default function LoginPage() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-[13px] text-clay bg-clay/5 rounded-lg px-3 py-2 mb-3"
+              className="text-[13px] text-clay bg-clay/5 rounded-lg px-3 py-2.5 mb-4"
             >
               {error}
             </motion.p>

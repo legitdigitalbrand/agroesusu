@@ -72,12 +72,12 @@ export default function SignupPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.15 }}
+        transition={{ duration: 0.35, delay: 0.15 }}
       >
-        <h2 className="font-display text-[24px] font-extrabold text-ink leading-tight mb-1">
+        <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
           Start saving<br />today.
         </h2>
-        <p className="text-[13px] text-ink-soft mb-6">
+        <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
           Open your account in under 2 minutes
         </p>
 
@@ -103,7 +103,7 @@ export default function SignupPage() {
             autoComplete="email"
           />
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             <AuthInput
               label="Phone"
               type="tel"
@@ -129,7 +129,7 @@ export default function SignupPage() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-[13px] text-clay bg-clay/5 rounded-lg px-3 py-2 mb-3"
+              className="text-[13px] text-clay bg-clay/5 rounded-lg px-3 py-2.5 mb-4"
             >
               {error}
             </motion.p>
@@ -140,7 +140,7 @@ export default function SignupPage() {
           </PrimaryButton>
         </form>
 
-        <p className="text-[12px] text-ink-soft mt-3 text-center leading-relaxed">
+        <p className="text-[12px] text-ink-soft mt-4 text-center leading-relaxed">
           By signing up you agree to our{" "}
           <Link href="/terms" className="text-indigo font-medium">Terms of Service</Link>{" "}
           and{" "}

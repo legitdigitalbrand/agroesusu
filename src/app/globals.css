@@ -147,30 +147,34 @@
     @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-[15px] font-medium transition;
   }
 
-  /* Auth input — matches mockup field styling */
+  /* Auth input — matches mockup field styling, premium polish */
   .auth-input {
     width: 100%;
+    height: 54px;
     background: #F4FAF4;
-    border: 1.5px solid #D6E8D2;
-    border-radius: 10px;
-    padding: 10px 14px;
+    border: 1.5px solid #E0EBDC;
+    border-radius: 12px;
+    padding: 0 16px;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
+    font-size: 15px;
     color: #1A2417;
     font-weight: 500;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
   }
   .auth-input::placeholder {
-    color: #5C6B57;
+    color: #8A9985;
     font-weight: 400;
   }
   .auth-input:focus {
     border-color: #1B5E20;
-    box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.12);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(27, 94, 32, 0.10), 0 2px 8px rgba(27, 94, 32, 0.06);
   }
   .auth-input:hover:not(:focus) {
     border-color: #3E8E2F;
+    background: #F8FCF7;
   }
 
   /* Border line utility */

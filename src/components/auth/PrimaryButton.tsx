@@ -13,10 +13,20 @@ export function PrimaryButton({ children, loading, disabled, className = "", ...
     <motion.button
       type="submit"
       disabled={disabled || loading}
-      whileHover={{ scale: 1.01, y: -1 }}
-      whileTap={{ scale: 0.99, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className={`w-full bg-ochre text-indigo-deep font-display font-bold text-[15px] py-3 rounded-[12px] mt-4 hover:bg-ochre-light transition disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+      whileHover={{
+        y: -2,
+        backgroundColor: "#C8E84A",
+        boxShadow: "0 6px 20px rgba(187, 220, 18, 0.35)",
+      }}
+      whileTap={{
+        y: 0,
+        boxShadow: "0 2px 8px rgba(187, 220, 18, 0.15)",
+      }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      style={{
+        boxShadow: "0 2px 8px rgba(187, 220, 18, 0.15)",
+      }}
+      className={`w-full bg-ochre text-indigo-deep font-display font-bold text-[15px] py-4 rounded-[12px] mt-6 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
       {...props}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : children}

@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 
 interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  hint?: string; // optional right-aligned hint (e.g. "Forgot password?")
+  hint?: string;
   hintHref?: string;
   onHintClick?: () => void;
 }
@@ -12,8 +12,8 @@ interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
   ({ label, hint, hintHref, onHintClick, className = "", ...props }, ref) => {
     return (
-      <div className="mb-3.5">
-        <div className="flex justify-between items-center mb-1.5">
+      <div className="mb-5">
+        <div className="flex justify-between items-center mb-2">
           <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft">
             {label}
           </label>

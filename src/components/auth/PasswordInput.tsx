@@ -14,8 +14,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     const [show, setShow] = useState(false);
 
     return (
-      <div className="mb-3.5">
-        <div className="flex justify-between items-center mb-1.5">
+      <div className="mb-5">
+        <div className="flex justify-between items-center mb-2">
           <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft">
             {label}
           </label>
@@ -30,16 +30,17 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             ref={ref}
             type={show ? "text" : "password"}
             className="auth-input pr-10 font-mono tracking-[0.06em]"
+            style={{ fontFamily: show ? "'IBM Plex Sans', sans-serif" : undefined }}
             {...props}
           />
           <button
             type="button"
             onClick={() => setShow(!show)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition"
             tabIndex={-1}
             aria-label={show ? "Hide password" : "Show password"}
           >
-            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {show ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
           </button>
         </div>
       </div>

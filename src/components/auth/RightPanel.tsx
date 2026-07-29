@@ -6,48 +6,87 @@ import { FloatingCard, StatsCard, TestimonialCard, FeaturePill, MemberCount } fr
 // ── Login right panel: product data cards ──
 export function LoginRightPanel() {
   return (
-    <div className="relative h-full flex flex-col items-center justify-center p-7 overflow-hidden bg-gradient-to-br from-indigo to-indigo-deep">
+    <div
+      className="relative h-full w-full flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        background: "linear-gradient(145deg, #1B5E20 0%, #123D15 100%)",
+        borderRadius: "0 24px 24px 0",
+      }}
+    >
       {/* Ambient circles */}
-      <div className="absolute w-[200px] h-[200px] rounded-full bg-ochre/8 -top-15 -right-15" />
-      <div className="absolute w-[140px] h-[140px] rounded-full bg-white/4 -bottom-10 -left-8" />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "240px",
+          height: "240px",
+          background: "rgba(187, 220, 18, 0.08)",
+          top: "-70px",
+          right: "-70px",
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "160px",
+          height: "160px",
+          background: "rgba(255,255,255,0.04)",
+          bottom: "-50px",
+          left: "-40px",
+        }}
+      />
 
+      {/* Headline */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="font-display text-[15px] font-bold text-white text-center leading-snug mb-5 relative z-10"
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="font-display text-[18px] font-bold text-white text-center leading-relaxed mb-10 relative z-20 px-8"
       >
         Save smarter.<br />
         <span className="text-ochre">Grow together.</span>
       </motion.div>
 
-      <FloatingCard
-        label="Available Balance"
-        value="₦134,000"
-        badge="+11.2% p.a."
-        delay={0.15}
-        offset
-      />
+      {/* Layered floating cards — offset, rotated, varied z-index */}
+      <div className="flex flex-col items-center gap-5 relative">
+        {/* Balance card — slightly right, rotated +1.5°, highest z */}
+        <FloatingCard
+          label="Available Balance"
+          value="₦134,000"
+          badge="+11.2% p.a."
+          delay={0.2}
+          rotate={1.5}
+          offsetX={24}
+          zIndex={30}
+        />
 
-      <StatsCard
-        label="Loan limit"
-        value="₦402,000"
-        bars={[
-          { height: 8 },
-          { height: 14 },
-          { height: 22, active: true },
-          { height: 18 },
-          { height: 28, active: true },
-          { height: 20 },
-        ]}
-        delay={0.3}
-      />
+        {/* Loan card — left, rotated -2°, mid z */}
+        <StatsCard
+          label="Loan limit"
+          value="₦402,000"
+          bars={[
+            { height: 10 },
+            { height: 16 },
+            { height: 24, active: true },
+            { height: 20 },
+            { height: 30, active: true },
+            { height: 22 },
+          ]}
+          delay={0.35}
+          rotate={-2}
+          offsetX={-16}
+          zIndex={20}
+        />
 
-      <TestimonialCard
-        text='"My Esusu group helped me expand my farm. I got my payout in 3 days."'
-        author="— Musa A., Kano · Member since 2024"
-        delay={0.45}
-      />
+        {/* Testimonial — right, rotated +1°, lowest z */}
+        <TestimonialCard
+          text='"My Esusu group helped me expand my farm. I got my payout in 3 days."'
+          author="— Musa A., Kano · Member since 2024"
+          delay={0.5}
+          rotate={1}
+          offsetX={20}
+          zIndex={10}
+        />
+      </div>
     </div>
   );
 }
@@ -55,42 +94,72 @@ export function LoginRightPanel() {
 // ── Signup right panel: value props ──
 export function SignupRightPanel() {
   return (
-    <div className="relative h-full flex flex-col items-center justify-center p-7 overflow-hidden bg-gradient-to-br from-indigo to-indigo-deep">
-      <div className="absolute w-[200px] h-[200px] rounded-full bg-ochre/8 -top-15 -right-15" />
-      <div className="absolute w-[140px] h-[140px] rounded-full bg-white/4 -bottom-10 -left-8" />
+    <div
+      className="relative h-full w-full flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        background: "linear-gradient(145deg, #1B5E20 0%, #123D15 100%)",
+        borderRadius: "0 24px 24px 0",
+      }}
+    >
+      {/* Ambient circles */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "240px",
+          height: "240px",
+          background: "rgba(187, 220, 18, 0.08)",
+          top: "-70px",
+          right: "-70px",
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "160px",
+          height: "160px",
+          background: "rgba(255,255,255,0.04)",
+          bottom: "-50px",
+          left: "-40px",
+        }}
+      />
 
+      {/* Headline */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="font-display text-[15px] font-bold text-white text-center leading-snug mb-5 relative z-10"
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="font-display text-[18px] font-bold text-white text-center leading-relaxed mb-10 relative z-20 px-8"
       >
         Join thousands<br />
         <span className="text-ochre">growing their wealth.</span>
       </motion.div>
 
-      <div className="flex flex-col gap-2.5 relative z-10">
+      {/* Feature pills — stacked with spacing */}
+      <div className="flex flex-col gap-3 relative z-20 items-center">
         <FeaturePill
           icon={<SavingsIcon />}
           title="Savings rate"
           subtitle="Up to 12% p.a. — fixed"
-          delay={0.15}
+          delay={0.2}
         />
         <FeaturePill
           icon={<LoanIcon />}
           title="Cooperative loans"
           subtitle="Up to 3× your savings"
-          delay={0.25}
+          delay={0.3}
         />
         <FeaturePill
           icon={<InvestIcon />}
           title="Investments"
           subtitle="Agri-pools from ₦10,000"
-          delay={0.35}
+          delay={0.4}
         />
       </div>
 
-      <MemberCount count="50,000+" label="active members" delay={0.5} />
+      {/* Member count */}
+      <div className="mt-10 relative z-20">
+        <MemberCount count="50,000+" label="active members" delay={0.55} />
+      </div>
     </div>
   );
 }
