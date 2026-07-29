@@ -87,21 +87,21 @@ export default function WalletPage() {
       {/* ── HERO BALANCE CARD ── */}
       <div className="relative bg-gradient-to-br from-indigo to-indigo-deep rounded-2xl overflow-hidden text-white">
         {/* Decorative circles */}
-        <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute right-10 bottom-0 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-paper/5 pointer-events-none" />
+        <div className="absolute right-10 bottom-0 w-28 h-28 rounded-full bg-paper/5 pointer-events-none" />
 
         <div className="relative p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-paper/15 flex items-center justify-center">
                 <Wallet className="w-4 h-4 text-ochre" />
               </div>
               <span className="text-[13px] text-white/70 font-medium">Agriqcap Wallet</span>
             </div>
             <button
               onClick={() => setBalanceVisible(!balanceVisible)}
-              className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+              className="w-8 h-8 rounded-lg bg-paper/10 flex items-center justify-center hover:bg-paper/20 transition"
               aria-label="Toggle balance"
             >
               {balanceVisible
@@ -137,7 +137,7 @@ export default function WalletPage() {
           )}
 
           {/* 4D balance breakdown */}
-          <div className="grid grid-cols-3 gap-3 bg-white/8 rounded-xl p-4 mb-5">
+          <div className="grid grid-cols-3 gap-3 bg-paper/8 rounded-xl p-4 mb-5">
             <div>
               <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Ledger</p>
               <p className="font-mono font-medium text-[14px] text-white">
@@ -169,14 +169,14 @@ export default function WalletPage() {
             </Link>
             <Link
               href="/wallet/transfer"
-              className="flex items-center justify-center gap-2 bg-white/15 py-3 rounded-xl hover:bg-white/20 transition"
+              className="flex items-center justify-center gap-2 bg-paper/15 py-3 rounded-xl hover:bg-paper/20 transition"
             >
               <Send className="w-4 h-4 text-white" strokeWidth={2} />
               <span className="text-[13px] font-medium text-white">Transfer</span>
             </Link>
             <Link
               href="/wallet/withdraw"
-              className="flex items-center justify-center gap-2 bg-white/15 py-3 rounded-xl hover:bg-white/20 transition"
+              className="flex items-center justify-center gap-2 bg-paper/15 py-3 rounded-xl hover:bg-paper/20 transition"
             >
               <ArrowUpRight className="w-4 h-4 text-white" strokeWidth={2} />
               <span className="text-[13px] font-medium text-white">Withdraw</span>

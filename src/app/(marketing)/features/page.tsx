@@ -65,17 +65,17 @@ const valuesList = [
 
 export default function FeaturesPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-paper">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-paper py-16 md:py-24 border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Platform Capabilities
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-ink tracking-tight max-w-3xl mx-auto">
             Digital Financial Tools Tailored for Nigerian Agribusiness
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
             Agriqcap merges traditional community cooperative values with cutting-edge mobile 
             banking technology. Grow your agribusiness with tools built specifically for your success.
           </p>
@@ -88,15 +88,15 @@ export default function FeaturesPage() {
           {mainFeatures.map((feat) => {
             const Icon = feat.icon;
             return (
-              <div key={feat.id} className="card-surface border border-gray-100 flex flex-col justify-between hover:shadow-md transition-all hover:border-indigo/10">
+              <div key={feat.id} className="card-surface border border-line flex flex-col justify-between hover:shadow-md transition-all hover:border-indigo/10">
                 <div className="space-y-4">
                   <div className={`p-3 rounded-xl w-12 h-12 flex items-center justify-center shrink-0 ${feat.color}`}>
                     <Icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">{feat.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{feat.description}</p>
+                  <h3 className="text-xl font-bold text-ink">{feat.title}</h3>
+                  <p className="text-sm text-ink-soft leading-relaxed">{feat.description}</p>
                 </div>
-                <div className="pt-6 border-t border-gray-100/50 mt-4 text-xs font-semibold text-indigo">
+                <div className="pt-6 border-t border-line/50 mt-4 text-xs font-semibold text-indigo">
                   Available in mobile app & USSD
                 </div>
               </div>
@@ -108,35 +108,35 @@ export default function FeaturesPage() {
       {/* USSD Highlight Banner */}
       <section className="bg-indigo text-white py-16 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-white rounded-full blur-2xl animate-pulse"></div>
+          <div className="absolute top-0 right-0 w-80 h-80 bg-paper rounded-full blur-2xl animate-pulse"></div>
         </div>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
-          <span className="text-ochre bg-white/10 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+          <span className="text-ochre bg-paper/10 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             Zero Internet Needed
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Dial <span className="text-ochre font-black underline">*347*88#</span>
           </h2>
-          <p className="text-base sm:text-lg text-gray-100 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
             We are deeply committed to financial inclusion. Our secure USSD platform works with 
             MTN, Airtel, Glo, and 9mobile across Nigeria, giving rural farmers access to savings, 
             group rotational ledger payouts, and inputs financing instantly.
           </p>
           <div className="pt-2">
-            <span className="text-xs text-gray-200 block">Works on any basic feature phone. Safe, secure, and fast.</span>
+            <span className="text-xs text-white/70 block">Works on any basic feature phone. Safe, secure, and fast.</span>
           </div>
         </div>
       </section>
 
       {/* Trust & Transparency */}
-      <section className="py-20 bg-gray-50 border-t border-b border-gray-100">
+      <section className="py-20 bg-parchment border-t border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              <h2 className="text-3xl font-extrabold text-ink tracking-tight">
                 Designed for Absolute Security & Transparency
               </h2>
-              <p className="text-base text-gray-600 leading-relaxed">
+              <p className="text-base text-ink-soft leading-relaxed">
                 Nigerian agricultural cooperatives have operated on mutual trust for centuries. 
                 Agriqcap respects this legacy and uses modern software engineering to provide 
                 co-guarantee features and real-time ledger records. No single individual can tamper 
@@ -144,7 +144,7 @@ export default function FeaturesPage() {
               </p>
               <ul className="space-y-3">
                 {valuesList.map((item, idx) => (
-                  <li key={idx} className="flex items-center space-x-2 text-sm text-gray-700 font-medium">
+                  <li key={idx} className="flex items-center space-x-2 text-sm text-ink font-medium">
                     <CheckCircle2 className="h-5 w-5 text-ochre shrink-0" />
                     <span>{item}</span>
                   </li>
@@ -152,28 +152,28 @@ export default function FeaturesPage() {
               </ul>
             </div>
 
-            <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm space-y-6">
-              <h4 className="font-bold text-gray-900 text-lg">Platform Compliance Overview</h4>
-              <div className="space-y-4 text-sm text-gray-600">
+            <div className="bg-paper border border-line rounded-2xl p-8 shadow-sm space-y-6">
+              <h4 className="font-bold text-ink text-lg">Platform Compliance Overview</h4>
+              <div className="space-y-4 text-sm text-ink-soft">
                 <div className="flex gap-3">
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="font-bold text-gray-900">MFA & Encryption</h5>
-                    <p className="text-xs text-gray-500 mt-1">All details and account transactions are encrypted. Access is secured with PINs and OTP codes.</p>
+                    <h5 className="font-bold text-ink">MFA & Encryption</h5>
+                    <p className="text-xs text-ink-soft mt-1">All details and account transactions are encrypted. Access is secured with PINs and OTP codes.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="font-bold text-gray-900">NDIC Deposit Insurance</h5>
-                    <p className="text-xs text-gray-500 mt-1">Every deposit is backed by our banking partner, Safe Haven MFB, and is insured by the Nigerian Government.</p>
+                    <h5 className="font-bold text-ink">NDIC Deposit Insurance</h5>
+                    <p className="text-xs text-ink-soft mt-1">Every deposit is backed by our banking partner, Safe Haven MFB, and is insured by the Nigerian Government.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="font-bold text-gray-900">KYC Verification</h5>
-                    <p className="text-xs text-gray-500 mt-1">BVN and NIMC database integration prevents identity fraud and guarantees security across cooperative chains.</p>
+                    <h5 className="font-bold text-ink">KYC Verification</h5>
+                    <p className="text-xs text-ink-soft mt-1">BVN and NIMC database integration prevents identity fraud and guarantees security across cooperative chains.</p>
                   </div>
                 </div>
               </div>
@@ -184,17 +184,17 @@ export default function FeaturesPage() {
 
       {/* CTA Section */}
       <section className="py-20 text-center max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
-        <h2 className="text-3xl font-extrabold text-gray-900">
+        <h2 className="text-3xl font-extrabold text-ink">
           Ready to experience the power of Agriqcap?
         </h2>
-        <p className="text-gray-600 max-w-xl mx-auto text-sm sm:text-base">
+        <p className="text-ink-soft max-w-xl mx-auto text-sm sm:text-base">
           Sign up today to create your individual or cooperative account. Experience modern agriculture finance.
         </p>
         <div className="flex justify-center gap-4">
           <Link href="/signup" className="btn-primary py-3 px-8 text-sm font-semibold">
             Get Started Now
           </Link>
-          <Link href="/contact" className="btn-secondary py-3 px-8 text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">
+          <Link href="/contact" className="btn-secondary py-3 px-8 text-sm font-semibold bg-parchment text-ink hover:bg-loam-light">
             Talk to an Agent
           </Link>
         </div>

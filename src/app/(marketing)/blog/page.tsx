@@ -81,17 +81,17 @@ const posts = [
 
 export default function BlogPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-paper">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-paper py-16 md:py-24 border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Insights & Guides
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-ink tracking-tight max-w-3xl mx-auto">
             The Agriqcap Agribusiness & Finance Blog
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
             Stay up to date with agriculture sector trends, cooperative growth strategies, micro-credit guides, 
             and success stories from the field.
           </p>
@@ -99,16 +99,16 @@ export default function BlogPage() {
       </section>
 
       {/* Categories Bar */}
-      <section className="border-b border-gray-100 bg-gray-50/50 py-4">
+      <section className="border-b border-line bg-parchment/50 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-4 overflow-x-auto no-scrollbar py-2 text-sm font-semibold text-gray-600">
+          <div className="flex items-center space-x-4 overflow-x-auto no-scrollbar py-2 text-sm font-semibold text-ink-soft">
             {categories.map((cat, idx) => (
               <button
                 key={idx}
                 className={`px-4 py-1.5 rounded-full transition-all shrink-0 ${
                   idx === 0
                     ? 'bg-indigo text-white'
-                    : 'bg-white border border-gray-200 hover:border-indigo/30'
+                    : 'bg-paper border border-line hover:border-indigo/30'
                 }`}
               >
                 {cat}
@@ -124,11 +124,11 @@ export default function BlogPage() {
           {posts.map((post) => (
             <article
               key={post.id}
-              className="card-surface border border-gray-100 flex flex-col justify-between hover:shadow-md transition-all hover:border-indigo/10 group"
+              className="card-surface border border-line flex flex-col justify-between hover:shadow-md transition-all hover:border-indigo/10 group"
             >
               <div className="space-y-4">
                 {/* Meta details */}
-                <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
+                <div className="flex items-center justify-between text-xs text-ink-soft font-medium">
                   <span className="text-indigo font-bold bg-indigo/5 px-2.5 py-1 rounded-lg">
                     {post.category}
                   </span>
@@ -139,25 +139,25 @@ export default function BlogPage() {
                 </div>
 
                 <Link href={`/blog/${post.id}`}>
-                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo transition-colors leading-snug">
+                  <h3 className="text-xl font-bold text-ink group-hover:text-indigo transition-colors leading-snug">
                     {post.title}
                   </h3>
                 </Link>
 
-                <p className="text-sm text-gray-500 leading-relaxed line-clamp-3">
+                <p className="text-sm text-ink-soft leading-relaxed line-clamp-3">
                   {post.excerpt}
                 </p>
               </div>
 
               {/* Author & Footer */}
-              <div className="pt-6 border-t border-gray-100/80 mt-6 flex items-center justify-between">
+              <div className="pt-6 border-t border-line/80 mt-6 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className={`w-8 h-8 rounded-full ${post.bg} font-bold text-xs flex items-center justify-center shrink-0`}>
                     {post.initials}
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-900 leading-none">{post.author}</p>
-                    <p className="text-[12px] text-gray-500 mt-0.5 leading-none">{post.authorRole}</p>
+                    <p className="text-xs font-bold text-ink leading-none">{post.author}</p>
+                    <p className="text-[12px] text-ink-soft mt-0.5 leading-none">{post.authorRole}</p>
                   </div>
                 </div>
 
@@ -177,17 +177,17 @@ export default function BlogPage() {
       <section className="bg-parchment border-t border-b border-ochre/10 py-16">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
           <BookOpen className="h-10 w-10 text-ochre mx-auto" />
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
             Subscribe to our Agribusiness Newsletter
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-ink-soft max-w-md mx-auto leading-relaxed">
             Get monthly market price outlooks, planting reminders, and extension updates 
             delivered directly to your email or mobile phone via SMS.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 max-w-md mx-auto">
             <input
               type="email"
-              className="input-field bg-white"
+              className="input-field bg-paper"
               placeholder="Enter your email address"
               required
             />
@@ -195,7 +195,7 @@ export default function BlogPage() {
               Subscribe
             </button>
           </div>
-          <span className="text-[12px] text-gray-400 block">We respect your privacy. Unsubscribe anytime.</span>
+          <span className="text-[12px] text-ink-soft block">We respect your privacy. Unsubscribe anytime.</span>
         </div>
       </section>
     </div>

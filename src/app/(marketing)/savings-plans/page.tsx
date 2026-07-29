@@ -90,17 +90,17 @@ const safetyGuarantees = [
 
 export default function SavingsPlansPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-paper">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-paper py-16 md:py-24 border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <span className="text-sm font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Agriqcap Wealth
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-ink tracking-tight max-w-3xl mx-auto">
             Agricultural Savings Plans Built to Multiply Your Wealth
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
             Choose from cooperative rotational circles, target-based planners, or locked high-yield deposits. 
             Automated, secure, and aligned with the Nigerian farming season.
           </p>
@@ -115,7 +115,7 @@ export default function SavingsPlansPage() {
             return (
               <div
                 key={plan.id}
-                className="card-surface flex flex-col justify-between border border-gray-100 hover:border-indigo/20 hover:shadow-lg transition-all"
+                className="card-surface flex flex-col justify-between border border-line hover:border-indigo/20 hover:shadow-lg transition-all"
               >
                 <div className="space-y-6">
                   {/* Badge & Title */}
@@ -129,18 +129,18 @@ export default function SavingsPlansPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+                    <h3 className="text-2xl font-bold text-ink">{plan.name}</h3>
                     <p className="text-sm text-ochre-dim font-medium">{plan.tagline}</p>
                   </div>
 
-                  <p className="text-sm text-gray-600 leading-relaxed">{plan.description}</p>
+                  <p className="text-sm text-ink-soft leading-relaxed">{plan.description}</p>
 
                   {/* Feature Checklist */}
-                  <div className="space-y-2.5 pt-4 border-t border-gray-100">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Plan Highlights</p>
+                  <div className="space-y-2.5 pt-4 border-t border-line">
+                    <p className="text-xs font-bold text-ink-soft uppercase tracking-wider">Plan Highlights</p>
                     <ul className="space-y-2">
                       {plan.features.map((feat, idx) => (
-                        <li key={idx} className="flex items-start space-x-2 text-sm text-gray-600">
+                        <li key={idx} className="flex items-start space-x-2 text-sm text-ink-soft">
                           <CheckCircle2 className="h-4.5 w-4.5 text-indigo shrink-0 mt-0.5" />
                           <span>{feat}</span>
                         </li>
@@ -151,9 +151,9 @@ export default function SavingsPlansPage() {
 
                 {/* Card footer CTAs */}
                 <div className="pt-8 flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-ink-soft">
                     <span className="block font-semibold">Payout Frequency:</span>
-                    <span className="text-gray-700">{plan.payout}</span>
+                    <span className="text-ink">{plan.payout}</span>
                   </div>
                   <Link
                     href={`/signup?plan=${plan.id}`}
@@ -169,13 +169,13 @@ export default function SavingsPlansPage() {
       </section>
 
       {/* Security & Regulatory Backing */}
-      <section className="bg-gray-50 py-20 border-t border-b border-gray-100">
+      <section className="bg-parchment py-20 border-t border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h2 className="text-3xl font-extrabold text-ink tracking-tight">
               Your Funds are 100% Secure
             </h2>
-            <p className="text-sm sm:text-base text-gray-600">
+            <p className="text-sm sm:text-base text-ink-soft">
               We prioritize the safety of your agricultural hard-earned money. Agriqcap is built on 
               strict security and regulatory-compliant foundations.
             </p>
@@ -183,12 +183,12 @@ export default function SavingsPlansPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {safetyGuarantees.map((item, idx) => (
-              <div key={idx} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+              <div key={idx} className="bg-paper p-8 rounded-2xl border border-line shadow-sm space-y-4">
                 <div className="bg-indigo/10 text-indigo w-10 h-10 rounded-full flex items-center justify-center">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
-                <h4 className="font-bold text-lg text-gray-900">{item.title}</h4>
-                <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
+                <h4 className="font-bold text-lg text-ink">{item.title}</h4>
+                <p className="text-sm text-ink-soft leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -198,10 +198,10 @@ export default function SavingsPlansPage() {
       {/* FAQ Call-out CTA */}
       <section className="py-20 text-center max-w-4xl mx-auto px-4 sm:px-6">
         <div className="space-y-6">
-          <h2 className="text-3xl font-extrabold text-gray-900">
+          <h2 className="text-3xl font-extrabold text-ink">
             Have questions about our savings plans?
           </h2>
-          <p className="text-gray-600 max-w-xl mx-auto text-sm sm:text-base">
+          <p className="text-ink-soft max-w-xl mx-auto text-sm sm:text-base">
             Check out our comprehensive FAQ page or get in touch with our agricultural customer success team 
             available 24/7 in English, Yoruba, Hausa, Igbo, and Pidgin.
           </p>

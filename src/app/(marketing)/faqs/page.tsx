@@ -71,17 +71,17 @@ const categories = [
 
 export default function FaqsPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-paper">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-paper py-16 md:py-24 border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Frequently Asked Questions
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-ink tracking-tight max-w-3xl mx-auto">
             Got Questions? We Have Answers.
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
             Everything you need to know about our savings circles, seasonal loans, offline USSD code, 
             and licensing security.
           </p>
@@ -93,24 +93,24 @@ export default function FaqsPage() {
         <div className="space-y-16">
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="space-y-6">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 border-b border-gray-100 pb-3">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-ink border-b border-line pb-3">
                 {cat.category}
               </h2>
               <div className="space-y-4">
                 {cat.faqs.map((faq, faqIdx) => (
                   <details
                     key={faqIdx}
-                    className="group border border-gray-100 rounded-2xl bg-white p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
+                    className="group border border-line rounded-2xl bg-paper p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden"
                   >
                     <summary className="flex items-center justify-between cursor-pointer focus:outline-none list-none">
-                      <h4 className="text-base font-bold text-gray-900 group-open:text-indigo pr-4 transition-colors">
+                      <h4 className="text-base font-bold text-ink group-open:text-indigo pr-4 transition-colors">
                         {faq.question}
                       </h4>
-                      <span className="bg-gray-50 text-gray-400 group-open:bg-indigo/10 group-open:text-indigo p-1.5 rounded-lg shrink-0 transition-all">
+                      <span className="bg-parchment text-ink-soft group-open:bg-indigo/10 group-open:text-indigo p-1.5 rounded-lg shrink-0 transition-all">
                         <ChevronRight className="h-4 w-4 transform group-open:rotate-90 transition-transform duration-200" />
                       </span>
                     </summary>
-                    <div className="mt-4 text-sm text-gray-600 leading-relaxed border-t border-gray-50 pt-4 animate-in fade-in duration-200">
+                    <div className="mt-4 text-sm text-ink-soft leading-relaxed border-t border-line pt-4 animate-in fade-in duration-200">
                       {faq.answer}
                     </div>
                   </details>
@@ -122,13 +122,13 @@ export default function FaqsPage() {
       </section>
 
       {/* Support Info */}
-      <section className="bg-gray-50 border-t border-b border-gray-100 py-16">
+      <section className="bg-parchment border-t border-b border-line py-16">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
           <HelpIcon className="h-12 w-12 text-ochre mx-auto" />
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h2 className="text-3xl font-extrabold text-ink tracking-tight">
             Still have questions?
           </h2>
-          <p className="text-gray-600 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
+          <p className="text-ink-soft max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
             Our agricultural cooperative customer support desk is available 24 hours a day, 
             7 days a week. We are happy to jump on a call and walk you through.
           </p>
@@ -136,7 +136,7 @@ export default function FaqsPage() {
             <Link href="/contact" className="btn-primary py-3 px-8 text-sm font-semibold">
               Contact Support
             </Link>
-            <Link href="/signup" className="btn-secondary py-3 px-8 text-sm font-semibold bg-white border border-gray-200 text-gray-700">
+            <Link href="/signup" className="btn-secondary py-3 px-8 text-sm font-semibold bg-paper border border-line text-ink">
               Register Account <ArrowRight className="h-4 w-4 ml-1 inline" />
             </Link>
           </div>

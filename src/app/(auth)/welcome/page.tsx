@@ -73,7 +73,7 @@ export default function WelcomePage() {
         </Link>
         <Link
           href="/login"
-          className="block text-center bg-transparent text-white/90 font-medium text-[15px] py-3 rounded-[14px] border-[1.4px] border-white/40 transition hover:bg-white/5"
+          className="block text-center bg-transparent text-white/90 font-medium text-[15px] py-3 rounded-[14px] border-[1.4px] border-white/40 transition hover:bg-paper/5"
         >
           Sign in
         </Link>

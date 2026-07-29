@@ -62,17 +62,17 @@ const jobs = [
 
 export default function CareersPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-paper">
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-parchment/80 to-white py-16 md:py-24 border-b border-gray-100">
+      <section className="bg-gradient-to-b from-parchment/80 to-paper py-16 md:py-24 border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <span className="text-xs font-bold text-indigo uppercase tracking-widest bg-indigo/10 px-4 py-1.5 rounded-full border border-indigo/20">
             Join Our Team
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight max-w-3xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-ink tracking-tight max-w-3xl mx-auto">
             Build the Future of Agricultural Finance
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
             We are looking for creative thinkers, passionate problem solvers, and domain experts 
             to help us digitize agricultural cooperatives and eliminate financial exclusion.
           </p>
@@ -82,10 +82,10 @@ export default function CareersPage() {
       {/* Why Join Us: Benefits Grid */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h2 className="text-3xl font-extrabold text-ink tracking-tight">
             Cultivate Your Career at Agriqcap
           </h2>
-          <p className="text-sm sm:text-base text-gray-500">
+          <p className="text-sm sm:text-base text-ink-soft">
             We provide our teams with the resources, benefits, and support they need to deliver outstanding 
             solutions for our farming partners.
           </p>
@@ -100,8 +100,8 @@ export default function CareersPage() {
                   <Icon className="h-6 w-6" />
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-bold text-lg text-gray-900">{benefit.title}</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">{benefit.desc}</p>
+                  <h4 className="font-bold text-lg text-ink">{benefit.title}</h4>
+                  <p className="text-sm text-ink-soft leading-relaxed">{benefit.desc}</p>
                 </div>
               </div>
             );
@@ -110,13 +110,13 @@ export default function CareersPage() {
       </section>
 
       {/* Open Positions */}
-      <section className="bg-gray-50 border-t border-b border-gray-100 py-20">
+      <section className="bg-parchment border-t border-b border-line py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h2 className="text-3xl font-extrabold text-ink tracking-tight">
               Current Open Roles
             </h2>
-            <p className="text-sm sm:text-base text-gray-500">
+            <p className="text-sm sm:text-base text-ink-soft">
               Apply today and make a real difference in the lives of millions of agricultural producers.
             </p>
           </div>
@@ -125,7 +125,7 @@ export default function CareersPage() {
             {jobs.map((job) => (
               <div
                 key={job.id}
-                className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo/10 transition-all flex flex-col md:flex-row justify-between gap-6"
+                className="bg-paper border border-line rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo/10 transition-all flex flex-col md:flex-row justify-between gap-6"
               >
                 <div className="space-y-4 max-w-3xl">
                   {/* Meta details */}
@@ -133,19 +133,19 @@ export default function CareersPage() {
                     <span className="bg-indigo/5 text-indigo px-2.5 py-1 rounded-lg">
                       {job.department}
                     </span>
-                    <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <span className="bg-parchment text-ink-soft px-2.5 py-1 rounded-lg flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> {job.location}
                     </span>
-                    <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <span className="bg-parchment text-ink-soft px-2.5 py-1 rounded-lg flex items-center gap-1">
                       <Clock className="h-3 w-3" /> {job.type}
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="text-xl font-bold text-ink">
                     {job.title}
                   </h3>
 
-                  <p className="text-sm text-gray-500 leading-relaxed">
+                  <p className="text-sm text-ink-soft leading-relaxed">
                     {job.description}
                   </p>
                 </div>
@@ -167,10 +167,10 @@ export default function CareersPage() {
       {/* General Application Callout */}
       <section className="py-20 text-center max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
         <Briefcase className="h-12 w-12 text-ochre mx-auto" />
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+        <h2 className="text-3xl font-extrabold text-ink tracking-tight">
           Don’t see your dream role listed?
         </h2>
-        <p className="text-gray-600 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
+        <p className="text-ink-soft max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
           We are always looking for visionary agricultural enthusiasts and builders. Send us a 
           spontaneous application detailing what you want to achieve at Agriqcap.
         </p>

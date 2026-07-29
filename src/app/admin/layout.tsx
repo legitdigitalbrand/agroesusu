@@ -83,8 +83,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition",
                   active
-                    ? "bg-white/10 text-ochre"
-                    : "text-white/50 hover:text-white hover:bg-white/5"
+                    ? "bg-paper/10 text-ochre"
+                    : "text-white/50 hover:text-white hover:bg-paper/5"
                 )}
               >
                 <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
@@ -98,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-3 py-4 border-t border-white/10">
           <Link
             href="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 w-full transition"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-paper/5 w-full transition"
           >
             <LogOut className="h-5 w-5" />
             Exit console

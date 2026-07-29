@@ -136,4 +136,14 @@
   .ys-tx-icon-debit {
     @apply w-10 h-10 rounded-full bg-clay flex items-center justify-center flex-shrink-0;
   }
+
+  /* Card surface — used on marketing pages */
+  .card-surface {
+    @apply rounded-2xl bg-paper p-6 shadow-sm;
+  }
+
+  /* Secondary button — used on marketing pages */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-[15px] font-medium transition;
+  }
 }

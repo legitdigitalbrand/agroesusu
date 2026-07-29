@@ -20,7 +20,7 @@ export default function AppShell({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-parchment/50">
       {/* Sidebar Navigation */}
       <Sidebar
         profile={profile}

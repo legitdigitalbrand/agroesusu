@@ -70,7 +70,7 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col border-r border-gray-100 bg-white px-5 py-6 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col border-r border-line bg-paper px-5 py-6 transition-transform duration-300 ease-in-out md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -86,7 +86,7 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
           </Link>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 md:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-parchment text-ink-soft hover:bg-parchment md:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -106,10 +106,10 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
                 className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
                   active
                     ? "bg-indigo text-white shadow-md shadow-indigo/10"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-indigo"
+                    : "text-ink-soft hover:bg-parchment hover:text-indigo"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${active ? "text-white" : "text-gray-400 group-hover:text-indigo"}`} />
+                <Icon className={`h-5 w-5 ${active ? "text-white" : "text-ink-soft group-hover:text-indigo"}`} />
                 {item.name}
               </Link>
             );
@@ -117,8 +117,8 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* User Profile + Logout at Bottom */}
-        <div className="border-t border-gray-100 pt-6 px-2">
-          <div className="flex items-center gap-3 rounded-xl p-2 bg-gray-50/50 mb-4">
+        <div className="border-t border-line pt-6 px-2">
+          <div className="flex items-center gap-3 rounded-xl p-2 bg-parchment/50 mb-4">
             {profile?.avatar_url ? (
               <img
                 src={profile.avatar_url}
@@ -131,10 +131,10 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">
+              <p className="text-sm font-semibold text-ink truncate">
                 {profile?.full_name || "Agriqcap User"}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-ink-soft truncate">
                 {profile?.kyc_tier === "tier_0"
                   ? "Unverified Account"
                   : `KYC Tier ${profile?.kyc_tier?.split("_")[1] || "1"}`}
@@ -143,7 +143,7 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
           </div>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors duration-200"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-clay hover:bg-clay/5 transition-colors duration-200"
           >
             <LogOut className="h-5 w-5 text-red-500" />
             Sign Out

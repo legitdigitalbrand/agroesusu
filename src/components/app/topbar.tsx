@@ -48,17 +48,17 @@ export default function Topbar({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-gray-100 bg-white/85 px-4 backdrop-blur-md md:px-8">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-line bg-paper/85 px-4 backdrop-blur-md md:px-8">
       {/* Left side: Hamburger (mobile) + Title */}
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuToggle}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-100 bg-gray-50/50 text-gray-600 hover:bg-gray-50 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-parchment/50 text-ink-soft hover:bg-parchment md:hidden"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900 md:text-xl">
+        <h1 className="text-lg font-bold text-ink md:text-xl">
           {getPageTitle()}
         </h1>
       </div>
@@ -68,7 +68,7 @@ export default function Topbar({
         {/* Notification Bell */}
         <Link
           href="/notifications"
-          className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-gray-100 bg-gray-50/50 text-gray-500 hover:bg-gray-50 transition-colors"
+          className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-parchment/50 text-ink-soft hover:bg-parchment transition-colors"
           aria-label="View notifications"
         >
           <Bell className="h-5 w-5" />
@@ -80,7 +80,7 @@ export default function Topbar({
         </Link>
 
         {/* Divider */}
-        <div className="h-6 w-[1px] bg-gray-100" />
+        <div className="h-6 w-[1px] bg-parchment" />
 
         {/* User profile avatar */}
         <Link
@@ -98,7 +98,7 @@ export default function Topbar({
               {initials(profile?.full_name || "User")}
             </div>
           )}
-          <span className="hidden text-sm font-semibold text-gray-700 md:inline-block">
+          <span className="hidden text-sm font-semibold text-ink-soft md:inline-block">
             {profile?.full_name?.split(" ")[0] || "User"}
           </span>
         </Link>

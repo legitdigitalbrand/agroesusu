@@ -41,7 +41,7 @@ function DefaultRightRail() {
       {/* Grow Your Money card */}
       <div className="bg-indigo rounded-2xl p-4 text-white">
         <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-paper/15 flex items-center justify-center">
             <TrendingUp className="w-4 h-4 text-ochre" strokeWidth={1.8} />
           </div>
           <h3 className="font-display font-semibold text-[14px] text-white">Grow Your Money</h3>
@@ -51,7 +51,7 @@ function DefaultRightRail() {
         </p>
         <Link
           href="/investments"
-          className="block w-full text-center bg-white/15 text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-white/20 transition"
+          className="block w-full text-center bg-paper/15 text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-paper/20 transition"
         >
           Explore
         </Link>

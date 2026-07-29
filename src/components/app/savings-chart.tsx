@@ -89,8 +89,8 @@ export default function SavingsChart({ contributions, savingsPlans }: SavingsCha
     <div className="card-surface flex flex-col h-[350px] justify-between">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <div>
-          <h3 className="text-base font-bold text-gray-900">Savings Growth</h3>
-          <p className="text-xs text-gray-500">Historical view of your active agricultural savings</p>
+          <h3 className="text-base font-bold text-ink">Savings Growth</h3>
+          <p className="text-xs text-ink-soft">Historical view of your active agricultural savings</p>
         </div>
         <div className="flex items-center gap-1.5 bg-indigo/10 text-indigo px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-center">
           Total: {formatNaira(totalSavings)}

@@ -153,7 +153,7 @@ function MembershipCard({ coop }: { coop: Cooperative }) {
     <Link href="/cooperative" className="block">
       <div className="bg-gradient-to-br from-indigo to-[#0F4A13] rounded-2xl p-4 text-white">
         <div className="flex items-center gap-3 mb-2">
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl bg-paper/10 flex items-center justify-center">
             <Users className="h-5 w-5 text-white" strokeWidth={1.8} />
           </div>
           <div className="flex-1">

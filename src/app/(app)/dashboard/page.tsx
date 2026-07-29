@@ -208,21 +208,21 @@ function WalletHeroCard({
   return (
     <div className="relative bg-gradient-to-br from-indigo to-indigo-deep rounded-2xl overflow-hidden text-white">
       {/* Decorative circles */}
-      <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
-      <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+      <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-paper/5 pointer-events-none" />
+      <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-paper/5 pointer-events-none" />
 
       <div className={`relative p-5 ${desktop ? "pb-5" : "pb-4"}`}>
         {/* Header row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-paper/15 flex items-center justify-center">
               <Wallet className="w-4 h-4 text-ochre" />
             </div>
             <span className="text-[13px] text-white/80 font-medium">Agriqcap Wallet</span>
           </div>
           <button
             onClick={onToggleBalance}
-            className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+            className="w-8 h-8 rounded-lg bg-paper/10 flex items-center justify-center hover:bg-paper/20 transition"
             aria-label="Toggle balance visibility"
           >
             {balanceVisible ? <EyeOff className="w-4 h-4 text-white/70" /> : <Eye className="w-4 h-4 text-white/70" />}
@@ -247,7 +247,7 @@ function WalletHeroCard({
         )}
 
         {/* Sub-balances row */}
-        <div className="grid grid-cols-3 gap-3 mb-5 bg-white/8 rounded-xl p-3">
+        <div className="grid grid-cols-3 gap-3 mb-5 bg-paper/8 rounded-xl p-3">
           <div>
             <p className="text-[12px] text-white/50 uppercase tracking-wider mb-0.5">Ledger</p>
             <p className="font-mono text-[13px] text-white font-medium">
@@ -279,14 +279,14 @@ function WalletHeroCard({
           </Link>
           <Link
             href="/wallet/transfer"
-            className="flex flex-col items-center gap-1.5 bg-white/15 rounded-xl py-2.5 hover:bg-white/20 transition"
+            className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 hover:bg-paper/20 transition"
           >
             <Send className="w-4 h-4 text-white" strokeWidth={2} />
             <span className="text-[11px] font-medium text-white">Transfer</span>
           </Link>
           <Link
             href="/wallet"
-            className="flex flex-col items-center gap-1.5 bg-white/15 rounded-xl py-2.5 hover:bg-white/20 transition"
+            className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 hover:bg-paper/20 transition"
           >
             <RefreshCw className="w-4 h-4 text-white" strokeWidth={2} />
             <span className="text-[11px] font-medium text-white">History</span>
