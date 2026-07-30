@@ -663,3 +663,69 @@ Investment pool performance reports show guaranteed, variable_pool, and expected
 - Reports honestly represent the risk/return profile of different product types
 - A compliance officer or auditor can see exactly which returns are contractual vs. performance-based
 - Future reporting phases must maintain this separation
+
+---
+
+## ADR-040: Email OTP Replaces Password-Based Authentication
+
+**Date:** 2026-07-30  
+**Status:** Accepted  
+
+### Decision
+Password-based authentication is removed entirely. All customer and staff sign-in uses Email OTP (Supabase `signInWithOtp`). No password field exists anywhere in the UI or API.
+
+**Configuration values:**
+- OTP code length: 6 digits
+- OTP expiry: 10 minutes (600 seconds)
+- OTP resend rate limit: 60 seconds between requests (client-enforced)
+- OTP is single-use: invalidated after successful verification or expiry
+- `shouldCreateUser: false` on login (prevents account creation from login screen)
+- `shouldCreateUser: true` on signup (creates account on OTP verification)
+
+### Consequences
+- No password storage, no password reset flows, no password-related security surface
+- Existing users with passwords in Supabase can still sign in via OTP (passwords remain in the DB but are simply unused — no migration needed)
+- Staff/admin also use Email OTP (deliberate decision — same login page, redirects to `/admin/dashboard`)
+- Google OAuth provider fully disabled in Supabase and all related code removed
+
+---
+
+## ADR-041: 4-Digit PIN for Device-Bound Fast Sign-In
+
+**Date:** 2026-07-30  
+**Status:** Accepted  
+
+### Decision
+A 4-digit PIN provides fast re-authentication on a device that has already completed Email OTP. The PIN is **device-bound, not identity-bound**: it unlocks a stored, still-valid Supabase session on a recognized device — it does NOT independently mint a new authenticated session.
+
+**Configuration values:**
+- PIN length: 4 digits
+- PIN max failed attempts: 5 (after 5, PIN is locked → force Email OTP)
+- PIN hashing: PBKDF2, 10,000 iterations, SHA-256, per-row 16-byte salt
+- PIN storage: `device_pins` table (migration 00034), RLS-enabled
+- Device identification: UUID stored in `localStorage` (`agriqcap_device_id`)
+- PIN setup: optional, offered after first successful Email OTP on a device
+- PIN can only refresh an existing session (`supabase.auth.refreshSession()`) — if the session's refresh token has expired, PIN is useless and the user must do Email OTP again
+- "Use email instead" link always visible on PIN entry screen — clears device PIN and redirects to email OTP
+
+### Consequences
+- PIN is a convenience layer, not a security gate — the session expiry (Supabase default: 30 days for refresh token) is the real security boundary
+- After 30 days of inactivity, all users must re-authenticate via Email OTP regardless of PIN
+- If a user clears browser data, the device_id is lost and PIN is unavailable (correct behavior)
+- If a user gets a new device, they must do Email OTP and set up a new PIN on that device
+- Lockout after 5 failed attempts is per-device (not per-account), preventing brute-force while allowing the user to sign in via Email OTP on the same device
+
+---
+
+## ADR-042: Google Sign-In Fully Removed
+
+**Date:** 2026-07-30  
+**Status:** Accepted  
+
+### Decision
+Google OAuth provider is disabled in Supabase Auth (client_id and secret cleared). All Google-related code is deleted: GoogleButton component, /auth/callback route, Divider component, Google-specific bootstrap logic. Google redirect URIs are no longer registered in Google Cloud Console (provider disabled).
+
+### Consequences
+- No dead code paths for a disabled provider
+- `signup_method` enum on customers table retains 'google' value for historical records but no new records will use it
+- Signup is exclusively via Email OTP (manual registration: name + email + phone)
