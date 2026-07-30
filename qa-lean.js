@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const BASE = 'https://agroesusu-repo.vercel.app';
+const BASE = 'https://agricap.vercel.app';
 
 const VPS = [
   { name: '320', w: 320, h: 568 },

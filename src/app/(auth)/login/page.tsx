@@ -12,6 +12,7 @@ import { PasswordInput } from "@/components/auth/PasswordInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
 import { Divider } from "@/components/auth/Divider";
 import { SwitchAuthLink } from "@/components/auth/SwitchAuthLink";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { LoginRightPanel } from "@/components/auth/RightPanel";
 
 export default function LoginPage() {
@@ -61,7 +62,13 @@ export default function LoginPage() {
         }
       }
 
-      router.push("/dashboard");
+      // Check if profile is complete (phone verified + address)
+      const profileComplete = (user.user_metadata as { profile_complete?: boolean })?.profile_complete === true;
+      if (!profileComplete) {
+        router.push("/complete-profile");
+      } else {
+        router.push("/dashboard");
+      }
       router.refresh();
     }
   };
@@ -120,6 +127,8 @@ export default function LoginPage() {
         </form>
 
         <Divider />
+
+        <GoogleButton mode="login" />
 
         <SwitchAuthLink
           text="No account?"

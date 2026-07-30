@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 
-const BASE_URL = 'https://agroesusu-repo.vercel.app';
+const BASE_URL = 'https://agricap.vercel.app';
 
 const VIEWPORTS = [
   { name: '320px', width: 320, height: 568 },
@@ -121,7 +121,7 @@ async function testPage(page, viewport, pageInfo) {
   const issueTracker = [];
   const pageScores = {};
   console.log('='.repeat(80));
-  console.log('  COMPREHENSIVE RESPONSIVE QA - AgroEsusu');
+  console.log('  COMPREHENSIVE RESPONSIVE QA - Agriqcap');
   console.log('  ' + (PUBLIC_PAGES.length + PROTECTED_PAGES.length) + ' pages x ' + VIEWPORTS.length + ' viewports = ' + ((PUBLIC_PAGES.length + PROTECTED_PAGES.length) * VIEWPORTS.length) + ' tests');
   console.log('='.repeat(80));
   for (const vp of VIEWPORTS) {

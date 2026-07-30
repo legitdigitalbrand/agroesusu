@@ -147,7 +147,7 @@ CREATE INDEX idx_ep_active ON public.cooperative_executive_positions(is_active) 
 -- ============================================================================
 INSERT INTO public.cooperatives (name, description, status, founded_date, config)
 VALUES (
-  'AgroEsusu Farmers Cooperative',
+  'Agriqcap Farmers Cooperative',
   'A cooperative for agricultural savings and lending, serving smallholder farmers across Nigeria.',
   'active',
   '2026-01-15',

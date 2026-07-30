@@ -1,5 +1,5 @@
 -- ============================================================================
--- AgroEsusu — Master Schema Migration
+-- Agriqcap — Master Schema Migration
 -- Generated from the Master Engineering PRD
 -- ============================================================================
 

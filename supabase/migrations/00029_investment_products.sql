@@ -346,8 +346,8 @@ INSERT INTO public.investment_products (
    '{"category": "crop_cycle", "crop_type": "maize", "season": "2026_wet", "payout_frequency": "at_harvest"}'::jsonb),
 
   -- Cooperative Growth Fund: profit-sharing, requires coop membership
-  ('INV-0003', 'Cooperative Growth Fund — AgroEsusu', 'cooperative_fund',
-   'Invest in the AgroEsusu Farmers Cooperative growth fund. Returns are based on the cooperative''s collective profitability from lending operations and group savings activities. Profit-sharing model — returns fluctuate with cooperative performance.',
+  ('INV-0003', 'Cooperative Growth Fund — Agriqcap', 'cooperative_fund',
+   'Invest in the Agriqcap Farmers Cooperative growth fund. Returns are based on the cooperative''s collective profitability from lending operations and group savings activities. Profit-sharing model — returns fluctuate with cooperative performance.',
    15.0000, 'compound',
    5000.00, 500000.00,
    365, NULL,

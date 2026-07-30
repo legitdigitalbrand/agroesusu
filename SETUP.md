@@ -11,7 +11,7 @@
 
 ```bash
 git clone https://github.com/legitdigitalbrand/agroesusu.git
-cd agroesusu
+cd agroesusu  # repo is still named agroesusu on GitHub
 npm install
 ```
 

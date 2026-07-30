@@ -19,14 +19,25 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Determine signup method from auth metadata (set by Google OAuth flow or manual signup)
+    const signupMethod = (user.user_metadata as { signup_method?: string })?.signup_method === 'google' ? 'google' : 'manual';
+
     // Check if customer already exists (idempotent)
     const { data: existingCustomer } = await supabase
       .from('customers')
-      .select('id, customer_number')
+      .select('id, customer_number, signup_method')
       .eq('auth_id', user.id)
       .maybeSingle();
 
     if (existingCustomer) {
+      // Update signup_method if it wasn't set (backward compat for existing records)
+      if (signupMethod === 'google' && existingCustomer.signup_method !== 'google') {
+        const svcClient = createServiceClient();
+        await svcClient
+          .from('customers')
+          .update({ signup_method: 'google' })
+          .eq('auth_id', user.id);
+      }
       return NextResponse.json({
         message: 'Customer already exists',
         customer_id: existingCustomer.id,
@@ -57,6 +68,7 @@ export async function POST() {
         email: email,
         phone: phone,
         status: 'registered',
+        signup_method: signupMethod,
         created_by: user.id,
       })
       .select('id, customer_number')

@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
       <div>
         <h1 className="font-display font-bold text-xl text-ink">Platform overview</h1>
         <p className="text-[14px] text-ink-soft mt-1">
-          {overview.product_counts ? "AgroEsusu Platform" : "Platform"} · last updated just now
+          {overview.product_counts ? "Agriqcap Platform" : "Platform"} · last updated just now
         </p>
       </div>
 

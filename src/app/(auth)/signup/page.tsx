@@ -12,6 +12,8 @@ import { AuthInput } from "@/components/auth/AuthInput";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
 import { SwitchAuthLink } from "@/components/auth/SwitchAuthLink";
+import { Divider } from "@/components/auth/Divider";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { SignupRightPanel } from "@/components/auth/RightPanel";
 
 export default function SignupPage() {
@@ -36,7 +38,7 @@ export default function SignupPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, phone } },
+      options: { data: { full_name: fullName, phone, signup_method: 'manual' } },
     });
 
     if (signUpError) {
@@ -61,7 +63,7 @@ export default function SignupPage() {
       console.error("[signup] Bootstrap error:", err);
     }
 
-    router.push("/dashboard");
+    router.push("/complete-profile");
     router.refresh();
   };
 
@@ -139,6 +141,10 @@ export default function SignupPage() {
             Create my account →
           </PrimaryButton>
         </form>
+
+        <Divider />
+
+        <GoogleButton mode="signup" />
 
         <p className="text-[12px] text-ink-soft mt-4 text-center leading-relaxed">
           By signing up you agree to our{" "}

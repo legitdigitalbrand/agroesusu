@@ -9,6 +9,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 //  - Redirect unauthenticated users from protected routes → /login
 //  - Redirect authenticated users from /login & /signup → /dashboard
 //  - Enforce admin-only access for /admin/* (server-side staff check)
+//  - Enforce profile completion gate: no app access until phone
+//    is verified AND address is on file (applies to ALL signup methods)
 // ════════════════════════════════════════════════════════════
 
 const publicRoutes = [
@@ -31,6 +33,14 @@ const publicRoutes = [
   '/privacy',
   '/help',
   '/welcome',
+  '/complete-profile',
+  '/auth/callback',
+];
+
+// Routes that are auth-related but don't require profile completion
+const authRoutes = [
+  '/auth',
+  '/complete-profile',
 ];
 
 // Routes that require staff/admin privileges (checked server-side)
@@ -40,6 +50,10 @@ const adminRoutes = [
 
 function isPublicRoute(pathname: string): boolean {
   return publicRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
+}
+
+function isAuthRoute(pathname: string): boolean {
+  return authRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
 function isAdminRoute(pathname: string): boolean {
@@ -121,10 +135,24 @@ export async function middleware(request: NextRequest) {
         // Non-admin trying to access admin routes → redirect to dashboard
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
+      // Staff users skip profile completion gate (they have separate onboarding)
+      return response;
     } catch {
       // If the RPC fails (e.g. DB unreachable), don't block — let the
       // client-side admin layout handle it as a fallback safety net
     }
+  }
+
+  // ─── Profile completion gate ───
+  // Check if user has completed their profile (phone verified + address).
+  // This is stored in user_metadata.profile_complete (set by the
+  // complete-profile page after phone OTP + address form).
+  const profileComplete = (session.user.user_metadata as { profile_complete?: boolean })?.profile_complete === true;
+
+  if (!profileComplete && !isAuthRoute(pathname) && !isPublicRoute(pathname)) {
+    // Block access to app routes until profile is complete
+    const redirectUrl = new URL('/complete-profile', request.url);
+    return NextResponse.redirect(redirectUrl);
   }
 
   // All checks passed — refresh session cookies and continue
