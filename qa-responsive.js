@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 
-const BASE_URL = 'https://agricap.vercel.app';
+const BASE_URL = 'https://agriqcap.vercel.app';
 
 const VIEWPORTS = [
   { name: '320px', width: 320, height: 568 },
