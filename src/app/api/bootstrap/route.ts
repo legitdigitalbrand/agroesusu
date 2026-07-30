@@ -105,6 +105,11 @@ export async function POST() {
       });
     }
 
+    // Set profile_complete in auth metadata
+    await supabase.auth.updateUser({
+      data: { profile_complete: true }
+    });
+
     return NextResponse.json({
       message: 'Customer and wallet created successfully',
       customer_id: customer.id,

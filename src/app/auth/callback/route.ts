@@ -5,9 +5,8 @@ import { createClient } from '@/lib/supabase/server';
 // OAuth Callback Handler
 //
 // Supabase redirects here after Google OAuth completes.
-// We check if the user's profile is complete (phone + address).
-// If not, redirect to /complete-profile (mandatory gate).
-// If yes, redirect to dashboard (or admin if staff).
+// We exchange the code for a session, create the customer
+// record + wallet if needed, then redirect to dashboard.
 // ════════════════════════════════════════════════════════════
 
 export async function GET(request: Request) {
@@ -30,47 +29,34 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Check if staff (staff don't use Google OAuth, but handle gracefully)
+    // Check if staff
     const { data: isStaff } = await supabase.rpc('is_staff');
     if (isStaff) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
 
-    // Check if customer record exists
+    // Create customer + wallet if not exists (idempotent)
     const { data: customer } = await supabase
       .from('customers')
-      .select('id, phone_verified, signup_method')
+      .select('id')
       .eq('auth_id', user.id)
       .maybeSingle();
 
-    // Check if profile is complete: phone_verified AND has address
-    let hasAddress = false;
-    let phoneVerified = false;
-
-    if (customer) {
-      phoneVerified = customer.phone_verified;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('residential_address')
-        .eq('id', user.id)
-        .maybeSingle();
-      hasAddress = !!(profile?.residential_address);
+    if (!customer) {
+      try {
+        await fetch(`${requestUrl.origin}/api/bootstrap`, { method: 'POST' });
+      } catch (e) {
+        console.error('[auth/callback] Bootstrap error:', e);
+      }
     }
 
-    // For Google users: customer may not exist yet, or may not have phone/address
-    const profileComplete = customer && phoneVerified && hasAddress;
+    // Set profile_complete in user metadata
+    await supabase.auth.updateUser({
+      data: { profile_complete: true }
+    });
 
-    if (!profileComplete) {
-      // Route to mandatory profile completion
-      const redirectUrl = new URL('/complete-profile', request.url);
-      redirectUrl.searchParams.set('oauth', '1');
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // Profile is complete → go to dashboard
     return NextResponse.redirect(new URL(next, request.url));
   }
 
-  // No code param → redirect to login
   return NextResponse.redirect(new URL('/login', request.url));
 }

@@ -62,13 +62,7 @@ export default function LoginPage() {
         }
       }
 
-      // Check if profile is complete (phone verified + address)
-      const profileComplete = (user.user_metadata as { profile_complete?: boolean })?.profile_complete === true;
-      if (!profileComplete) {
-        router.push("/complete-profile");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
       router.refresh();
     }
   };

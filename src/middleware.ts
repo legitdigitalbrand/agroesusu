@@ -2,15 +2,12 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // ════════════════════════════════════════════════════════════
-// Agriqcap — Production Authentication Middleware
+// Agriqcap — Authentication Middleware
 //
-// Centralizes ALL auth logic:
 //  - Session refresh on every request
 //  - Redirect unauthenticated users from protected routes → /login
 //  - Redirect authenticated users from /login & /signup → /dashboard
 //  - Enforce admin-only access for /admin/* (server-side staff check)
-//  - Enforce profile completion gate: no app access until phone
-//    is verified AND address is on file (applies to ALL signup methods)
 // ════════════════════════════════════════════════════════════
 
 const publicRoutes = [
@@ -37,23 +34,10 @@ const publicRoutes = [
   '/auth/callback',
 ];
 
-// Routes that are auth-related but don't require profile completion
-const authRoutes = [
-  '/auth',
-  '/complete-profile',
-];
-
-// Routes that require staff/admin privileges (checked server-side)
-const adminRoutes = [
-  '/admin',
-];
+const adminRoutes = ['/admin'];
 
 function isPublicRoute(pathname: string): boolean {
   return publicRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
-}
-
-function isAuthRoute(pathname: string): boolean {
-  return authRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
 function isAdminRoute(pathname: string): boolean {
@@ -63,7 +47,7 @@ function isAdminRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip API routes — they handle their own auth via Supabase server client
+  // Skip API routes — they handle their own auth
   if (pathname.startsWith('/api')) {
     return NextResponse.next();
   }
@@ -84,12 +68,11 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // If Supabase env vars aren't configured, pass through (dev fallback)
+  // If Supabase env vars aren't configured, pass through
   if (!supabaseUrl || !supabaseAnonKey) {
     return response;
   }
 
-  // Create a Supabase client that can refresh the session cookie
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
@@ -103,18 +86,16 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Refresh session — this also validates the JWT
+  // Refresh session
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   // ─── Unauthenticated user ───
   if (!session) {
-    // Allow public routes
     if (isPublicRoute(pathname)) {
       return response;
     }
-    // Redirect everything else to login
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(redirectUrl);
@@ -127,35 +108,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Admin route protection — check staff status server-side
+  // Admin route protection
   if (isAdminRoute(pathname)) {
     try {
       const { data: isStaff } = await supabase.rpc('is_staff');
       if (!isStaff) {
-        // Non-admin trying to access admin routes → redirect to dashboard
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
-      // Staff users skip profile completion gate (they have separate onboarding)
-      return response;
     } catch {
-      // If the RPC fails (e.g. DB unreachable), don't block — let the
-      // client-side admin layout handle it as a fallback safety net
+      // If RPC fails, let client-side admin layout handle it
     }
   }
 
-  // ─── Profile completion gate ───
-  // Check if user has completed their profile (phone verified + address).
-  // This is stored in user_metadata.profile_complete (set by the
-  // complete-profile page after phone OTP + address form).
-  const profileComplete = (session.user.user_metadata as { profile_complete?: boolean })?.profile_complete === true;
-
-  if (!profileComplete && !isAuthRoute(pathname) && !isPublicRoute(pathname)) {
-    // Block access to app routes until profile is complete
-    const redirectUrl = new URL('/complete-profile', request.url);
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  // All checks passed — refresh session cookies and continue
   return response;
 }
 

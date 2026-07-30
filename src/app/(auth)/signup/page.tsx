@@ -38,7 +38,7 @@ export default function SignupPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, phone, signup_method: 'manual' } },
+      options: { data: { full_name: fullName, phone, signup_method: 'manual', profile_complete: true } },
     });
 
     if (signUpError) {
@@ -63,7 +63,7 @@ export default function SignupPage() {
       console.error("[signup] Bootstrap error:", err);
     }
 
-    router.push("/complete-profile");
+    router.push("/dashboard");
     router.refresh();
   };
 
