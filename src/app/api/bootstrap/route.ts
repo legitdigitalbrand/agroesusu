@@ -20,7 +20,7 @@ export async function POST() {
     }
 
     // Determine signup method from auth metadata (set by Google OAuth flow or manual signup)
-    const signupMethod = (user.user_metadata as { signup_method?: string })?.signup_method === 'google' ? 'google' : 'manual';
+    const signupMethod = 'manual';
 
     // Check if customer already exists (idempotent)
     const { data: existingCustomer } = await supabase
@@ -30,14 +30,7 @@ export async function POST() {
       .maybeSingle();
 
     if (existingCustomer) {
-      // Update signup_method if it wasn't set (backward compat for existing records)
-      if (signupMethod === 'google' && existingCustomer.signup_method !== 'google') {
-        const svcClient = createServiceClient();
-        await svcClient
-          .from('customers')
-          .update({ signup_method: 'google' })
-          .eq('auth_id', user.id);
-      }
+      // Existing customer — no updates needed
       return NextResponse.json({
         message: 'Customer already exists',
         customer_id: existingCustomer.id,

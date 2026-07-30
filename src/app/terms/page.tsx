@@ -23,7 +23,7 @@ export default function TermsPage() {
           </section>
           <section>
             <h2 className="font-display text-xl text-ink">3. User Accounts</h2>
-            <p>You must provide accurate and complete information when creating your account. You are responsible for maintaining the security of your account and password.</p>
+            <p>You must provide accurate and complete information when creating your account. You are responsible for maintaining the security of your account and PIN.</p>
           </section>
           <section>
             <h2 className="font-display text-xl text-ink">4. Eligibility</h2>

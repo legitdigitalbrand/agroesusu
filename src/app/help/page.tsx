@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function HelpPage() {
   const faqs = [
-    { q: "How do I create an account?", a: "Download the app or visit our website, click Get Started, and follow the signup process. You'll need your name, email, phone number, and a password." },
+    { q: "How do I create an account?", a: "Download the app or visit our website, click Get Started, and follow the signup process. You'll need your name, email, phone number, and verify your email with a one-time code." },
     { q: "How do I verify my account?", a: "After creating your account, visit the Profile section to complete verification tiers. Higher tiers unlock more features and higher transaction limits." },
     { q: "Is my money safe?", a: `Yes. All deposits are held by Safe Haven Microfinance Bank, fully licensed by the Central Bank of Nigeria (CBN). Deposits are insured by the NDIC.` },
     { q: "How do I access USSD?", a: "Dial *347*88# from any phone to access your account without internet. You can check balances, save, and apply for loans." },

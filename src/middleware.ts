@@ -16,8 +16,6 @@ const publicRoutes = [
   '/signup',
   '/forgot-password',
   '/reset-password',
-  '/verify-email',
-  '/verify-phone',
   '/about',
   '/blog',
   '/careers',
@@ -30,8 +28,6 @@ const publicRoutes = [
   '/privacy',
   '/help',
   '/welcome',
-  '/complete-profile',
-  '/auth/callback',
 ];
 
 const adminRoutes = ['/admin'];
@@ -47,12 +43,10 @@ function isAdminRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip API routes — they handle their own auth
   if (pathname.startsWith('/api')) {
     return NextResponse.next();
   }
 
-  // Skip Next.js internal routes and static assets
   if (
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico' ||
@@ -68,7 +62,6 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // If Supabase env vars aren't configured, pass through
   if (!supabaseUrl || !supabaseAnonKey) {
     return response;
   }
@@ -86,12 +79,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Refresh session
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // ─── Unauthenticated user ───
   if (!session) {
     if (isPublicRoute(pathname)) {
       return response;
@@ -100,8 +91,6 @@ export async function middleware(request: NextRequest) {
     redirectUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(redirectUrl);
   }
-
-  // ─── Authenticated user ───
 
   // Redirect to dashboard if they visit login/signup while logged in
   if (pathname === '/login' || pathname === '/signup') {
@@ -116,7 +105,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
     } catch {
-      // If RPC fails, let client-side admin layout handle it
+      // Let client-side handle it
     }
   }
 
