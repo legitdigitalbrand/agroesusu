@@ -71,11 +71,11 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
 
   const account = data as SavingsAccount;
 
-  // 5. If initial deposit provided, activate and process it
+  // 5. If initial deposit provided, activate the account
+  // The actual deposit will be processed by the API layer calling deposit()
+  // after this returns (see POST /api/savings/accounts)
   if (request.initial_deposit && request.initial_deposit > 0) {
     await activateAccount(account.id);
-    // The actual deposit will be handled by the deposit function
-    // (called by the API layer after this returns)
   }
 
   return account;

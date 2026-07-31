@@ -98,19 +98,23 @@ export async function computeSavingsSignal(customerId: string): Promise<void> {
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
+  // Get customer's wallet IDs for filtering
+  const walletIds = (await supabase.from('wallets').select('id').eq('customer_id', customerId).then(r => r.data?.map(w => w.id) || []));
+
   const { count: contributions30d } = await supabase
     .from('financial_transactions')
     .select('*', { count: 'exact', head: true })
     .eq('source_module', 'savings')
     .in('transaction_type', ['savings_contribution'])
     .gte('created_at', thirtyDaysAgo.toISOString())
-    .in('wallet_id', (await supabase.from('wallets').select('id').eq('customer_id', customerId).then(r => r.data?.map(w => w.id) || [])));
+    .in('wallet_id', walletIds);
 
   const { count: contributions90d } = await supabase
     .from('financial_transactions')
     .select('*', { count: 'exact', head: true })
     .eq('source_module', 'savings')
     .in('transaction_type', ['savings_contribution'])
+    .in('wallet_id', walletIds)
     .gte('created_at', ninetyDaysAgo.toISOString());
 
   const { count: withdrawals90d } = await supabase
@@ -118,6 +122,7 @@ export async function computeSavingsSignal(customerId: string): Promise<void> {
     .select('*', { count: 'exact', head: true })
     .eq('source_module', 'savings')
     .in('transaction_type', ['savings_withdrawal'])
+    .in('wallet_id', walletIds)
     .gte('created_at', ninetyDaysAgo.toISOString());
 
   // 5. Compute total interest earned

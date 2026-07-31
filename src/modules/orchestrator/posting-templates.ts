@@ -1,7 +1,7 @@
 // ============================================================================
 // Posting Templates — Transaction Type → Journal Lines
 // 
-// EXTENDED IN PHASE 8: Added investment posting templates.
+// EXTENDED IN PHASE 15: Added incoming_deposit template.
 // ============================================================================
 
 import type { JournalLineInput } from '@/modules/ledger';
@@ -30,6 +30,15 @@ const TEMPLATES: Record<string, PostingTemplate> = {
       { account_id: walletAccountId, entry_type: 'credit', amount, description },
     ],
   },
+
+  // Phase 15: Incoming deposit (external bank transfer to DVA)
+  incoming_deposit: {
+    buildLines: ({ amount, walletAccountId, safeHavenAccountId, description }) => [
+      { account_id: safeHavenAccountId, entry_type: 'debit', amount, description: `Incoming: ${description}` },
+      { account_id: walletAccountId, entry_type: 'credit', amount, description: `Wallet funding: ${description}` },
+    ],
+  },
+
   wallet_withdrawal: {
     buildLines: ({ amount, walletAccountId, safeHavenAccountId, description }) => [
       { account_id: walletAccountId, entry_type: 'debit', amount, description },
@@ -101,38 +110,38 @@ const TEMPLATES: Record<string, PostingTemplate> = {
     buildLines: ({ amount, walletAccountId, productAccountId, description }) => {
       if (!productAccountId) throw new Error('loan_repayment requires productAccountId');
       return [
-        { account_id: walletAccountId, entry_type: 'debit', amount, description: `Loan repayment (principal): ${description}` },
-        { account_id: productAccountId, entry_type: 'credit', amount, description: `Principal repaid: ${description}` },
+        { account_id: walletAccountId, entry_type: 'debit', amount, description: `Loan repayment: ${description}` },
+        { account_id: productAccountId, entry_type: 'credit', amount, description: `Loan repaid: ${description}` },
       ];
     },
   },
   loan_interest: {
-    buildLines: ({ amount, walletAccountId, interestRevenueAccountId, description }) => {
+    buildLines: ({ amount, walletAccountId, productAccountId, interestRevenueAccountId, description }) => {
+      if (!productAccountId) throw new Error('loan_interest requires productAccountId');
       if (!interestRevenueAccountId) throw new Error('loan_interest requires interestRevenueAccountId');
       return [
-        { account_id: walletAccountId, entry_type: 'debit', amount, description: `Loan interest payment: ${description}` },
-        { account_id: interestRevenueAccountId, entry_type: 'credit', amount, description: `Interest income: ${description}` },
+        { account_id: walletAccountId, entry_type: 'debit', amount, description: `Interest: ${description}` },
+        { account_id: interestRevenueAccountId, entry_type: 'credit', amount, description: `Interest revenue: ${description}` },
       ];
     },
   },
   loan_penalty: {
-    buildLines: ({ amount, productAccountId, feeRevenueAccountId, description }) => {
-      if (!productAccountId) throw new Error('loan_penalty requires productAccountId');
+    buildLines: ({ amount, walletAccountId, feeRevenueAccountId, description }) => {
       if (!feeRevenueAccountId) throw new Error('loan_penalty requires feeRevenueAccountId');
       return [
-        { account_id: productAccountId, entry_type: 'debit', amount, description: `Late payment penalty: ${description}` },
-        { account_id: feeRevenueAccountId, entry_type: 'credit', amount, description: `Penalty income: ${description}` },
+        { account_id: walletAccountId, entry_type: 'debit', amount, description: `Penalty: ${description}` },
+        { account_id: feeRevenueAccountId, entry_type: 'credit', amount, description: `Penalty revenue: ${description}` },
       ];
     },
   },
 
-  // Phase 7: Group Savings operations
+  // Phase 7: Group savings operations
   group_contribution: {
     buildLines: ({ amount, walletAccountId, productAccountId, description }) => {
       if (!productAccountId) throw new Error('group_contribution requires productAccountId');
       return [
         { account_id: walletAccountId, entry_type: 'debit', amount, description: `Group contribution: ${description}` },
-        { account_id: productAccountId, entry_type: 'credit', amount, description: `Pool deposit: ${description}` },
+        { account_id: productAccountId, entry_type: 'credit', amount, description: `Group savings: ${description}` },
       ];
     },
   },
@@ -140,15 +149,13 @@ const TEMPLATES: Record<string, PostingTemplate> = {
     buildLines: ({ amount, walletAccountId, productAccountId, description }) => {
       if (!productAccountId) throw new Error('group_payout requires productAccountId');
       return [
-        { account_id: productAccountId, entry_type: 'debit', amount, description: `Pool payout: ${description}` },
-        { account_id: walletAccountId, entry_type: 'credit', amount, description: `Group payout to wallet: ${description}` },
+        { account_id: productAccountId, entry_type: 'debit', amount, description: `Group payout: ${description}` },
+        { account_id: walletAccountId, entry_type: 'credit', amount, description: `Payout to wallet: ${description}` },
       ];
     },
   },
 
   // Phase 8: Investment operations
-  // Subscription: money moves from wallet to investment account
-  // Debit Wallet (2000.{wallet}), Credit Investment Settlement (2003.{investment})
   investment_subscription: {
     buildLines: ({ amount, walletAccountId, productAccountId, description }) => {
       if (!productAccountId) throw new Error('investment_subscription requires productAccountId');
@@ -158,8 +165,6 @@ const TEMPLATES: Record<string, PostingTemplate> = {
       ];
     },
   },
-  // Redemption: money moves from investment back to wallet
-  // Debit Investment Settlement (2003.{investment}), Credit Wallet (2000.{wallet})
   investment_redemption: {
     buildLines: ({ amount, walletAccountId, productAccountId, description }) => {
       if (!productAccountId) throw new Error('investment_redemption requires productAccountId');
@@ -169,37 +174,46 @@ const TEMPLATES: Record<string, PostingTemplate> = {
       ];
     },
   },
-  // Returns paid out to wallet
-  // Debit Interest Expense (5000), Credit Wallet (2000.{wallet})
   investment_returns: {
     buildLines: ({ amount, walletAccountId, interestExpenseAccountId, description }) => {
       if (!interestExpenseAccountId) throw new Error('investment_returns requires interestExpenseAccountId');
       return [
-        { account_id: interestExpenseAccountId, entry_type: 'debit', amount, description: `Investment returns: ${description}` },
+        { account_id: interestExpenseAccountId, entry_type: 'debit', amount, description: `Returns payout: ${description}` },
         { account_id: walletAccountId, entry_type: 'credit', amount, description: `Returns to wallet: ${description}` },
       ];
     },
   },
-  // Returns reinvested (auto-reinvest) — stays in investment account
-  // Debit Interest Expense (5000), Credit Investment Settlement (2003.{investment})
   investment_reinvest: {
     buildLines: ({ amount, productAccountId, interestExpenseAccountId, description }) => {
       if (!productAccountId) throw new Error('investment_reinvest requires productAccountId');
       if (!interestExpenseAccountId) throw new Error('investment_reinvest requires interestExpenseAccountId');
       return [
-        { account_id: interestExpenseAccountId, entry_type: 'debit', amount, description: `Reinvested returns: ${description}` },
-        { account_id: productAccountId, entry_type: 'credit', amount, description: `Returns reinvested: ${description}` },
+        { account_id: interestExpenseAccountId, entry_type: 'debit', amount, description: `Returns reinvested: ${description}` },
+        { account_id: productAccountId, entry_type: 'credit', amount, description: `Reinvestment: ${description}` },
       ];
     },
+  },
+
+  // Misc
+  fee_charge: {
+    buildLines: ({ amount, walletAccountId, feeRevenueAccountId, description }) => {
+      if (!feeRevenueAccountId) throw new Error('fee_charge requires feeRevenueAccountId');
+      return [
+        { account_id: walletAccountId, entry_type: 'debit', amount, description: `Fee: ${description}` },
+        { account_id: feeRevenueAccountId, entry_type: 'credit', amount, description: `Fee revenue: ${description}` },
+      ];
+    },
+  },
+  adjustment: {
+    buildLines: ({ amount, walletAccountId, safeHavenAccountId, description }) => [
+      { account_id: walletAccountId, entry_type: 'debit', amount, description: `Adjustment: ${description}` },
+      { account_id: safeHavenAccountId, entry_type: 'credit', amount, description: `Adjustment offset: ${description}` },
+    ],
   },
 };
 
 export function getPostingTemplate(type: string): PostingTemplate | null {
   return TEMPLATES[type] || null;
-}
-
-export function hasPostingTemplate(type: string): boolean {
-  return type in TEMPLATES;
 }
 
 export function requiresProductAccount(type: string): boolean {

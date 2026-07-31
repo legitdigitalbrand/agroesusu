@@ -193,7 +193,7 @@ export async function initiate(
 
     // 8. CREATE WALLET_TRANSACTIONS READ MODEL ENTRY
     if (request.wallet_id && walletAccountId && request.transaction_type !== 'savings_interest') {
-      const walletCreditTypes = ['wallet_deposit', 'savings_withdrawal', 'loan_disbursement', 'group_payout', 'investment_redemption', 'investment_returns'];
+      const walletCreditTypes = ['wallet_deposit', 'incoming_deposit', 'savings_withdrawal', 'loan_disbursement', 'group_payout', 'investment_redemption', 'investment_returns'];
       const direction = walletCreditTypes.includes(request.transaction_type) ? 'credit' : 'debit';
 
       await supabase.from('wallet_transactions').insert({

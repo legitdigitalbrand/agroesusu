@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { deposit } from '@/modules/savings';
+import { dispatchNotification } from '@/modules/communications';
 
 // POST /api/savings/accounts/[accountId]/deposit — deposit into savings
 export async function POST(
@@ -72,6 +73,18 @@ export async function POST(
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+
+    // Dispatch notification (non-blocking)
+    dispatchNotification({
+      event: 'contribution_received',
+      user_id: user.id,
+      variables: {
+        amount: amount.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }),
+        account_id: context.params.accountId,
+      },
+      metadata: { ft_ref: result.transaction_reference },
+      related_entity_type: 'savings_transaction',
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

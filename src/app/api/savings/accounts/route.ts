@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { openAccount, listCustomerAccounts } from '@/modules/savings';
+import { openAccount, listCustomerAccounts, deposit } from '@/modules/savings';
 
 // POST /api/savings/accounts — open a new savings account
 export async function POST(request: NextRequest) {
@@ -68,6 +68,30 @@ export async function POST(request: NextRequest) {
       target_amount,
       initial_deposit,
     });
+
+    // Process initial deposit if provided
+    if (initial_deposit && initial_deposit > 0) {
+      try {
+        const depositResult = await deposit({
+          savings_account_id: account.id,
+          wallet_id: walletId,
+          amount: initial_deposit,
+          description: 'Initial deposit',
+        });
+        if (!depositResult.success) {
+          return NextResponse.json({
+            account,
+            warning: `Account opened but initial deposit failed: ${depositResult.error}`,
+          }, { status: 201 });
+        }
+      } catch (depErr) {
+        console.error('[API:savings-accounts] Initial deposit error:', depErr);
+        return NextResponse.json({
+          account,
+          warning: 'Account opened but initial deposit failed — please deposit manually',
+        }, { status: 201 });
+      }
+    }
 
     return NextResponse.json({ account }, { status: 201 });
 

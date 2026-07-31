@@ -6,7 +6,10 @@
 
 export type FinancialTransactionType =
   | 'wallet_deposit'
+  | 'incoming_deposit'
   | 'wallet_withdrawal'
+  | 'wallet_withdrawal_reservation'
+  | 'wallet_withdrawal_settlement'
   | 'wallet_transfer'
   | 'savings_contribution'
   | 'savings_withdrawal'
