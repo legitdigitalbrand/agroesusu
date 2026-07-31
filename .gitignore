@@ -35,3 +35,8 @@ yarn-error.log*
 next-env.d.ts
 .env.local
 supabase/.temp/
+
+# Safe Haven OAuth credentials
+*.key
+*.crt
+*.cer
