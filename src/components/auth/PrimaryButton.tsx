@@ -15,7 +15,7 @@ export function PrimaryButton({ children, loading, disabled, className = "", ...
       disabled={disabled || loading}
       whileHover={{
         y: -2,
-        backgroundColor: "#C8E84A",
+        backgroundColor: "#BBDC12",
         boxShadow: "0 6px 20px rgba(187, 220, 18, 0.35)",
       }}
       whileTap={{

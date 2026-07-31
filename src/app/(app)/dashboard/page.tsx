@@ -5,9 +5,9 @@ import { useMe } from "@/hooks/use-me";
 import { LoadingState, ErrorState } from "@/components/yield";
 import { formatRelativeTime, initials } from "@/lib/format";
 import {
-  PiggyBank, Landmark, Users, TrendingUp,
+  PiggyBank, Landmark,
   Bell, Wallet, ArrowUpRight, ArrowDownLeft,
-  Plus, Send, RefreshCw, Eye, EyeOff,
+  Plus, Send, RefreshCw, Eye, EyeOff, FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -33,8 +33,8 @@ const fmtNGN = (v: number) =>
 // ════════════════════════════════════════════════════════════
 // Dashboard — Wallet-first layout
 // Mobile: balance hero card → quick actions → activity
-// Desktop: wallet hero spans left column → 4 metric cards →
-//          recent activity | right rail (Loan eligibility, Invest promo)
+// Desktop: wallet hero → metric cards → recent activity
+// No fake data. No Cooperative/Investments promotions.
 // ════════════════════════════════════════════════════════════
 
 export default function DashboardPage() {
@@ -61,13 +61,17 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = me.profile.full_name?.split(" ")[0] || "there";
 
+  // Real savings data from API
+  const savingsTotal = me?.summaries?.savings?.total_balance || 0;
+  const loanTotal = me?.summaries?.loans?.total_outstanding || 0;
+
   return (
     <>
       {/* ══════════════════════════════════════════════
           MOBILE LAYOUT
          ══════════════════════════════════════════════ */}
       <div className="md:hidden space-y-4">
-        {/* Top bar */}
+        {/* Greeting */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-full bg-indigo flex items-center justify-center text-white font-display font-semibold text-sm">
@@ -90,23 +94,12 @@ export default function DashboardPage() {
           onToggleBalance={() => setBalanceVisible(!balanceVisible)}
         />
 
-        {/* Quick actions grid */}
+        {/* Quick actions grid — 4 real actions */}
         <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-          <QuickAction icon={PiggyBank} label="Save" href="/savings" color="bg-indigo" />
-          <QuickAction icon={Landmark} label="Borrow" href="/loans" color="bg-loam" />
-          <QuickAction icon={Users} label="Co-op" href="/cooperative" color="bg-indigo-deep" />
-          <QuickAction icon={TrendingUp} label="Invest" href="/investments" color="bg-loam-dim" />
-        </div>
-
-        {/* Promo */}
-        <div className="bg-indigo-deep rounded-2xl p-4 flex justify-between items-center">
-          <div>
-            <p className="font-display font-semibold text-[14px] text-white">Lock savings · 90 days</p>
-            <p className="text-[12px] text-white/60 mt-0.5">Earn 11.2% p.a. on Harvest Lock</p>
-          </div>
-          <Link href="/savings" className="bg-ochre text-indigo-deep text-[13px] font-semibold px-3 py-1.5 rounded-lg">
-            Open
-          </Link>
+          <QuickAction icon={Plus} label="Fund" href="/wallet/deposit" color="bg-indigo" />
+          <QuickAction icon={PiggyBank} label="Save" href="/savings" color="bg-loam" />
+          <QuickAction icon={Landmark} label="Borrow" href="/loans" color="bg-indigo-deep" />
+          <QuickAction icon={FileText} label="Statements" href="/statements" color="bg-loam-dim" />
         </div>
 
         {/* Recent activity */}
@@ -129,11 +122,11 @@ export default function DashboardPage() {
             {greeting}, {firstName}
           </h1>
           <p className="text-[14px] text-ink-soft mt-1">
-            Here&apos;s what&apos;s happening across your savings, loans and cooperative today.
+            Here&apos;s what&apos;s happening with your savings and loans today.
           </p>
         </div>
 
-        {/* ── WALLET HERO — full-width, replaces chart ── */}
+        {/* ── WALLET HERO ── */}
         <WalletHeroCard
           wallet={wallet}
           balanceVisible={balanceVisible}
@@ -141,15 +134,15 @@ export default function DashboardPage() {
           desktop
         />
 
-        {/* 4 metric cards */}
+        {/* 4 metric cards — real data only */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <MetricCard icon={Wallet} label="Total balance" value={wallet ? fmtNGN(wallet.available_balance) : "—"} delta="+3.4%" deltaUp />
-          <MetricCard icon={PiggyBank} label="Locked savings" value="₦0" delta="No active lock" deltaUp />
-          <MetricCard icon={TrendingUp} label="Contributions" value="₦0" delta="This month" deltaUp />
-          <MetricCard icon={Landmark} label="Repayments" value="₦0" delta="Nothing due" deltaUp />
+          <MetricCard icon={Wallet} label="Wallet balance" value={wallet ? fmtNGN(wallet.available_balance) : "—"} />
+          <MetricCard icon={PiggyBank} label="Savings" value={fmtNGN(savingsTotal)} />
+          <MetricCard icon={Landmark} label="Active loans" value={fmtNGN(loanTotal)} />
+          <MetricCard icon={FileText} label="Transactions" value={String(transactions.length)} />
         </div>
 
-        {/* Bottom two-col: activity + right rail */}
+        {/* Bottom two-col: activity + quick actions */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
           {/* Left — recent activity */}
           <div className="bg-paper border border-line rounded-2xl p-5">
@@ -162,29 +155,16 @@ export default function DashboardPage() {
             <ActivityList transactions={transactions} loading={txLoading} />
           </div>
 
-          {/* Right — mini right rail inline (supplements the layout right rail) */}
+          {/* Right — quick actions */}
           <div className="space-y-3">
-            {/* Quick actions */}
             <div className="bg-paper border border-line rounded-2xl p-4">
               <h4 className="font-display font-semibold text-[14px] text-ink mb-3">Quick actions</h4>
               <div className="grid grid-cols-2 gap-2">
-                <QuickAction icon={PiggyBank} label="Save" href="/savings" color="bg-indigo" />
-                <QuickAction icon={Landmark} label="Borrow" href="/loans" color="bg-loam" />
-                <QuickAction icon={Users} label="Co-op" href="/cooperative" color="bg-indigo-deep" />
-                <QuickAction icon={TrendingUp} label="Invest" href="/investments" color="bg-loam-dim" />
+                <QuickAction icon={Plus} label="Fund wallet" href="/wallet/deposit" color="bg-indigo" />
+                <QuickAction icon={PiggyBank} label="Save" href="/savings" color="bg-loam" />
+                <QuickAction icon={Landmark} label="Borrow" href="/loans" color="bg-indigo-deep" />
+                <QuickAction icon={FileText} label="Statements" href="/statements" color="bg-loam-dim" />
               </div>
-            </div>
-
-            {/* Promo */}
-            <div className="bg-indigo-deep rounded-2xl p-4">
-              <p className="font-display font-semibold text-[14px] text-white mb-1">Lock savings · 90 days</p>
-              <p className="text-[12px] text-white/60 mb-3">Earn 11.2% p.a. on Harvest Lock</p>
-              <Link
-                href="/savings"
-                className="block text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl"
-              >
-                Open account
-              </Link>
             </div>
           </div>
         </div>
@@ -230,63 +210,42 @@ function WalletHeroCard({
         </div>
 
         {/* Balance */}
-        <div className="mb-1">
-          <p className="text-[12px] text-white/50 uppercase tracking-widest mb-1">Available Balance</p>
-          <p className="font-mono font-medium leading-tight" style={{ fontSize: desktop ? "34px" : "30px" }}>
-            {balanceVisible
-              ? (wallet ? fmtNGN(wallet.available_balance) : "₦0")
-              : "••••••"}
-          </p>
-        </div>
+        <p className="text-[12px] text-white/70 mb-1">Available balance</p>
+        <p className="font-mono font-bold text-[32px] leading-tight">
+          {balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "₦ ••••••"}
+        </p>
 
-        {/* Account number */}
-        {wallet?.account_number && (
-          <p className="font-mono text-[12px] text-white/40 mb-4">
-            •••• {wallet.account_number.slice(-4)}
-          </p>
-        )}
-
-        {/* Sub-balances row */}
-        <div className="grid grid-cols-3 gap-3 mb-5 bg-paper/8 rounded-xl p-3">
+        {/* Secondary balances */}
+        <div className="flex gap-4 mt-2">
           <div>
-            <p className="text-[12px] text-white/50 uppercase tracking-wider mb-0.5">Ledger</p>
-            <p className="font-mono text-[13px] text-white font-medium">
-              {balanceVisible ? (wallet ? fmtNGN(wallet.ledger_balance) : "₦0") : "••••"}
-            </p>
+            <p className="text-[10px] text-white/60">Ledger</p>
+            <p className="font-mono text-[13px] text-white/90">{balanceVisible ? fmtNGN(wallet?.ledger_balance || 0) : "••••"}</p>
           </div>
           <div>
-            <p className="text-[12px] text-white/50 uppercase tracking-wider mb-0.5">Pending</p>
-            <p className="font-mono text-[13px] text-white font-medium">
-              {balanceVisible ? (wallet ? fmtNGN(wallet.pending_balance) : "₦0") : "••••"}
-            </p>
-          </div>
-          <div>
-            <p className="text-[12px] text-white/50 uppercase tracking-wider mb-0.5">Reserved</p>
-            <p className="font-mono text-[13px] text-white font-medium">
-              {balanceVisible ? (wallet ? fmtNGN(wallet.reserved_balance) : "₦0") : "••••"}
-            </p>
+            <p className="text-[10px] text-white/60">Pending</p>
+            <p className="font-mono text-[13px] text-white/90">{balanceVisible ? fmtNGN(wallet?.pending_balance || 0) : "••••"}</p>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex gap-2 mt-4">
           <Link
             href="/wallet/deposit"
-            className="flex flex-col items-center gap-1.5 bg-ochre rounded-xl py-2.5 hover:opacity-90 transition"
+            className="flex flex-col items-center gap-1.5 bg-ochre rounded-xl py-2.5 px-3 flex-1 hover:opacity-90 transition"
           >
             <Plus className="w-4 h-4 text-indigo-deep" strokeWidth={2.5} />
             <span className="text-[11px] font-semibold text-indigo-deep">Add money</span>
           </Link>
           <Link
-            href="/wallet/transfer"
-            className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 hover:bg-paper/20 transition"
+            href="/wallet/withdraw"
+            className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 px-3 flex-1 hover:bg-paper/20 transition"
           >
             <Send className="w-4 h-4 text-white" strokeWidth={2} />
-            <span className="text-[11px] font-medium text-white">Transfer</span>
+            <span className="text-[11px] font-medium text-white">Withdraw</span>
           </Link>
           <Link
             href="/wallet"
-            className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 hover:bg-paper/20 transition"
+            className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 px-3 flex-1 hover:bg-paper/20 transition"
           >
             <RefreshCw className="w-4 h-4 text-white" strokeWidth={2} />
             <span className="text-[11px] font-medium text-white">History</span>
@@ -297,15 +256,13 @@ function WalletHeroCard({
   );
 }
 
-// ─── Metric card (desktop) ───────────────────────────────────
+// ─── Metric card (desktop) — no delta, real data only ────────
 function MetricCard({
-  icon: Icon, label, value, delta, deltaUp,
+  icon: Icon, label, value,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
-  delta: string;
-  deltaUp: boolean;
 }) {
   return (
     <div className="bg-paper border border-line rounded-2xl p-4">
@@ -316,7 +273,6 @@ function MetricCard({
       </div>
       <p className="text-[12px] text-ink-soft font-medium mb-1">{label}</p>
       <p className="font-mono font-semibold text-[22px] text-ink leading-tight">{value}</p>
-      <p className={`text-[11px] mt-1 font-medium ${deltaUp ? "text-loam" : "text-clay"}`}>{delta}</p>
     </div>
   );
 }
@@ -356,7 +312,10 @@ function ActivityList({
           <Wallet className="w-6 h-6 text-ink-soft" strokeWidth={1.5} />
         </div>
         <p className="font-medium text-[14px] text-ink">No transactions yet</p>
-        <p className="text-[12px] text-ink-soft mt-1">Your activity will appear here</p>
+        <p className="text-[12px] text-ink-soft mt-1">
+          Fund your wallet to get started{" "}
+          <Link href="/wallet/deposit" className="text-indigo font-medium underline">Add money</Link>
+        </p>
       </div>
     );
   }

@@ -11,7 +11,7 @@ const loanTypes = [
     amountRange: '₦50,000 – ₦300,000',
     term: 'Up to 6 Months',
     icon: Sprout,
-    iconBg: 'bg-emerald-100 text-emerald-800',
+    iconBg: 'bg-loam-light text-indigo',
     description: 'Designed for individual farmers to purchase certified seeds, crop protection, and premium fertilizers. Avoid price surges by procuring inputs early before rains begin.',
     features: [
       'Fast-track approval within 48 hours',
@@ -28,7 +28,7 @@ const loanTypes = [
     amountRange: '₦500,000 – ₦5,000,000',
     term: '3 to 12 Months',
     icon: Users,
-    iconBg: 'bg-amber-100 text-amber-800',
+    iconBg: 'bg-ochre-light text-indigo',
     description: 'Specialized group credit where members co-guarantee each other. This collective backing allows cooperatives to secure larger funding volumes with lower interest rates.',
     features: [
       'Extremely low interest rate',
@@ -45,7 +45,7 @@ const loanTypes = [
     amountRange: '₦250,000 – ₦2,000,000',
     term: '6 to 18 Months',
     icon: Tractor,
-    iconBg: 'bg-blue-100 text-blue-800',
+    iconBg: 'bg-indigo/10 text-indigo',
     description: 'Tractor rental, irrigation setup, drone spraying, or post-harvest processing machinery. Stop using manual labor when you can mechanize your acreage cost-effectively.',
     features: [
       'Lease-to-own equipment financing options',

@@ -15,7 +15,7 @@ const posts = [
     author: 'Chioma Nze',
     authorRole: 'Cooperative Specialist',
     initials: 'CN',
-    bg: 'bg-emerald-50 text-emerald-800',
+    bg: 'bg-loam-light text-indigo',
   },
   {
     id: 'weather-insurance-harvest',
@@ -27,7 +27,7 @@ const posts = [
     author: 'Aminu Dankwambo',
     authorRole: 'Head Agronomist',
     initials: 'AD',
-    bg: 'bg-blue-50 text-blue-800',
+    bg: 'bg-loam-light text-indigo',
   },
   {
     id: 'first-loan-application',
@@ -39,7 +39,7 @@ const posts = [
     author: 'Tunde Alao',
     authorRole: 'CEO & Co-founder',
     initials: 'TA',
-    bg: 'bg-amber-50 text-amber-800',
+    bg: 'bg-ochre-light text-indigo',
   },
   {
     id: 'ussd-transforming-inclusion',

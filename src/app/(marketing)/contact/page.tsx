@@ -122,7 +122,7 @@ export default function ContactPage() {
             <div className="card-surface border border-line shadow-lg p-5 sm:p-6 md:p-8">
               {isSubmitted ? (
                 <div className="text-center py-12 space-y-6 animate-in fade-in duration-300">
-                  <div className="bg-emerald-100 text-emerald-700 h-16 w-14 rounded-full flex items-center justify-center mx-auto">
+                  <div className="bg-loam-light text-loam h-16 w-14 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 className="h-10 w-10 text-indigo" />
                   </div>
                   <div className="space-y-2">

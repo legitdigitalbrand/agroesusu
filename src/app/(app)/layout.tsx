@@ -4,12 +4,13 @@ import React from "react";
 import { DesktopShell, MobileShell } from "@/components/yield/desktop-shell";
 import { useMe } from "@/hooks/use-me";
 import { LoadingState } from "@/components/yield";
-import { PiggyBank, Landmark, TrendingUp } from "lucide-react";
+import { PiggyBank, Landmark } from "lucide-react";
 import Link from "next/link";
 
 // ════════════════════════════════════════════════════════════
 // App layout — right rail uses design system tokens correctly.
-// White icons on solid color backgrounds for legibility.
+// Investments and Cooperative cards REMOVED from current product.
+// Only Wallet, Savings, Loans promoted.
 // ════════════════════════════════════════════════════════════
 
 function DefaultRightRail() {
@@ -19,44 +20,6 @@ function DefaultRightRail() {
 
   return (
     <>
-      {/* Loan eligibility card */}
-      <div className="bg-paper border border-line rounded-2xl p-4">
-        <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo flex items-center justify-center">
-            <Landmark className="w-4 h-4 text-white" strokeWidth={1.8} />
-          </div>
-          <h3 className="font-display font-semibold text-[14px] text-ink">Loan Eligibility</h3>
-        </div>
-        <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
-          You can borrow up to 3× your eligible savings balance.
-        </p>
-        <Link
-          href="/loans"
-          className="block w-full text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl hover:opacity-90 transition"
-        >
-          Check eligibility
-        </Link>
-      </div>
-
-      {/* Grow Your Money card */}
-      <div className="bg-indigo rounded-2xl p-4 text-white">
-        <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-paper/15 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-ochre" strokeWidth={1.8} />
-          </div>
-          <h3 className="font-display font-semibold text-[14px] text-white">Grow Your Money</h3>
-        </div>
-        <p className="text-[14px] text-white/70 leading-relaxed mb-3">
-          Invest in agricultural pools from ₦10,000. Earn up to 18% returns.
-        </p>
-        <Link
-          href="/investments"
-          className="block w-full text-center bg-paper/15 text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-paper/20 transition"
-        >
-          Explore
-        </Link>
-      </div>
-
       {/* Savings nudge */}
       <div className="bg-paper border border-line rounded-2xl p-4">
         <div className="flex items-center gap-2.5 mb-2">
@@ -73,6 +36,25 @@ function DefaultRightRail() {
           className="block w-full text-center bg-loam text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-loam-dim transition"
         >
           Open account
+        </Link>
+      </div>
+
+      {/* Loan eligibility card */}
+      <div className="bg-paper border border-line rounded-2xl p-4">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-indigo flex items-center justify-center">
+            <Landmark className="w-4 h-4 text-white" strokeWidth={1.8} />
+          </div>
+          <h3 className="font-display font-semibold text-[14px] text-ink">Loan Eligibility</h3>
+        </div>
+        <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
+          You can borrow up to 3× your eligible savings balance.
+        </p>
+        <Link
+          href="/loans"
+          className="block w-full text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl hover:opacity-90 transition"
+        >
+          Check eligibility
         </Link>
       </div>
     </>

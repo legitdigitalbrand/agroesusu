@@ -10,8 +10,8 @@ const plans = [
     interest: '12% per annum',
     payout: 'Rotational or collective',
     icon: Users,
-    color: 'bg-emerald-50 text-emerald-800 border-emerald-100',
-    iconColor: 'bg-emerald-100 text-emerald-700',
+    color: 'bg-loam-light text-indigo border-line',
+    iconColor: 'bg-loam-light text-loam',
     description: 'Perfect for local farm groups, cluster farmers, and market unions. Save together, track each member\'s ledger online, and easily access joint lending options with collective accountability.',
     features: [
       'Digital ledger for all group members',
@@ -27,8 +27,8 @@ const plans = [
     interest: 'Up to 15% per annum',
     payout: 'At contract maturity',
     icon: Lock,
-    color: 'bg-amber-50 text-amber-800 border-amber-100',
-    iconColor: 'bg-amber-100 text-amber-700',
+    color: 'bg-ochre-light text-indigo border-line',
+    iconColor: 'bg-ochre-light text-ochre-dim',
     description: 'Protect your farming revenues. Lock seed funds or sales cash for 3, 6, or 9 months matching your crop growth cycle. Earn some of the most competitive, guaranteed interest rates in Nigeria.',
     features: [
       'Aligned with actual planting/harvest calendars',
@@ -44,8 +44,8 @@ const plans = [
     interest: '10% per annum',
     payout: 'Flexible upon goal completion',
     icon: Sprout,
-    color: 'bg-blue-50 text-blue-800 border-blue-100',
-    iconColor: 'bg-blue-100 text-blue-700',
+    color: 'bg-loam-light text-indigo border-line',
+    iconColor: 'bg-indigo/10 text-indigo',
     description: 'Planning to buy high-yield fertilizers, purchase hybrid seeds, or rent a tractor next season? Set a target, configure automated daily/weekly contributions, and earn high interest as you save.',
     features: [
       'Automated daily, weekly, or monthly savings',

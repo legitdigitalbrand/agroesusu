@@ -109,29 +109,29 @@ export default function SavingsChart({ contributions, savingsPlans }: SavingsCha
                 <stop offset="95%" stopColor="#1B5E20" stopOpacity={0.0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D6E8D2" />
             <XAxis
               dataKey="date"
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 11, fill: "#6B7280" }}
+              tick={{ fontSize: 11, fill: "#5C6B57" }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 11, fill: "#6B7280" }}
+              tick={{ fontSize: 11, fill: "#5C6B57" }}
               tickFormatter={(val) => `₦${val >= 1000 ? (val / 1000).toFixed(0) + "k" : val}`}
             />
             <Tooltip
               formatter={(value: number) => [formatNaira(value), "Savings Balance"]}
               contentStyle={{
-                backgroundColor: "#FFFFFF",
+                backgroundColor: "#FBFDF9",
                 borderRadius: "12px",
-                border: "1px solid #F3F4F6",
+                border: "1px solid #D6E8D2",
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
                 fontSize: "12px",
               }}
-              labelStyle={{ fontWeight: "600", color: "#111827" }}
+              labelStyle={{ fontWeight: "600", color: "#1A2417" }}
             />
             <Area
               type="monotone"

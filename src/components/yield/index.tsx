@@ -12,7 +12,7 @@ interface LogoMarkProps {
 }
 
 export function LogoMark({ size = 40, variant = "customer", className }: LogoMarkProps) {
-  const ringColor = variant === "customer" ? "#1B5E20" : "#F5F1E8";
+  const ringColor = variant === "customer" ? "#1B5E20" : "#E8F5E9";
   const dotColor = variant === "customer" ? "#BBDC12" : "#3E8E2F";
 
   return (
@@ -99,7 +99,7 @@ export function ProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#E8E4D9"
+          stroke="#D9E9D2"
           strokeWidth={strokeWidth}
         />
         {/* Progress (ochre) */}

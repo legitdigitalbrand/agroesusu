@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/lib/types";
-import { initials } from "@/lib/format";
+
 import {
   LayoutDashboard,
   PiggyBank,
@@ -42,7 +42,7 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Savings", href: "/savings", icon: PiggyBank },
     { name: "Loans", href: "/loans", icon: LandCredit },
-    { name: "Transactions", href: "/transactions", icon: ArrowLeftRight },
+    { name: "Statements", href: "/statements", icon: ArrowLeftRight },
     { name: "Profile", href: "/profile", icon: User },
   ];
 
@@ -80,73 +80,48 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo text-white font-bold text-lg shadow-sm">
               A
             </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight text-indigo">Agriq</span><span className="text-xl font-bold tracking-tight text-ochre">cap</span>
-            </div>
+            <span className="font-display font-bold text-ink text-lg">Agriqcap</span>
           </Link>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-parchment text-ink-soft hover:bg-parchment md:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-parchment md:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 space-y-1.5 px-2">
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1">
           {navItems.map((item) => {
-            const active = isLinkActive(item.href);
             const Icon = item.icon;
+            const active = isLinkActive(item.href);
             return (
               <Link
-                key={item.name}
+                key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition ${
                   active
-                    ? "bg-indigo text-white shadow-md shadow-indigo/10"
-                    : "text-ink-soft hover:bg-parchment hover:text-indigo"
+                    ? "bg-indigo text-white"
+                    : "text-ink-soft hover:text-ink hover:bg-parchment"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${active ? "text-white" : "text-ink-soft group-hover:text-indigo"}`} />
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
                 {item.name}
               </Link>
             );
           })}
         </nav>
 
-        {/* User Profile + Logout at Bottom */}
-        <div className="border-t border-line pt-6 px-2">
-          <div className="flex items-center gap-3 rounded-xl p-2 bg-parchment/50 mb-4">
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.full_name || "User"}
-                className="h-10 w-10 rounded-full object-cover border border-indigo/10"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo/10 text-indigo font-semibold text-sm">
-                {initials(profile?.full_name || "User")}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-ink truncate">
-                {profile?.full_name || "Agriqcap User"}
-              </p>
-              <p className="text-xs text-ink-soft truncate">
-                {profile?.kyc_tier === "tier_0"
-                  ? "Unverified Account"
-                  : `KYC Tier ${profile?.kyc_tier?.split("_")[1] || "1"}`}
-              </p>
-            </div>
-          </div>
+        {/* Footer / Logout */}
+        <div className="pt-4 border-t border-line">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-clay hover:bg-clay/5 transition-colors duration-200"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium text-clay hover:bg-clay-light transition"
           >
-            <LogOut className="h-5 w-5 text-red-500" />
-            Sign Out
+            <LogOut className="h-5 w-5" strokeWidth={1.8} />
+            Log out
           </button>
         </div>
       </aside>

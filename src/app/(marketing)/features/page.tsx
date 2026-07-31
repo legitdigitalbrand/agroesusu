@@ -1,66 +1,59 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Smartphone,
-  Users,
-  LineChart,
-  ShoppingBag,
-  CloudSun,
-  ShieldCheck,
-  CheckCircle2,
-  Laptop,
+  Wallet, PiggyBank, Landmark, ShieldCheck, CheckCircle2, Clock,
 } from 'lucide-react';
 
 const mainFeatures = [
   {
-    id: 'ussd',
-    title: 'Offline USSD Integration (*347*88#)',
-    icon: Smartphone,
-    color: 'bg-emerald-50 text-emerald-800 border-emerald-100',
-    description: 'No internet? No smartphone? No problem. Farmers in remote rural communities can manage their entire savings circles, check loan limits, make deposits, and execute transfers on any basic phone without data.',
-  },
-  {
-    id: 'cooperative-portal',
-    title: 'Cooperative "Esusu" Manager',
-    icon: Users,
-    color: 'bg-amber-50 text-amber-800 border-amber-100',
-    description: 'Digitize your local cooperative contributions (Ajo). Our transparent system records member contributions, handles rotational cycles automatically, and keeps members updated via real-time SMS notifications.',
-  },
-  {
-    id: 'automated-savings',
-    title: 'Automated Harvest Savings',
-    icon: LineChart,
-    color: 'bg-blue-50 text-blue-800 border-blue-100',
-    description: 'Set rules to automatically round up expenses or deduct weekly savings into a high-interest vault. Safely lock funds during planting and watch your capital grow with up to 15% guaranteed annual yield.',
-  },
-  {
-    id: 'input-store',
-    title: 'Verified Inputs Marketplace',
-    icon: ShoppingBag,
-    color: 'bg-purple-50 text-purple-800 border-purple-100',
-    description: 'Purchase premium certified seeds, organic fertilizers, pesticides, and tractor rental hours directly from partnered agro-dealers using your Agriqcap wallet. Get exclusive discounts and quality guarantees.',
-  },
-  {
-    id: 'climate-tips',
-    title: 'Weather & Extension Advisory',
-    icon: CloudSun,
-    color: 'bg-orange-50 text-orange-800 border-orange-100',
-    description: 'Get free SMS crop advice customized to your LGA (Local Government Area) in Nigeria. Receive timely weather alerts, planting advice, pest control guidelines, and market pricing updates to protect your farm.',
-  },
-  {
     id: 'wallet',
-    title: 'Instant Virtual Bank Accounts',
-    icon: Laptop,
-    color: 'bg-pink-50 text-purple-800 border-pink-100',
-    description: 'Every registered user gets a fully functional virtual bank account mapped to our partner bank. Receive bank transfers from anywhere in Nigeria instantly to fund your savings or settle loan balances.',
+    title: 'Instant Virtual Bank Account',
+    icon: Wallet,
+    color: 'bg-loam-light text-indigo border-line',
+    description: 'Every registered user gets a dedicated virtual account from our banking partner. Receive bank transfers from anywhere in Nigeria to fund your wallet instantly.',
+  },
+  {
+    id: 'savings',
+    title: 'Automated Savings & Interest',
+    icon: PiggyBank,
+    color: 'bg-loam-light text-indigo border-line',
+    description: 'Set savings goals, save consistently, and watch interest post automatically. Choose flexible savings or lock funds for higher rates.',
+  },
+  {
+    id: 'loans',
+    title: 'Savings-Backed Loans',
+    icon: Landmark,
+    color: 'bg-ochre-light text-indigo border-line',
+    description: 'Consistent savers unlock fair credit — up to 3× their savings balance. Transparent rates, harvest-aligned repayment, no hidden charges.',
+  },
+  {
+    id: 'security',
+    title: 'Bank-Grade Security',
+    icon: ShieldCheck,
+    color: 'bg-loam-light text-indigo border-line',
+    description: 'PIN-protected access, device verification, and deposits safeguarded by our CBN-licensed banking partner. Every transaction is encrypted.',
+  },
+  {
+    id: 'interest',
+    title: 'Competitive Interest Rates',
+    icon: Clock,
+    color: 'bg-ochre-light text-indigo border-line',
+    description: 'Earn up to 12% p.a. on locked savings. Interest is calculated daily and posted automatically to your account.',
+  },
+  {
+    id: 'transparency',
+    title: 'Full Transparency',
+    icon: CheckCircle2,
+    color: 'bg-loam-light text-indigo border-line',
+    description: 'Every transaction is logged and traceable. View your complete transaction history and statements at any time.',
   },
 ];
 
 const valuesList = [
   'Zero hidden maintenance charges or deposit fees',
   '100% compliant with Central Bank of Nigeria guidelines',
-  'Multilingual support in Yoruba, Hausa, Igbo, and Pidgin English',
-  'Interactive loan and interest calculators for smart planning',
+  'Deposits safeguarded by CBN-licensed banking partner',
+  'Transparent loan terms with no hidden charges',
 ];
 
 export default function FeaturesPage() {
@@ -73,11 +66,11 @@ export default function FeaturesPage() {
             Platform Capabilities
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-ink tracking-tight max-w-3xl mx-auto">
-            Digital Financial Tools Tailored for Nigerian Agribusiness
+            Digital Financial Tools for Nigerian Agribusiness
           </h1>
           <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
-            Agriqcap merges traditional community cooperative values with cutting-edge mobile 
-            banking technology. Grow your agribusiness with tools built specifically for your success.
+            Agriqcap brings modern banking technology to farmers and small businesses. 
+            Save, borrow, and manage money with tools built for your success.
           </p>
         </div>
       </section>
@@ -88,7 +81,7 @@ export default function FeaturesPage() {
           {mainFeatures.map((feat) => {
             const Icon = feat.icon;
             return (
-              <div key={feat.id} className="card-surface border border-line flex flex-col justify-between hover:shadow-md transition-all hover:border-indigo/10">
+              <div key={feat.id} className="bg-paper border border-line rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-all">
                 <div className="space-y-4">
                   <div className={`p-3 rounded-xl w-12 h-12 flex items-center justify-center shrink-0 ${feat.color}`}>
                     <Icon className="h-6 w-6" />
@@ -96,35 +89,9 @@ export default function FeaturesPage() {
                   <h3 className="text-xl font-bold text-ink">{feat.title}</h3>
                   <p className="text-sm text-ink-soft leading-relaxed">{feat.description}</p>
                 </div>
-                <div className="pt-6 border-t border-line/50 mt-4 text-xs font-semibold text-indigo">
-                  Available in mobile app & USSD
-                </div>
               </div>
             );
           })}
-        </div>
-      </section>
-
-      {/* USSD Highlight Banner */}
-      <section className="bg-indigo text-white py-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-paper rounded-full blur-2xl animate-pulse"></div>
-        </div>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
-          <span className="text-ochre bg-paper/10 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            Zero Internet Needed
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Dial <span className="text-ochre font-black underline">*347*88#</span>
-          </h2>
-          <p className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-            We are deeply committed to financial inclusion. Our secure USSD platform works with 
-            MTN, Airtel, Glo, and 9mobile across Nigeria, giving rural farmers access to savings, 
-            group rotational ledger payouts, and inputs financing instantly.
-          </p>
-          <div className="pt-2">
-            <span className="text-xs text-white/70 block">Works on any basic feature phone. Safe, secure, and fast.</span>
-          </div>
         </div>
       </section>
 
@@ -137,10 +104,9 @@ export default function FeaturesPage() {
                 Designed for Absolute Security & Transparency
               </h2>
               <p className="text-base text-ink-soft leading-relaxed">
-                Nigerian agricultural cooperatives have operated on mutual trust for centuries. 
-                Agriqcap respects this legacy and uses modern software engineering to provide 
-                co-guarantee features and real-time ledger records. No single individual can tamper 
-                with cooperative funds.
+                Agriqcap respects the tradition of community trust and uses modern software 
+                engineering to provide secure, transparent financial services. Every transaction 
+                is logged, traceable, and protected.
               </p>
               <ul className="space-y-3">
                 {valuesList.map((item, idx) => (
@@ -159,21 +125,21 @@ export default function FeaturesPage() {
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
                     <h5 className="font-bold text-ink">MFA & Encryption</h5>
-                    <p className="text-xs text-ink-soft mt-1">All details and account transactions are encrypted. Access is secured with PINs and password authentication.</p>
+                    <p className="text-xs text-ink-soft mt-1">All transactions are encrypted. Access is secured with password and PIN authentication.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="font-bold text-ink">NDIC Deposit Insurance</h5>
-                    <p className="text-xs text-ink-soft mt-1">Every deposit is backed by our banking partner, Safe Haven MFB, and is insured by the Nigerian Government.</p>
+                    <h5 className="font-bold text-ink">Deposit Protection</h5>
+                    <p className="text-xs text-ink-soft mt-1">Every deposit is backed by our CBN-licensed banking partner, Safe Haven MFB.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
                     <h5 className="font-bold text-ink">KYC Verification</h5>
-                    <p className="text-xs text-ink-soft mt-1">BVN and NIMC database integration prevents identity fraud and guarantees security across cooperative chains.</p>
+                    <p className="text-xs text-ink-soft mt-1">BVN and NIMC database integration prevents identity fraud and ensures secure access.</p>
                   </div>
                 </div>
               </div>
@@ -185,17 +151,17 @@ export default function FeaturesPage() {
       {/* CTA Section */}
       <section className="py-20 text-center max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
         <h2 className="text-3xl font-extrabold text-ink">
-          Ready to experience the power of Agriqcap?
+          Ready to experience Agriqcap?
         </h2>
         <p className="text-ink-soft max-w-xl mx-auto text-sm sm:text-base">
-          Sign up today to create your individual or cooperative account. Experience modern agriculture finance.
+          Sign up today and start building your financial future. Open your account in under 2 minutes.
         </p>
         <div className="flex justify-center gap-4">
-          <Link href="/signup" className="btn-primary py-3 px-8 text-sm font-semibold">
+          <Link href="/signup" className="bg-ochre text-indigo-deep py-3 px-8 text-sm font-semibold rounded-xl hover:opacity-90 transition">
             Get Started Now
           </Link>
-          <Link href="/contact" className="btn-secondary py-3 px-8 text-sm font-semibold bg-parchment text-ink hover:bg-loam-light">
-            Talk to an Agent
+          <Link href="/contact" className="border border-line py-3 px-8 text-sm font-semibold bg-parchment text-ink hover:bg-loam-light rounded-xl transition">
+            Talk to Us
           </Link>
         </div>
       </section>
