@@ -1,158 +1,130 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { reconcileWithdrawal } from '@/modules/withdrawal';
 
 // ============================================================================
 // Safe Haven Webhook Handler
-// 
-// This endpoint receives webhooks from Safe Haven MFB for:
-//   - Incoming transfers to a customer's DVA
+//
+// Receives webhooks from Safe Haven MFB for:
 //   - Transfer completion/failure notifications
+//   - Account credit/debit events
 //   - Identity verification completions
-// 
+//
 // Security:
-//   1. Webhook signature verification (HMAC-SHA256 or Safe Haven's method)
+//   1. Webhook signature verification (HMAC-SHA256)
 //   2. Raw body preserved before any parsing
 //   3. All events stored in inbound_events table (append-only landing zone)
-//   4. No processing happens here — events land and wait for Phase 5 Orchestrator
-// 
-// Per Phase 2 constraint: "Every inbound webhook must be authenticated/verified
-// before trusting its payload."
+//   4. Duplicate prevention via external_event_id unique constraint
+//   5. Transfer events trigger withdrawal reconciliation
 // ============================================================================
 
-// Lazy-initialize the Supabase service client
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error('Missing Supabase environment variables for service client');
-  }
-  return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  if (!url || !key) throw new Error('Missing Supabase env vars');
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-// Verify webhook signature
-// Safe Haven uses a webhook secret for verification.
-// The exact method depends on Safe Haven's implementation — we support
-// both HMAC-SHA256 (common) and raw secret comparison.
 function verifyWebhookSignature(signature: string, body: string): boolean {
   const webhookSecret = process.env.SAFE_HAVEN_WEBHOOK_SECRET;
-  
-  // If no secret is configured, we're in mock/dev mode — accept all
   if (!webhookSecret) {
-    console.warn('[Webhook] No SAFE_HAVEN_WEBHOOK_SECRET configured — accepting all webhooks (dev mode only)');
+    console.warn('[Webhook] No SAFE_HAVEN_WEBHOOK_SECRET — accepting all (dev mode)');
     return true;
   }
-  
-  // HMAC-SHA256 verification
   try {
     const crypto = require('crypto');
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(body)
-      .digest('hex');
-    
-    // Constant-time comparison to prevent timing attacks
-    if (signature.length !== expectedSignature.length) {
-      return false;
-    }
-    
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    const expected = crypto.createHmac('sha256', webhookSecret).update(body).digest('hex');
+    if (signature.length !== expected.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
   } catch {
-    // Fallback: direct comparison (less secure but functional)
-    return signature === webhookSecret;
+    return false;
   }
 }
 
-// Map Safe Haven event types to our internal event types
 function mapEventType(shEventType: string): string {
-  const typeMap: Record<string, string> = {
+  const map: Record<string, string> = {
     'transfer': 'transfer_received',
+    'transfer.success': 'transfer_completed',
+    'transfer.failed': 'transfer_failed',
     'credit': 'account_credit',
     'debit': 'account_debit',
     'verification': 'verification_completed',
-    'transfer.success': 'transfer_completed',
-    'transfer.failed': 'transfer_failed',
   };
-  
-  const mapped = typeMap[shEventType.toLowerCase()];
-  if (!mapped) {
-    console.warn(`[Webhook] Unknown event type: ${shEventType}`);
-    return 'unknown';
-  }
-  return mapped;
+  return map[shEventType.toLowerCase()] || 'unknown';
 }
 
-// Extract external event ID from Safe Haven payload
 function extractExternalEventId(payload: Record<string, unknown>): string | null {
-  // Safe Haven includes a transaction ID or event ID in the payload
-  // The exact field name depends on their webhook format
   return (
     (payload._id as string) ||
     (payload.transactionId as string) ||
     (payload.eventId as string) ||
     (payload.reference as string) ||
+    (payload.paymentReference as string) ||
     null
   );
 }
 
+/**
+ * Extract the payment reference from a transfer webhook payload.
+ * Safe Haven includes the paymentReference we sent with the transfer request.
+ */
+function extractPaymentReference(payload: Record<string, unknown>): string | null {
+  // Check top-level fields
+  if (payload.paymentReference) return payload.paymentReference as string;
+  if (payload.reference) return payload.reference as string;
+  // Check nested data object
+  if (payload.data && typeof payload.data === 'object') {
+    const dataObj = payload.data as Record<string, unknown>;
+    if (dataObj.paymentReference) return dataObj.paymentReference as string;
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
-    // 1. Get raw body BEFORE any parsing
+    // 1. Get raw body BEFORE parsing
     const rawBody = await request.text();
-    
+
     // 2. Get signature from headers
-    const signature = request.headers.get('x-sh-signature') 
+    const signature = request.headers.get('x-sh-signature')
       || request.headers.get('x-safehaven-signature')
       || request.headers.get('signature')
       || '';
-    
+
     // 3. Verify signature
     if (!verifyWebhookSignature(signature, rawBody)) {
       console.error('[Webhook] Signature verification failed');
-      return NextResponse.json(
-        { error: 'Signature verification failed' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Signature verification failed' }, { status: 401 });
     }
-    
-    // 4. Parse the payload
+
+    // 4. Parse payload
     let payload: Record<string, unknown>;
     try {
       payload = JSON.parse(rawBody);
     } catch {
-      console.error('[Webhook] Invalid JSON payload');
-      return NextResponse.json(
-        { error: 'Invalid JSON payload' },
-        { status: 400 }
-      );
+      console.error('[Webhook] Invalid JSON');
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
-    
+
     // 5. Extract event metadata
     const externalEventId = extractExternalEventId(payload);
     const eventType = mapEventType(
-      (payload.eventType as string) || 
-      (payload.type as string) || 
-      'unknown'
+      (payload.eventType as string) || (payload.type as string) || 'unknown'
     );
-    
+
     // 6. Capture non-secret headers for audit
     const headers: Record<string, string> = {};
     request.headers.forEach((value, key) => {
-      // Redact auth-related headers
       if (!key.toLowerCase().includes('auth') && !key.toLowerCase().includes('cookie')) {
         headers[key] = value;
       }
     });
-    
-    // 7. Store in inbound_events (append-only landing zone)
+
+    // 7. Store in inbound_events (append-only, idempotent)
     const supabase = getServiceClient();
-    
+
     const { data: eventRecord, error: insertError } = await supabase
       .from('inbound_events')
       .insert({
@@ -165,58 +137,80 @@ export async function POST(request: NextRequest) {
       })
       .select('id')
       .single();
-    
+
     if (insertError) {
-      // If it's a unique constraint violation on external_event_id, it's a duplicate
       if (insertError.code === '23505') {
-        console.log('[Webhook] Duplicate event detected, marking as duplicate');
-        // Update the existing record to mark as duplicate
-        if (externalEventId) {
+        // Duplicate — already processed
+        console.log('[Webhook] Duplicate event — skipping');
+        return NextResponse.json({ status: 'duplicate', message: 'Event already received' }, { status: 200 });
+      }
+      console.error('[Webhook] Failed to store event:', insertError);
+      return NextResponse.json({ error: 'Failed to store event' }, { status: 500 });
+    }
+
+    console.log(`[Webhook] Event stored: type=${eventType}, id=${eventRecord.id}, latency=${Date.now() - startTime}ms`);
+
+    // 8. Process transfer-related events
+    if (['transfer_completed', 'transfer_failed'].includes(eventType)) {
+      const paymentReference = extractPaymentReference(payload);
+
+      if (paymentReference) {
+        // Find the withdrawal request by payment reference
+        const { data: withdrawal } = await supabase
+          .from('withdrawal_requests')
+          .select('id, status')
+          .eq('payment_reference', paymentReference)
+          .in('status', ['pending', 'transfer_submitted', 'requires_reconciliation'])
+          .maybeSingle();
+
+        if (withdrawal) {
+          console.log(`[Webhook] Triggering reconciliation for withdrawal ${withdrawal.id}`);
+          try {
+            const result = await reconcileWithdrawal(withdrawal.id);
+            console.log(`[Webhook] Reconciliation result: ${result.status} - ${result.message}`);
+
+            // Mark event as processed
+            await supabase
+              .from('inbound_events')
+              .update({ processing_status: 'processed', processed_at: new Date().toISOString() })
+              .eq('id', eventRecord.id);
+          } catch (reconError) {
+            console.error('[Webhook] Reconciliation failed:', reconError);
+            // Mark for retry
+            await supabase
+              .from('inbound_events')
+              .update({ processing_status: 'processing_failed', processing_error: reconError instanceof Error ? reconError.message : 'Unknown' })
+              .eq('id', eventRecord.id);
+          }
+        } else {
+          console.log(`[Webhook] No pending withdrawal for payment reference ${paymentReference}`);
           await supabase
             .from('inbound_events')
-            .update({ processing_status: 'duplicate' })
-            .eq('source', 'safe_haven')
-            .eq('external_event_id', externalEventId);
+            .update({ processing_status: 'processed', processed_at: new Date().toISOString() })
+            .eq('id', eventRecord.id);
         }
-        return NextResponse.json(
-          { status: 'duplicate', message: 'Event already received' },
-          { status: 200 }
-        );
       }
-      
-      console.error('[Webhook] Failed to store event:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to store event' },
-        { status: 500 }
-      );
+    } else {
+      // Non-transfer events: mark as processed (no action needed yet)
+      await supabase
+        .from('inbound_events')
+        .update({ processing_status: 'processed', processed_at: new Date().toISOString() })
+        .eq('id', eventRecord.id);
     }
-    
-    const processingTime = Date.now() - startTime;
-    console.log(`[Webhook] Event stored: type=${eventType}, id=${eventRecord.id}, latency=${processingTime}ms`);
-    
-    // 8. Return 200 immediately — Safe Haven expects a quick response
-    // Processing will happen asynchronously (Phase 5 Orchestrator picks up 'received' events)
-    return NextResponse.json(
-      { 
-        status: 'received', 
-        eventId: eventRecord.id,
-        eventType,
-      },
-      { status: 200 }
-    );
-    
+
+    // 9. Return 200 immediately
+    return NextResponse.json({
+      status: 'received',
+      eventId: eventRecord.id,
+      eventType,
+    }, { status: 200 });
+
   } catch (error) {
-    const processingTime = Date.now() - startTime;
-    console.error(`[Webhook] Error after ${processingTime}ms:`, error);
-    
-    return NextResponse.json(
-      { error: 'Internal error processing webhook' },
-      { status: 500 }
-    );
+    console.error(`[Webhook] Error after ${Date.now() - startTime}ms:`, error);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
-// Health check endpoint
 export async function GET() {
   return NextResponse.json({
     service: 'safe-haven-webhook',

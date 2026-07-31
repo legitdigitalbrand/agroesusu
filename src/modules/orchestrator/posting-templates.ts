@@ -10,6 +10,7 @@ interface PostingTemplateParams {
   amount: number;
   walletAccountId: string;
   safeHavenAccountId: string;
+  escrowAccountId?: string;
   productAccountId?: string;
   interestExpenseAccountId?: string;
   interestRevenueAccountId?: string;
@@ -34,6 +35,26 @@ const TEMPLATES: Record<string, PostingTemplate> = {
       { account_id: walletAccountId, entry_type: 'debit', amount, description },
       { account_id: safeHavenAccountId, entry_type: 'credit', amount, description },
     ],
+  },
+
+  // Phase 14: External bank withdrawal — two-phase
+  wallet_withdrawal_reservation: {
+    buildLines: ({ amount, walletAccountId, escrowAccountId, description }) => {
+      if (!escrowAccountId) throw new Error('wallet_withdrawal_reservation requires escrowAccountId');
+      return [
+        { account_id: walletAccountId, entry_type: 'debit', amount, description },
+        { account_id: escrowAccountId, entry_type: 'credit', amount, description },
+      ];
+    },
+  },
+  wallet_withdrawal_settlement: {
+    buildLines: ({ amount, escrowAccountId, safeHavenAccountId, description }) => {
+      if (!escrowAccountId) throw new Error('wallet_withdrawal_settlement requires escrowAccountId');
+      return [
+        { account_id: escrowAccountId, entry_type: 'debit', amount, description },
+        { account_id: safeHavenAccountId, entry_type: 'credit', amount, description },
+      ];
+    },
   },
 
   // Phase 5: Savings operations

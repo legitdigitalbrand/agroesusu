@@ -1,10 +1,9 @@
-/**
- * Communications Domain Module
- * 
- * Bounded context for Notifications and messaging.
- * Owned by: Communications Domain
- * Depends on: (none in Phase 1)
- * 
- * Phase 1 Status: Empty — awaiting Phase 2+ implementation.
- */
-export {};
+export { dispatchNotification } from './dispatcher';
+export type { DispatchInput } from './dispatcher';
+export { createNotification, getNotifications, markAsRead, markAllAsRead, getUnreadCount } from './repository';
+export { TEMPLATES } from './templates';
+export type {
+  NotificationChannel, NotificationStatus, NotificationCategory,
+  NotificationEvent, NotificationTemplate, Notification,
+  CreateNotificationInput, GetNotificationsFilters,
+} from './types';

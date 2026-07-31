@@ -25,6 +25,14 @@
     {
       "path": "/api/cron/process-returns",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-withdrawals",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/run-scheduled-reports",
+      "schedule": "0 * * * *"
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { initiate } from '@/modules/orchestrator';
+import { dispatchNotification } from '@/modules/communications';
 
 // POST /api/wallets/[walletId]/deposit
 // Manual wallet funding (sandbox/testing mode).
@@ -85,6 +86,18 @@ export async function POST(
     if (result.status === 'failed') {
       return NextResponse.json({ error: result.error || 'Deposit failed' }, { status: 400 });
     }
+
+    // Dispatch deposit notification (async, non-blocking)
+    dispatchNotification({
+      event: 'deposit_received',
+      user_id: user.id,
+      variables: {
+        amount: Number(body.amount).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }),
+        accountNumber: context.params.walletId.slice(0, 8),
+      },
+      metadata: { ft_id: result.id, transaction_reference: result.transaction_reference },
+      related_entity_type: 'wallet_transaction',
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

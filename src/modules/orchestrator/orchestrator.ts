@@ -116,6 +116,13 @@ export async function initiate(
     const safeHavenAccount = await getAccountByCode('1000');
     if (!safeHavenAccount) validationErrors.push('Safe Haven account (1000) not found');
 
+    // Look up escrow account (2004) for withdrawal reservations
+    let escrowAccount: { id: string } | null = null;
+    if (['wallet_withdrawal_reservation', 'wallet_withdrawal_settlement'].includes(request.transaction_type)) {
+      escrowAccount = await getAccountByCode('2004');
+      if (!escrowAccount) validationErrors.push('Escrow account (2004) not found');
+    }
+
     // Look up interest expense account (5000) for savings interest
     let interestExpenseAccount: { id: string } | null = null;
     if (['savings_interest', 'investment_returns', 'investment_reinvest'].includes(request.transaction_type)) {
@@ -156,6 +163,7 @@ export async function initiate(
       amount: request.amount,
       walletAccountId: walletAccountId || '',
       safeHavenAccountId: safeHavenAccount!.id,
+      escrowAccountId: escrowAccount?.id,
       productAccountId: request.product_account_id,
       interestExpenseAccountId: interestExpenseAccount?.id,
       interestRevenueAccountId: interestRevenueAccount?.id,
