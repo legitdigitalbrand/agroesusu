@@ -1,5 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+
+// ============================================================================
+// Cron Endpoint: Run Scheduled Reports
+//
+// Triggered daily at 6 AM UTC by Vercel Cron.
+// Checks for scheduled reports that are due and generates them.
+// Supports: daily, weekly, monthly, quarterly schedules.
+//
+// Authentication: CRON_SECRET header
+// ============================================================================
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -8,12 +18,14 @@ function getServiceClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-/**
- * Cron: Run Scheduled Reports
- * Runs every hour to check for scheduled reports that are due.
- * Supports: daily, weekly, monthly, quarterly schedules.
- */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const supabase = getServiceClient();
 
@@ -37,8 +49,6 @@ export async function GET() {
 
     for (const schedule of dueReports) {
       try {
-        // Store a report generation record (the actual report generation
-        // would call the reporting module, but for the cron we just record it)
         await supabase
           .from('report_generations')
           .insert({
@@ -52,7 +62,6 @@ export async function GET() {
           .select('id')
           .single();
 
-        // Calculate next run time
         const nextRunAt = calculateNextRun(schedule.schedule_type);
 
         await supabase.from('scheduled_reports').update({
