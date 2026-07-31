@@ -8,7 +8,7 @@
 //   - Malformed payload (must not crash or credit)
 // ============================================================================
 
-import { processIncomingCredit, IncomingCreditPayload } from '../incoming-credit';
+import type { IncomingCreditPayload } from '../incoming-credit';
 
 // These are unit tests that verify the LOGIC of idempotency and matching.
 // They don't connect to a real database — they verify the function contracts.

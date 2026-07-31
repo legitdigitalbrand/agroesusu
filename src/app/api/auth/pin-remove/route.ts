@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 
 // POST /api/auth/pin-remove
 // Removes the PIN for a specific device (e.g., revoking a lost or compromised device)
 
 export async function POST(request: Request) {
+  const limited = applyRateLimit(request, "/api/auth/pin-remove", RATE_LIMITS.AUTH);
+  if (limited) return limited;
   try {
     const { deviceId } = await request.json();
 

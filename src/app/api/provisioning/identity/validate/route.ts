@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getBankingProvider } from '@/modules/integrations';
@@ -14,6 +15,8 @@ import { getBankingProvider } from '@/modules/integrations';
 //   { verified: true, accountNumber: string, accountName: string, bankName: string }
 //   or { error: string } on failure
 export async function POST(request: NextRequest) {
+  const limited = applyRateLimit(request, "/api/provisioning/validate", RATE_LIMITS.PROVISIONING);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { performNameEnquiry } from '@/modules/withdrawal';
 
 export async function POST(request: NextRequest) {
+  const limited = applyRateLimit(request, "/api/wallets/name-enquiry", RATE_LIMITS.WITHDRAW);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();

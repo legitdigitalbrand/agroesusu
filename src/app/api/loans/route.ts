@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { applyForLoan, listCustomerLoans } from '@/modules/loans';
 
 // POST /api/loans — apply for a loan
 export async function POST(request: NextRequest) {
+  const limited = applyRateLimit(request, "/api/loans", RATE_LIMITS.LOAN);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

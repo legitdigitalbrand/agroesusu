@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 
@@ -91,6 +92,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = applyRateLimit(request, "/api/verification/tier", RATE_LIMITS.VERIFICATION);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

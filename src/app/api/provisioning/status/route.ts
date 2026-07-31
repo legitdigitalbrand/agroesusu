@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 
 // GET /api/provisioning/status
 // Returns the Safe Haven provisioning status for the authenticated customer.
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = applyRateLimit(request, "/api/provisioning/status", RATE_LIMITS.PROVISIONING);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

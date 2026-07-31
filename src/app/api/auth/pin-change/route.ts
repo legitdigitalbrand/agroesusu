@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { DEVICE_COOKIE_NAME } from '@/lib/auth/device';
 import crypto from 'crypto';
@@ -7,6 +8,8 @@ import crypto from 'crypto';
 // Changes the PIN for the current device. Requires the current PIN for verification.
 
 export async function POST(request: Request) {
+  const limited = applyRateLimit(request, "/api/auth/pin-change", RATE_LIMITS.AUTH);
+  if (limited) return limited;
   try {
     const { currentPin, newPin } = await request.json();
 

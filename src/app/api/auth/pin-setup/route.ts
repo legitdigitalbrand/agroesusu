@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import {
   DEVICE_COOKIE_NAME,
@@ -14,6 +15,8 @@ import crypto from 'crypto';
 // Sets the device_id as an httpOnly cookie.
 
 export async function POST(request: Request) {
+  const limited = applyRateLimit(request, "/api/auth/pin-setup", RATE_LIMITS.AUTH);
+  if (limited) return limited;
   try {
     const { pin, deviceName } = await request.json();
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 
@@ -11,6 +12,8 @@ async function verifySuperAdmin(supabase: ReturnType<typeof createClient>) {
 }
 
 export async function GET(request: NextRequest) {
+  const limited = applyRateLimit(request, "/api/admin/staff", RATE_LIMITS.ADMIN);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

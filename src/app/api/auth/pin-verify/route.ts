@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import {
   DEVICE_COOKIE_NAME,
@@ -16,6 +17,8 @@ import crypto from 'crypto';
 const MAX_PIN_ATTEMPTS = 5;
 
 export async function POST(request: Request) {
+  const limited = applyRateLimit(request, "/api/auth/pin-verify", RATE_LIMITS.AUTH);
+  if (limited) return limited;
   try {
     const { pin } = await request.json();
 

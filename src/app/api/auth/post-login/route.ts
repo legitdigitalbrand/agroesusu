@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import {
   PIN_VERIFIED_COOKIE_NAME,
@@ -9,7 +10,9 @@ import {
 // Called after successful password authentication.
 // Sets the pin_verified cookie and checks if the user needs PIN setup.
 
-export async function POST() {
+export async function POST(request: Request) {
+  const limited = applyRateLimit(request, "/api/auth/post-login", RATE_LIMITS.AUTH);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();

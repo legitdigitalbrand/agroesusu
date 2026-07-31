@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { openAccount, listCustomerAccounts, deposit } from '@/modules/savings';
 
 // POST /api/savings/accounts — open a new savings account
 export async function POST(request: NextRequest) {
+  const limited = applyRateLimit(request, "/api/savings/accounts", RATE_LIMITS.SAVINGS);
+  if (limited) return limited;
   try {
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

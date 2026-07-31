@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@supabase/supabase-js';
 import { reconcileWithdrawal } from '@/modules/withdrawal';
 import { processIncomingCredit } from '@/modules/wallet/incoming-credit';
@@ -132,6 +133,8 @@ function extractIncomingCredit(payload: Record<string, unknown>): {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = applyRateLimit(request, "/api/webhooks/safe-haven", RATE_LIMITS.WEBHOOK);
+  if (limited) return limited;
   const startTime = Date.now();
 
   try {
