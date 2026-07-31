@@ -4,18 +4,23 @@ import { NextResponse, type NextRequest } from 'next/server';
 // ════════════════════════════════════════════════════════════
 // Agriqcap — Authentication Middleware
 //
-//  - Session refresh on every request
-//  - Redirect unauthenticated users from protected routes → /login
-//  - Redirect authenticated users from /login & /signup → /dashboard
-//  - Enforce admin-only access for /admin/* (server-side staff check)
+//  1. Session refresh on every request
+//  2. Redirect unauthenticated → /login (for protected routes)
+//  3. Redirect authenticated from /login & /signup → /dashboard
+//  4. PIN gate: authenticated users without pin_verified cookie
+//     → /set-pin (if no device cookie) or /pin-login (if device cookie)
+//  5. Admin-only access for /admin/* (staff check)
 // ════════════════════════════════════════════════════════════
 
-const publicRoutes = [
+const PUBLIC_ROUTES = [
   '/',
   '/login',
   '/signup',
   '/forgot-password',
   '/reset-password',
+  '/verify-email',
+  '/set-pin',
+  '/forgot-pin',
   '/about',
   '/blog',
   '/careers',
@@ -30,19 +35,31 @@ const publicRoutes = [
   '/welcome',
 ];
 
-const adminRoutes = ['/admin'];
+const ADMIN_ROUTES = ['/admin'];
+
+// Routes that bypass the PIN gate (user is authenticated but may not have PIN yet)
+const PIN_BYPASS_ROUTES = [
+  '/set-pin',
+  '/forgot-pin',
+  '/pin-login',
+];
 
 function isPublicRoute(pathname: string): boolean {
-  return publicRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
+  return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
 function isAdminRoute(pathname: string): boolean {
-  return adminRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
+  return ADMIN_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
+}
+
+function isPinBypassRoute(pathname: string): boolean {
+  return PIN_BYPASS_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip API routes and static files
   if (pathname.startsWith('/api')) {
     return NextResponse.next();
   }
@@ -83,17 +100,25 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // ── No session ──
   if (!session) {
     if (isPublicRoute(pathname)) {
       return response;
     }
+    // Protected route + no session → /login
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Redirect to dashboard if they visit login/signup while logged in
+  // ── Has session ──
+
+  // Redirect from login/signup → dashboard (or set-pin if no device cookie)
   if (pathname === '/login' || pathname === '/signup') {
+    const hasDeviceCookie = request.cookies.has('agriqcap_device');
+    if (!hasDeviceCookie) {
+      return NextResponse.redirect(new URL('/set-pin', request.url));
+    }
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -106,6 +131,27 @@ export async function middleware(request: NextRequest) {
       }
     } catch {
       // Let client-side handle it
+    }
+  }
+
+  // ── PIN Gate ──
+  // For protected routes, check if PIN has been verified this session
+  if (!isPublicRoute(pathname) && !isPinBypassRoute(pathname) && !isAdminRoute(pathname)) {
+    const hasPinVerified = request.cookies.has('agriqcap_pin_verified');
+    const hasDeviceCookie = request.cookies.has('agriqcap_device');
+
+    if (!hasPinVerified) {
+      if (!hasDeviceCookie) {
+        // No device PIN → mandatory setup
+        return NextResponse.redirect(new URL('/set-pin', request.url));
+      } else {
+        // Has device PIN but hasn't verified this session → PIN login
+        // (But if they just authenticated via password, they should go to dashboard)
+        // The login page handles this: after password auth, we skip the gate
+        // by setting the pin_verified cookie server-side.
+        // For now, redirect to pin-login.
+        return NextResponse.redirect(new URL('/pin-login', request.url));
+      }
     }
   }
 

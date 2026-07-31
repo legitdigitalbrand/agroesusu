@@ -1,236 +1,185 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { deviceHasPin, getDeviceId, ensureDeviceId, setDeviceHasPin, clearDevicePin } from "@/lib/auth/device";
+import { getDeviceId } from "@/lib/auth/device";
 
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { AuthLogo } from "@/components/auth/AuthLogo";
 import { AuthInput } from "@/components/auth/AuthInput";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
 import { SwitchAuthLink } from "@/components/auth/SwitchAuthLink";
-import { OtpInput } from "@/components/auth/OtpInput";
 import { PinInput } from "@/components/auth/PinInput";
 import { LoginRightPanel } from "@/components/auth/RightPanel";
-import { Loader2, ArrowLeft } from "lucide-react";
-
-type LoginStep = "email" | "otp" | "pin" | "pin-setup" | "verifying";
+import { Loader2 } from "lucide-react";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/dashboard";
 
-  const [step, setStep] = useState<LoginStep>("email");
   const [email, setEmail] = useState("");
-  const [otpCode, setOtpCode] = useState("");
+  const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
   const [pinRemaining, setPinRemaining] = useState(5);
-  const otpSentRef = useRef(false);
+  const [mode, setMode] = useState<"password" | "pin">("password");
+  const [checkingDevice, setCheckingDevice] = useState(true);
 
-  // On mount: check if device has PIN and session is still valid
+  // On mount: check if this device has a PIN and session is still valid
   useEffect(() => {
-    const checkPin = async () => {
-      if (!deviceHasPin()) return;
+    const checkDevice = async () => {
       const deviceId = getDeviceId();
-      if (!deviceId) return;
+      if (!deviceId) {
+        setCheckingDevice(false);
+        return;
+      }
 
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
-        // Session still valid → show PIN entry
-        setStep("pin");
+        // Session valid + device has cookie → try PIN mode
+        setMode("pin");
       }
-      // If no session, stay on email step (PIN can't help)
+      setCheckingDevice(false);
     };
-    checkPin();
+    checkDevice();
   }, []);
 
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [resendCooldown]);
-
-  // ── Step 1: Send OTP to email ──
-  const sendOtp = async () => {
+  // ── Password login ──
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
+
     const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-
-    if (otpError) {
-      setError(otpError.message);
+    if (signInError) {
+      setError(signInError.message);
       setLoading(false);
       return;
     }
 
-    setStep("otp");
-    setResendCooldown(60);
-    otpSentRef.current = true;
-    setLoading(false);
-  };
-
-  // ── Step 2: Verify OTP ──
-  const verifyOtp = async () => {
-    setLoading(true);
-    setError(null);
-    const supabase = createClient();
-
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: otpCode,
-      type: "email",
-    });
-
-    if (verifyError) {
-      setError(verifyError.message);
-      setLoading(false);
-      return;
-    }
-
-    // OTP verified — session created
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      setError("Authentication failed. Please try again.");
+      setError("Authentication failed");
       setLoading(false);
       return;
     }
 
-    // Check if staff
-    const { data: isStaff } = await supabase.rpc("is_staff");
-    if (isStaff) {
-      router.push("/admin/dashboard");
-      router.refresh();
-      return;
-    }
-
-    // Bootstrap customer + wallet if needed
-    const { data: customer } = await supabase
-      .from("customers")
-      .select("id")
-      .eq("auth_id", user.id)
-      .maybeSingle();
-
-    if (!customer) {
-      try {
-        await fetch("/api/bootstrap", { method: "POST" });
-      } catch (err) {
-        console.error("[login] Bootstrap error:", err);
-      }
-    }
-
-    // Offer PIN setup (only if device doesn't already have a PIN)
-    if (!deviceHasPin()) {
-      setStep("pin-setup");
-      setLoading(false);
-    } else {
-      // Already has PIN on this device — go straight to dashboard
-      router.push(redirectPath);
-      router.refresh();
-    }
-  };
-
-  // ── Step 3a: Set up PIN (after OTP) ──
-  const setupPin = async () => {
-    if (pin.length !== 4 || pin !== confirmPin) {
-      setError("PINs don't match. Please re-enter.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-
-    const deviceId = ensureDeviceId();
-
+    // Call post-login to set pin_verified cookie and check if PIN setup is needed
     try {
-      const res = await fetch("/api/auth/pin-setup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin, deviceId }),
-      });
+      const postRes = await fetch("/api/auth/post-login", { method: "POST" });
+      const postBody = await postRes.json();
 
-      if (!res.ok) {
-        const body = await res.json();
-        setError(body.error || "Failed to set up PIN");
-        setLoading(false);
+      // Check if staff
+      const { data: isStaff } = await supabase.rpc("is_staff");
+      const adminTarget = "/admin/dashboard";
+      const customerTarget = redirectPath;
+
+      if (postBody.needsPinSetup) {
+        // No PIN on any device → mandatory setup
+        router.push("/set-pin");
+        router.refresh();
         return;
       }
 
-      setDeviceHasPin(true);
-      router.push(redirectPath);
+      // Bootstrap customer if needed (customer only)
+      if (!isStaff) {
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("id")
+          .eq("auth_id", user.id)
+          .maybeSingle();
+
+        if (!customer) {
+          try {
+            await fetch("/api/bootstrap", { method: "POST" });
+          } catch (err) {
+            console.error("[login] Bootstrap error:", err);
+          }
+        }
+      }
+
+      // User has PIN and just authenticated via password → go to dashboard
+      router.push(isStaff ? adminTarget : customerTarget);
       router.refresh();
     } catch (err) {
-      setError("Network error. Please try again.");
-      setLoading(false);
+      console.error("[login] Post-login error:", err);
+      router.push(redirectPath);
+      router.refresh();
     }
   };
 
-  // ── Step 3b: Verify PIN (returning user) ──
-  const verifyPin = async () => {
+  // ── PIN login ──
+  const handlePinLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin.length !== 4) return;
     setLoading(true);
     setError(null);
-    const deviceId = getDeviceId();
-
-    if (!deviceId) {
-      setError("Device not recognized. Please use email sign-in.");
-      setStep("email");
-      setLoading(false);
-      return;
-    }
 
     try {
       const res = await fetch("/api/auth/pin-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin, deviceId }),
+        body: JSON.stringify({ pin }),
       });
 
       const body = await res.json();
 
       if (res.ok) {
-        // PIN verified, session refreshed → dashboard
+        // PIN verified — redirect
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: isStaff } = await supabase.rpc("is_staff");
+          if (isStaff) {
+            router.push("/admin/dashboard");
+          } else {
+            router.push(redirectPath);
+          }
+          router.refresh();
+          return;
+        }
         router.push(redirectPath);
         router.refresh();
         return;
       }
 
-      if (body.code === "locked" || body.code === "session_expired" || body.code === "no_session") {
-        // Force email OTP
-        clearDevicePin();
+      if (body.code === "locked") {
         setError(body.error);
         setPin("");
-        setStep("email");
+        setPinRemaining(0);
+        setLoading(false);
+        // Auto-switch to password after a delay
+        setTimeout(() => {
+          setMode("password");
+          setPin("");
+          setError(null);
+        }, 2000);
+        return;
+      }
+
+      if (body.code === "no_session" || body.code === "no_device") {
+        // Session expired or device not recognized → switch to password
+        setMode("password");
+        setPin("");
+        setError("Session expired. Please sign in with email and password.");
         setLoading(false);
         return;
       }
 
-      if (body.code === "wrong_pin") {
-        setPinRemaining(body.remaining || 0);
-        setError(body.error);
-        setPin("");
-        setLoading(false);
-        return;
-      }
-
-      setError(body.error || "PIN verification failed");
+      // Wrong PIN
+      setPinRemaining(body.remaining || 0);
+      setError(body.error);
+      setPin("");
       setLoading(false);
     } catch (err) {
       setError("Network error. Please try again.");
@@ -238,39 +187,37 @@ function LoginContent() {
     }
   };
 
-  // ── Skip PIN setup ──
-  const skipPinSetup = () => {
-    router.push(redirectPath);
-    router.refresh();
-  };
-
-  // ── Use email instead (from PIN screen) ──
-  const switchToEmail = async () => {
-    const deviceId = getDeviceId();
-    if (deviceId) {
-      try {
-        await fetch("/api/auth/pin-remove", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ deviceId }),
-        });
-      } catch {}
-    }
-    clearDevicePin();
+  // ── Switch to password mode ──
+  const switchToPassword = () => {
+    setMode("password");
     setPin("");
     setError(null);
-    setStep("email");
   };
+
+  // ── Switch to PIN mode (if device has PIN) ──
+  const switchToPin = () => {
+    setMode("pin");
+    setPin("");
+    setError(null);
+  };
+
+  if (checkingDevice) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f0f4f0" }}>
+        <Loader2 className="h-6 w-6 animate-spin text-loam" />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout rightPanel={<LoginRightPanel />}>
       <AuthLogo />
 
       <AnimatePresence mode="wait">
-        {/* ── EMAIL STEP ── */}
-        {step === "email" && (
+        {/* ── PASSWORD MODE ── */}
+        {mode === "password" && (
           <motion.div
-            key="email"
+            key="password"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -280,10 +227,10 @@ function LoginContent() {
               Welcome back.
             </h2>
             <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
-              Enter your email and we&apos;ll send you a one-time code.
+              Sign in to manage your savings &amp; loans
             </p>
 
-            <form onSubmit={(e) => { e.preventDefault(); sendOtp(); }}>
+            <form onSubmit={handlePasswordLogin}>
               <AuthInput
                 label="Email address"
                 type="email"
@@ -292,6 +239,17 @@ function LoginContent() {
                 required
                 placeholder="you@example.com"
                 autoComplete="email"
+              />
+
+              <PasswordInput
+                label="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+                hint="Forgot password?"
+                hintHref="/forgot-password"
               />
 
               {error && (
@@ -305,9 +263,21 @@ function LoginContent() {
               )}
 
               <PrimaryButton loading={loading} disabled={loading}>
-                Send code
+                Sign in to Agriqcap
               </PrimaryButton>
             </form>
+
+            {/* Show PIN option if device has PIN cookie */}
+            {getDeviceId() && (
+              <div className="text-center mt-4">
+                <button
+                  onClick={switchToPin}
+                  className="text-[13px] text-loam font-medium hover:text-indigo transition"
+                >
+                  Use PIN instead →
+                </button>
+              </div>
+            )}
 
             <SwitchAuthLink
               text="No account?"
@@ -317,127 +287,8 @@ function LoginContent() {
           </motion.div>
         )}
 
-        {/* ── OTP STEP ── */}
-        {step === "otp" && (
-          <motion.div
-            key="otp"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <button
-              onClick={() => { setStep("email"); setOtpCode(""); setError(null); }}
-              className="flex items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink transition mb-6"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Back
-            </button>
-
-            <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
-              Check your email
-            </h2>
-            <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
-              We sent a 6-digit code to <span className="font-medium text-ink">{email}</span>
-            </p>
-
-            <form onSubmit={(e) => { e.preventDefault(); if (otpCode.length === 6) verifyOtp(); }}>
-              <OtpInput
-                value={otpCode}
-                onChange={setOtpCode}
-                error={!!error}
-              />
-
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-[13px] text-clay bg-clay/5 rounded-lg px-3 py-2.5 mb-4 mt-4 text-center"
-                >
-                  {error}
-                </motion.p>
-              )}
-
-              <PrimaryButton loading={loading} disabled={loading || otpCode.length < 6}>
-                Verify code
-              </PrimaryButton>
-            </form>
-
-            <div className="text-center mt-5">
-              {resendCooldown > 0 ? (
-                <p className="text-[12px] text-ink-soft">
-                  Resend code in {resendCooldown}s
-                </p>
-              ) : (
-                <button
-                  onClick={sendOtp}
-                  className="text-[13px] text-loam font-medium hover:text-indigo transition"
-                >
-                  Resend code
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── PIN SETUP STEP ── */}
-        {step === "pin-setup" && (
-          <motion.div
-            key="pin-setup"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
-              Set up a 4-digit PIN
-            </h2>
-            <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
-              For faster sign-in on this device next time. You can skip this and use email every time.
-            </p>
-
-            <form onSubmit={(e) => { e.preventDefault(); if (pin.length === 4 && confirmPin.length === 4) setupPin(); }}>
-              <div className="mb-6">
-                <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft block mb-3 text-center">
-                  Enter PIN
-                </label>
-                <PinInput value={pin} onChange={setPin} />
-              </div>
-
-              <div className="mb-4">
-                <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft block mb-3 text-center">
-                  Confirm PIN
-                </label>
-                <PinInput value={confirmPin} onChange={setConfirmPin} autoFocus={false} />
-              </div>
-
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-[13px] text-clay bg-clay/5 rounded-lg px-3 py-2.5 mb-4 text-center"
-                >
-                  {error}
-                </motion.p>
-              )}
-
-              <PrimaryButton loading={loading} disabled={loading || pin.length < 4 || confirmPin.length < 4}>
-                Save PIN
-              </PrimaryButton>
-            </form>
-
-            <div className="text-center mt-4">
-              <button
-                onClick={skipPinSetup}
-                className="text-[13px] text-ink-soft font-medium hover:text-ink transition"
-              >
-                Skip — use email every time
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── PIN ENTRY STEP (returning user) ── */}
-        {step === "pin" && (
+        {/* ── PIN MODE ── */}
+        {mode === "pin" && (
           <motion.div
             key="pin"
             initial={{ opacity: 0, y: 10 }}
@@ -452,7 +303,7 @@ function LoginContent() {
               Quick sign-in for this device.
             </p>
 
-            <form onSubmit={(e) => { e.preventDefault(); if (pin.length === 4) verifyPin(); }}>
+            <form onSubmit={handlePinLogin}>
               <PinInput value={pin} onChange={setPin} error={!!error} />
 
               {error && (
@@ -478,10 +329,10 @@ function LoginContent() {
 
             <div className="text-center mt-5">
               <button
-                onClick={switchToEmail}
+                onClick={switchToPassword}
                 className="text-[13px] text-loam font-medium hover:text-indigo transition"
               >
-                Use email instead
+                Use password instead
               </button>
             </div>
           </motion.div>
