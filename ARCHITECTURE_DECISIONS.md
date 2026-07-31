@@ -729,3 +729,43 @@ Google OAuth provider is disabled in Supabase Auth (client_id and secret cleared
 - No dead code paths for a disabled provider
 - `signup_method` enum on customers table retains 'google' value for historical records but no new records will use it
 - Signup is exclusively via Email OTP (manual registration: name + email + phone)
+
+---
+
+## ADR-043: Email/Password + Mandatory PIN Authentication (Supersedes ADR-040, ADR-041)
+
+**Date:** 2026-07-31  
+**Status:** Accepted  
+**Supersedes:** ADR-040 (Email OTP as primary auth), ADR-041 (Optional PIN)
+
+### Decision
+Email/Password is the primary authentication mechanism. After first successful login, a 4-digit PIN is **mandatory** — no skip option. OTP is retained only for email verification, password recovery, and step-up verification — NOT for normal login.
+
+### Authentication Flow
+1. **Signup:** First/last name, email, phone, password, confirm, T&Cs → email verification (if enabled) → mandatory PIN setup → dashboard
+2. **Login (trusted device):** PIN entry → server verifies → session refreshed → dashboard
+3. **Login (new device):** Email + Password → mandatory PIN setup → dashboard
+4. **Password fallback:** Always available via "Use password instead"
+5. **Forgot PIN:** Email + Password verification → create new PIN
+6. **Change PIN:** Settings → Security → current PIN → new PIN → confirm
+
+### Configuration Values
+- Password: min 8 chars, requires uppercase + lowercase + number (enforced client and server-side)
+- PIN: exactly 4 digits, hashed with PBKDF2 (10000 iterations, SHA-256, 16-byte salt)
+- PIN max failed attempts: 5 (lockout → force password login)
+- PIN lockout is per-device, not per-account (account is never locked by wrong PIN)
+- Device ID: server-generated UUID (crypto.randomUUID), stored in httpOnly cookie (1 year)
+- PIN verified cookie: httpOnly, session-scoped (cleared on browser close)
+- Session: Supabase-managed (JWT in httpOnly cookies, auto-refresh)
+
+### Security Properties
+- PIN never stored in plaintext, never returned by API, never logged
+- PIN never stored in localStorage
+- Device ID generated server-side, stored in httpOnly cookie (not client-provided)
+- PIN alone cannot authenticate a new device — must go through Email + Password first
+- PIN lockout doesn't lock the account — user can always use Email + Password
+- All protected routes enforced at middleware level (not just client-side)
+
+### Staff/Admin
+Staff use the same auth model: Email + Password → mandatory PIN. Admin routes additionally protected by `is_staff` RPC check.
+
