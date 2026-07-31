@@ -20,6 +20,18 @@ export async function POST(
     const { data: isStaff } = await supabase.rpc('is_staff');
     if (!customer && !isStaff) return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
 
+    // CRITICAL: Verify the loan belongs to this customer (or staff)
+    if (!isStaff && customer) {
+      const { data: loan } = await supabase
+        .from('loans')
+        .select('customer_id')
+        .eq('id', context.params.loanId)
+        .maybeSingle();
+
+      if (!loan) return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+      if (loan.customer_id !== customer.id) return NextResponse.json({ error: 'Forbidden: not your loan' }, { status: 403 });
+    }
+
     let walletId = wallet_id;
     if (!walletId && customer) {
       const wallets = (customer as { wallets?: { id: string }[] }).wallets;

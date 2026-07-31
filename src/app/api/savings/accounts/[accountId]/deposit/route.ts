@@ -21,20 +21,35 @@ export async function POST(
       return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 });
     }
 
-    // Verify ownership
+    // Verify authentication + get customer
+    const { data: isStaff } = await supabase.rpc('is_staff');
     const { data: customer } = await supabase
       .from('customers')
       .select('id, wallets(id)')
       .eq('auth_id', user.id)
       .maybeSingle();
 
-    const { data: isStaff } = await supabase.rpc('is_staff');
-
     if (!customer && !isStaff) {
       return NextResponse.json({ error: 'Customer profile not found' }, { status: 404 });
     }
 
-    // Use customer's wallet if not provided (or if staff specifies)
+    // CRITICAL: Verify the savings account belongs to this customer (or staff)
+    if (!isStaff && customer) {
+      const { data: savingsAccount } = await supabase
+        .from('savings_accounts')
+        .select('customer_id')
+        .eq('id', context.params.accountId)
+        .maybeSingle();
+
+      if (!savingsAccount) {
+        return NextResponse.json({ error: 'Savings account not found' }, { status: 404 });
+      }
+      if (savingsAccount.customer_id !== customer.id) {
+        return NextResponse.json({ error: 'Forbidden: not your savings account' }, { status: 403 });
+      }
+    }
+
+    // Use customer's wallet if not provided
     let walletId = wallet_id;
     if (!walletId && customer) {
       const wallets = (customer as { wallets?: { id: string }[] }).wallets;
