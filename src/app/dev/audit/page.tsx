@@ -49,7 +49,7 @@ export default function AdminAuditPage() {
   const { data, isLoading, error, refetch } = useQuery<AuditResponse>({
     queryKey: ["admin-audit", logType, queryString],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/audit?${queryString}`);
+      const res = await fetch(`/api/dev/audit?${queryString}`);
       if (!res.ok) throw new Error("Failed to load audit log");
       return res.json();
     },

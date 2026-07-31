@@ -49,7 +49,7 @@ export default function AdminDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery<AdminDashboard>({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/dashboard");
+      const res = await fetch("/api/dev/dashboard");
       if (!res.ok) throw new Error("Failed to load dashboard");
       return res.json();
     },
@@ -190,7 +190,7 @@ export default function AdminDashboardPage() {
                 </div>
               ))}
             </div>
-            <Link href="/admin/staff" className="block mt-4 text-xs text-indigo hover:underline">
+            <Link href="/dev/staff" className="block mt-4 text-xs text-indigo hover:underline">
               Manage staff →
             </Link>
           </div>
@@ -207,7 +207,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ))}
             </div>
-            <Link href="/admin/products" className="block mt-4 text-xs text-indigo hover:underline">
+            <Link href="/dev/products" className="block mt-4 text-xs text-indigo hover:underline">
               Configure products →
             </Link>
           </div>
@@ -253,13 +253,13 @@ function ReviewRow({ loan }: { loan: PendingLoan }) {
       </div>
       <div className="flex gap-1.5">
         <Link
-          href={`/admin/loans`}
+          href={`/dev/loans`}
           className="text-[13px] px-3 py-1.5 rounded-lg border border-line bg-paper text-ink-soft hover:bg-parchment transition"
         >
           Deny
         </Link>
         <Link
-          href={`/admin/loans`}
+          href={`/dev/loans`}
           className="text-[13px] px-3 py-1.5 rounded-lg border border-loam bg-loam-light text-ink hover:opacity-80 transition font-medium"
         >
           Approve

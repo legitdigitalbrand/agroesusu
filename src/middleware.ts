@@ -35,7 +35,7 @@ const PUBLIC_ROUTES = [
   '/welcome',
 ];
 
-const ADMIN_ROUTES = ['/admin'];
+const ADMIN_ROUTES = ['/dev'];
 
 // Routes that bypass the PIN gate (user is authenticated but may not have PIN yet)
 const PIN_BYPASS_ROUTES = [
@@ -48,7 +48,7 @@ function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
-function isAdminRoute(pathname: string): boolean {
+function isDevRoute(pathname: string): boolean {
   return ADMIN_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
@@ -122,8 +122,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Admin route protection
-  if (isAdminRoute(pathname)) {
+  // Dev route protection
+  if (isDevRoute(pathname)) {
     try {
       const { data: isStaff } = await supabase.rpc('is_staff');
       if (!isStaff) {
@@ -136,7 +136,7 @@ export async function middleware(request: NextRequest) {
 
   // ── PIN Gate ──
   // For protected routes, check if PIN has been verified this session
-  if (!isPublicRoute(pathname) && !isPinBypassRoute(pathname) && !isAdminRoute(pathname)) {
+  if (!isPublicRoute(pathname) && !isPinBypassRoute(pathname) && !isDevRoute(pathname)) {
     const hasPinVerified = request.cookies.has('agriqcap_pin_verified');
     const hasDeviceCookie = request.cookies.has('agriqcap_device');
 

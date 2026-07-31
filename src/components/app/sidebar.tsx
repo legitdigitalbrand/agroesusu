@@ -48,7 +48,7 @@ export default function Sidebar({ profile, isOpen, onClose }: SidebarProps) {
 
   // Only show Admin Panel if user is an admin
   if (profile?.role === "admin") {
-    navItems.push({ name: "Admin Panel", href: "/admin", icon: Shield });
+    navItems.push({ name: "Dev Console", href: "/dev", icon: Shield });
   }
 
   const isLinkActive = (href: string) => {

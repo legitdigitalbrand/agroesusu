@@ -33,7 +33,7 @@ export default function AdminReportsPage() {
 
   const handleExport = async (format: "csv" | "json") => {
     const reportKey = showRisk ? `risk_${reportType}` : `compliance_${reportType}`;
-    window.open(`/api/admin/reports/${reportKey}?format=${format}`, "_blank");
+    window.open(`/api/dev/reports/${reportKey}?format=${format}`, "_blank");
   };
 
   const reportTypes: { key: ReportType; label: string }[] = [

@@ -15,14 +15,14 @@ import { useMe } from "@/hooks/use-me";
 // Client-side auth guard: redirects non-staff users to /dashboard.
 
 const adminNav = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Products", href: "/admin/products", icon: PiggyBank },
-  { name: "Loan Review", href: "/admin/loans", icon: Landmark },
-  { name: "Investments", href: "/admin/investments", icon: TrendingUp },
-  { name: "Cooperatives", href: "/admin/cooperatives", icon: Users },
-  { name: "Audit Log", href: "/admin/audit", icon: ScrollText },
-  { name: "Compliance", href: "/admin/reports", icon: FileText },
-  { name: "Staff & RBAC", href: "/admin/staff", icon: Shield },
+  { name: "Dashboard", href: "/dev/dashboard", icon: LayoutDashboard },
+  { name: "Products", href: "/dev/products", icon: PiggyBank },
+  { name: "Loan Review", href: "/dev/loans", icon: Landmark },
+  { name: "Investments", href: "/dev/investments", icon: TrendingUp },
+  { name: "Cooperatives", href: "/dev/cooperatives", icon: Users },
+  { name: "Audit Log", href: "/dev/audit", icon: ScrollText },
+  { name: "Compliance", href: "/dev/reports", icon: FileText },
+  { name: "Staff & RBAC", href: "/dev/staff", icon: Shield },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -50,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (isLoading) return;
     if (error || !me) {
-      router.replace("/login?redirect=" + encodeURIComponent(pathname || "/admin"));
+      router.replace("/login?redirect=" + encodeURIComponent(pathname || "/dev"));
       return;
     }
     if (me.type !== "staff") {
@@ -68,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const isActive = (href: string) => {
-    if (href === "/admin/dashboard") return pathname === "/admin/dashboard";
+    if (href === "/dev/dashboard") return pathname === "/dev/dashboard";
     return pathname?.startsWith(href);
   };
 

@@ -136,7 +136,7 @@ function ReviewModal({ loan, onClose }: { loan: PendingLoan; onClose: () => void
       body.approved_amount = parseFloat(approvedAmount);
     }
 
-    const res = await fetch(`/api/admin/loans/${loan.id}/review`, {
+    const res = await fetch(`/api/dev/loans/${loan.id}/review`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

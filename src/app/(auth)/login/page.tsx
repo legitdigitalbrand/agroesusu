@@ -81,7 +81,7 @@ function LoginContent() {
 
       // Check if staff
       const { data: isStaff } = await supabase.rpc("is_staff");
-      const adminTarget = "/admin/dashboard";
+      const adminTarget = "/dev/dashboard";
       const customerTarget = redirectPath;
 
       if (postBody.needsPinSetup) {
@@ -141,7 +141,7 @@ function LoginContent() {
         if (user) {
           const { data: isStaff } = await supabase.rpc("is_staff");
           if (isStaff) {
-            router.push("/admin/dashboard");
+            router.push("/dev/dashboard");
           } else {
             router.push(redirectPath);
           }
