@@ -9,17 +9,17 @@ export async function POST(request: Request) {
   const limited = applyRateLimit(request, "/api/auth/pin-remove", RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
+    const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { deviceId } = await request.json();
 
     if (!deviceId) {
       return NextResponse.json({ error: 'Device ID required' }, { status: 400 });
-    }
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     const { error } = await supabase

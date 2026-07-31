@@ -18,16 +18,16 @@ export async function POST(request: Request) {
   const limited = applyRateLimit(request, "/api/auth/pin-setup", RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
+    const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { pin, deviceName } = await request.json();
 
     if (!pin || typeof pin !== 'string' || !/^\d{4}$/.test(pin)) {
       return NextResponse.json({ error: 'PIN must be exactly 4 digits' }, { status: 400 });
-    }
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     // Generate a secure device ID (server-side, not client-provided)

@@ -20,6 +20,16 @@ export async function POST(request: Request) {
   const limited = applyRateLimit(request, "/api/auth/pin-verify", RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
+    // Check if there's a valid session first (before body parsing)
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({
+        error: 'Session expired. Please sign in with email and password.',
+        code: 'no_session'
+      }, { status: 401 });
+    }
+
     const { pin } = await request.json();
 
     if (!pin || !/^\d{4}$/.test(pin)) {
@@ -40,98 +50,84 @@ export async function POST(request: Request) {
       }, { status: 401 });
     }
 
-    const supabase = createClient();
-
-    // Check if there's a valid session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json({
-        error: 'Session expired. Please sign in with email and password.',
-        code: 'no_session'
-      }, { status: 401 });
-    }
-
     const userId = session.user.id;
 
     // Look up the PIN record for this device
     const { data: pinRecord, error: dbError } = await supabase
       .from('device_pins')
-      .select('id, pin_hash, pin_salt, failed_attempts, locked_at')
+      .select('id, pin_hash, failed_attempts, locked_at')
       .eq('user_id', userId)
       .eq('device_id', deviceId)
-      .maybeSingle();
+      .single();
 
-    if (dbError) {
-      console.error('[pin-verify] DB error:', dbError.message);
-      return NextResponse.json({ error: 'Verification failed' }, { status: 500 });
-    }
-
-    if (!pinRecord) {
+    if (dbError || !pinRecord) {
       return NextResponse.json({
-        error: 'No PIN set up for this device',
+        error: 'No PIN set for this device. Please set up a PIN.',
         code: 'no_pin'
       }, { status: 404 });
     }
 
-    // Check if locked out
+    // Check if PIN is locked
     if (pinRecord.locked_at) {
       return NextResponse.json({
-        error: 'PIN locked. Please use email and password to sign in.',
-        code: 'locked'
-      }, { status: 429 });
+        error: 'PIN locked due to too many failed attempts. Please sign in with email and password.',
+        code: 'pin_locked'
+      }, { status: 403 });
     }
 
-    // Verify the PIN
-    const computedHash = crypto.pbkdf2Sync(pin, pinRecord.pin_salt, 10000, 64, 'sha256').toString('hex');
+    // Hash the provided PIN with the stored salt
+    const [storedHash, salt] = pinRecord.pin_hash.split(':');
+    const providedHash = crypto
+      .pbkdf2Sync(pin, salt, 100000, 64, 'sha512')
+      .toString('hex');
 
-    if (computedHash === pinRecord.pin_hash) {
-      // PIN correct — reset failed attempts, update last_used
-      await supabase
-        .from('device_pins')
-        .update({
-          failed_attempts: 0,
-          locked_at: null,
-          last_used_at: new Date().toISOString(),
-        })
-        .eq('id', pinRecord.id);
-
-      // Refresh the Supabase session
-      await supabase.auth.refreshSession();
-
-      // Set pin_verified cookie
-      const response = NextResponse.json({ success: true });
-      response.cookies.set(PIN_VERIFIED_COOKIE_NAME, 'true', PIN_VERIFIED_COOKIE_OPTIONS);
-
-      return response;
-    } else {
-      // PIN wrong — increment failed attempts
-      const newAttempts = (pinRecord.failed_attempts || 0) + 1;
-      const shouldLock = newAttempts >= MAX_PIN_ATTEMPTS;
+    if (providedHash !== storedHash) {
+      // Increment failed attempts
+      const newFailedAttempts = (pinRecord.failed_attempts || 0) + 1;
+      const shouldLock = newFailedAttempts >= MAX_PIN_ATTEMPTS;
 
       await supabase
         .from('device_pins')
         .update({
-          failed_attempts: newAttempts,
+          failed_attempts: newFailedAttempts,
           locked_at: shouldLock ? new Date().toISOString() : null,
         })
         .eq('id', pinRecord.id);
 
-      const remaining = MAX_PIN_ATTEMPTS - newAttempts;
-
-      if (shouldLock) {
-        return NextResponse.json({
-          error: 'PIN locked after 5 failed attempts. Please use email and password.',
-          code: 'locked',
-          remaining: 0,
-        }, { status: 429 });
-      }
-
       return NextResponse.json({
-        error: `Wrong PIN. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`,
-        code: 'wrong_pin',
-        remaining,
+        error: shouldLock
+          ? 'PIN locked due to too many failed attempts. Please sign in with email and password.'
+          : `Incorrect PIN. ${MAX_PIN_ATTEMPTS - newFailedAttempts} attempts remaining.`,
+        code: shouldLock ? 'pin_locked' : 'wrong_pin',
+        attempts_remaining: Math.max(0, MAX_PIN_ATTEMPTS - newFailedAttempts),
       }, { status: 401 });
     }
+
+    // PIN is correct — reset failed attempts
+    await supabase
+      .from('device_pins')
+      .update({ failed_attempts: 0 })
+      .eq('id', pinRecord.id);
+
+    // Set pin_verified cookie
+    const response = NextResponse.json({
+      success: true,
+      message: 'PIN verified successfully',
+    });
+
+    response.cookies.set(
+      PIN_VERIFIED_COOKIE_NAME,
+      'true',
+      PIN_VERIFIED_COOKIE_OPTIONS
+    );
+
+    // Refresh the Supabase session
+    const { error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError) {
+      console.error('[pin-verify] Session refresh error:', refreshError);
+    }
+
+    return response;
   } catch (err) {
     console.error('[pin-verify] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

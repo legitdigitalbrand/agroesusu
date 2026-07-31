@@ -11,6 +11,12 @@ export async function POST(request: Request) {
   const limited = applyRateLimit(request, "/api/auth/pin-change", RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
+    const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { currentPin, newPin } = await request.json();
 
     if (!currentPin || !/^\d{4}$/.test(currentPin)) {
@@ -31,12 +37,6 @@ export async function POST(request: Request) {
 
     if (!deviceId) {
       return NextResponse.json({ error: 'Device not recognized' }, { status: 400 });
-    }
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     const { data: pinRecord, error: dbError } = await supabase
