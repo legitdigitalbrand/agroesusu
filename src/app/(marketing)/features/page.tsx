@@ -159,7 +159,7 @@ export default function FeaturesPage() {
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
                     <h5 className="font-bold text-ink">MFA & Encryption</h5>
-                    <p className="text-xs text-ink-soft mt-1">All details and account transactions are encrypted. Access is secured with PINs and OTP codes.</p>
+                    <p className="text-xs text-ink-soft mt-1">All details and account transactions are encrypted. Access is secured with PINs and password authentication.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">

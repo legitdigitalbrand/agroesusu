@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 // POST /api/auth/pin-remove
-// Removes the PIN for a specific device (e.g., user chose "Use email instead")
+// Removes the PIN for a specific device (e.g., revoking a lost or compromised device)
 
 export async function POST(request: Request) {
   try {
