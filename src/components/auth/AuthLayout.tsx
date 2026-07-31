@@ -9,7 +9,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children, rightPanel }: AuthLayoutProps) {
   return (
-    <div
+    <main
       className="min-h-screen flex items-center justify-center px-4 py-8 md:px-8 md:py-10 bg-parchment"
     >
       <motion.div
@@ -45,10 +45,10 @@ export function AuthLayout({ children, rightPanel }: AuthLayoutProps) {
             Mobile:  hidden
             Desktop: 45% width, fills entire right column
         */}
-        <div className="hidden md:block md:w-[45%] relative">
+        <div className="hidden md:block md:w-[45%] relative" aria-hidden="true">
           {rightPanel}
         </div>
       </motion.div>
-    </div>
+    </main>
   );
 }

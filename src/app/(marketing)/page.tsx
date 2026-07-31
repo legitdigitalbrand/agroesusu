@@ -69,9 +69,9 @@ export default function LandingPage() {
 
           {/* Floating balance card */}
           <div className="absolute top-4 right-2 w-[230px] bg-gradient-to-br from-indigo to-[indigo-deep] text-white rounded-[14px] p-4 shadow-[0_20px_40px_rgba(18,61,21,0.25)]">
-            <p className="text-[12px] text-[white/40] mb-1.5">Dry season fund</p>
+            <p className="text-[12px] text-white/70 mb-1.5">Dry season fund</p>
             <p className="font-mono text-[22px] font-medium">₦134,000</p>
-            <p className="text-[12px] text-[white/50] mt-1.5">67% of ₦200,000 goal</p>
+            <p className="text-[12px] text-white/70 mt-1.5">67% of ₦200,000 goal</p>
           </div>
 
           {/* Floating stat card */}
@@ -91,15 +91,15 @@ export default function LandingPage() {
       <section className="bg-indigo-deep flex flex-wrap justify-around py-8 px-6 text-center">
         <div>
           <p className="font-mono text-ochre text-[26px] m-0">50,000+</p>
-          <p className="text-[13px] text-[white/50] m-0 mt-1">Farmers &amp; members served</p>
+          <p className="text-[13px] text-white/70 m-0 mt-1">Farmers &amp; members served</p>
         </div>
         <div>
           <p className="font-mono text-ochre text-[26px] m-0">₦2.5B+</p>
-          <p className="text-[13px] text-[white/50] m-0 mt-1">Saved through Agriqcap</p>
+          <p className="text-[13px] text-white/70 m-0 mt-1">Saved through Agriqcap</p>
         </div>
         <div>
           <p className="font-mono text-ochre text-[26px] m-0">₦1.8B+</p>
-          <p className="text-[13px] text-[white/50] m-0 mt-1">Loaned to members</p>
+          <p className="text-[13px] text-white/70 m-0 mt-1">Loaned to members</p>
         </div>
       </section>
 
@@ -139,7 +139,7 @@ export default function LandingPage() {
       {/* ═══ Savings detail ═══ */}
       <section id="savings" className="grid grid-cols-1 lg:grid-cols-2 gap-11 px-6 md:px-10 py-10 max-w-[1180px] mx-auto items-center">
         <div>
-          <p className="text-loam text-[13px] font-semibold mb-2">Savings</p>
+          <p className="text-loam-dim text-[13px] font-semibold mb-2">Savings</p>
           <h3 className="font-display font-bold text-[23px] text-ink mb-3">
             Secure your future. Earn industry-leading rates.
           </h3>
@@ -165,22 +165,22 @@ export default function LandingPage() {
         {/* Visual first on desktop (reversed) */}
         <div className="order-1 lg:order-1">
           <div className="bg-gradient-to-br from-indigo to-[indigo-deep] text-white rounded-2xl p-5">
-            <p className="text-[12px] text-[white/40] mb-1">You could be eligible to borrow up to</p>
+            <p className="text-[12px] text-white/70 mb-1">You could be eligible to borrow up to</p>
             <p className="font-mono text-[28px] font-medium mb-3">₦375,000</p>
             <div className="space-y-2">
               <div className="flex justify-between text-[14px]">
-                <span className="text-[white/50]">Savings consistency</span>
+                <span className="text-white/70">Savings consistency</span>
                 <span className="text-white">Excellent</span>
               </div>
               <div className="flex justify-between text-[14px]">
-                <span className="text-[white/50]">Cooperative participation</span>
+                <span className="text-white/70">Cooperative participation</span>
                 <span className="text-white">Active</span>
               </div>
             </div>
           </div>
         </div>
         <div className="order-2 lg:order-2">
-          <p className="text-loam text-[13px] font-semibold mb-2">Loans</p>
+          <p className="text-loam-dim text-[13px] font-semibold mb-2">Loans</p>
           <h3 className="font-display font-bold text-[23px] text-ink mb-3">
             Affordable credit to fund your farming season.
           </h3>
@@ -285,7 +285,7 @@ function StepCard({ num, title, desc }: { num: string; title: string; desc: stri
       </div>
       <div>
         <h5 className="font-display font-semibold text-[15px] text-white mb-1">{title}</h5>
-        <p className="text-[12px] text-[white/40] leading-relaxed">{desc}</p>
+        <p className="text-[12px] text-white/70 leading-relaxed">{desc}</p>
       </div>
     </div>
   );

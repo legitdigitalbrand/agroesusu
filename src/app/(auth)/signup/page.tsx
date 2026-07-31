@@ -119,9 +119,9 @@ export default function SignupPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.15 }}
       >
-        <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
+        <h1 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
           Start saving<br />today.
-        </h2>
+        </h1>
         <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
           Open your account in under 2 minutes
         </p>

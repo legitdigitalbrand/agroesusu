@@ -223,9 +223,9 @@ function LoginContent() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
+            <h1 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
               Welcome back.
-            </h2>
+            </h1>
             <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
               Sign in to manage your savings &amp; loans
             </p>
@@ -296,9 +296,9 @@ function LoginContent() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
+            <h1 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
               Enter your PIN
-            </h2>
+            </h1>
             <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
               Quick sign-in for this device.
             </p>

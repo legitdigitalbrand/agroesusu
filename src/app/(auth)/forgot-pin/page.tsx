@@ -86,9 +86,9 @@ export default function ForgotPinPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
+            <h1 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
               Reset your PIN
-            </h2>
+            </h1>
             <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
               Verify your identity with email and password to set a new PIN.
             </p>
@@ -137,9 +137,9 @@ export default function ForgotPinPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
+            <h1 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
               Create new PIN
-            </h2>
+            </h1>
             <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
               Set a new 4-digit PIN for this device.
             </p>

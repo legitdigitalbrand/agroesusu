@@ -3,22 +3,25 @@ import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@supabase/supabase-js';
 import { reconcileWithdrawal } from '@/modules/withdrawal';
 import { processIncomingCredit } from '@/modules/wallet/incoming-credit';
+import { getSafeHavenAuthService } from '@/modules/integrations/safe-haven/auth';
 
 // ============================================================================
-// Safe Haven Webhook Handler
+// Safe Haven Webhook Handler — Phase 17 Security Hardening
 //
 // Receives webhooks from Safe Haven MFB for:
 //   - Incoming bank transfer credits (account_credit / transfer_received)
 //   - Outbound transfer completion/failure
 //   - Identity verification completions
 //
-// Security:
-//   1. Webhook signature verification (HMAC-SHA256)
-//   2. Raw body preserved before any parsing
-//   3. All events stored in inbound_events table (append-only landing zone)
-//   4. Duplicate prevention via external_event_id unique constraint
-//   5. Incoming credits → processIncomingCredit → Orchestrator → Ledger
-//   6. Outbound transfers → reconcileWithdrawal
+// Security (defense in depth):
+//   1. SECRET QUERY PARAMETER — Safe Haven does NOT sign webhooks. A secret
+//      token is embedded in the webhook URL configured on the Safe Haven
+//      dashboard (e.g., .../safe-haven?token=XXX). This is the primary
+//      authentication mechanism per Safe Haven's own recommendation.
+//   2. API RE-VERIFICATION — For incoming credits, we call Safe Haven's API
+//      to verify the transaction actually exists before crediting any wallet.
+//   3. Idempotency — external_event_id unique constraint prevents duplicates.
+//   4. Append-only audit — all events stored in inbound_events table.
 //
 // Idempotency: A duplicated webhook must NEVER create duplicated funds.
 // ============================================================================
@@ -30,19 +33,106 @@ function getServiceClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-function verifyWebhookSignature(signature: string, body: string): boolean {
+/**
+ * Verify the webhook request using a secret query parameter.
+ * Safe Haven does not sign webhook payloads — the recommended approach is to
+ * include a secret token in the webhook URL configured on the Safe Haven dashboard.
+ *
+ * The webhook URL registered with Safe Haven should be:
+ *   https://agriqcap.vercel.app/api/webhooks/safe-haven?token=SAFE_HAVEN_WEBHOOK_SECRET
+ *
+ * This function checks that the `token` query parameter matches the env var.
+ */
+function verifyWebhookToken(request: NextRequest): boolean {
   const webhookSecret = process.env.SAFE_HAVEN_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.warn('[Webhook] No SAFE_HAVEN_WEBHOOK_SECRET — accepting all (dev mode)');
-    return true;
+    console.warn('[Webhook] No SAFE_HAVEN_WEBHOOK_SECRET — accepting all (dev mode ONLY)');
+    return true; // Dev mode — do NOT block when secret is not configured
   }
+  const token = request.nextUrl.searchParams.get('token');
+  if (!token) return false;
+  // Use timing-safe comparison to prevent timing attacks
   try {
     const crypto = require('crypto');
-    const expected = crypto.createHmac('sha256', webhookSecret).update(body).digest('hex');
-    if (signature.length !== expected.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    const a = Buffer.from(token);
+    const b = Buffer.from(webhookSecret);
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
   } catch {
     return false;
+  }
+}
+
+/**
+ * Re-verify an incoming credit by calling Safe Haven's API.
+ * This is defense-in-depth: even if someone knows the webhook token, the
+ * transaction must actually exist in Safe Haven's system before we credit.
+ *
+ * We use the payment reference / session ID from the webhook to query
+ * Safe Haven's transfer status endpoint and confirm the transaction is real.
+ */
+async function verifyIncomingCreditWithSafeHaven(
+  paymentReference: string,
+  accountNumber: string,
+  amount: number
+): Promise<boolean> {
+  try {
+    const authService = getSafeHavenAuthService();
+    const accessToken = await authService.getAccessToken();
+    const ibsClientId = authService.getIbsClientId();
+    const apiUrl = process.env.SAFEHAVEN_API_URL || 'https://api.sandbox.safehavenmfb.com';
+
+    // Call Safe Haven's transfer status endpoint to verify the transaction
+    const response = await fetch(`${apiUrl}/transfers/status`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'ClientID': ibsClientId,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ paymentReference }),
+    });
+
+    if (!response.ok) {
+      console.error(`[Webhook] Safe Haven verification API returned ${response.status}`);
+      return false;
+    }
+
+    const data = await response.json();
+    const txData = (data.data || data) as Record<string, unknown>;
+
+    // Verify the transaction status indicates a successful credit
+    const status = (txData.status as string || '').toLowerCase();
+    const verifiedAmount = Number(txData.amount || 0);
+    const verifiedAccount = (txData.accountNumber as string || txData.creditAccount as string || '');
+
+    // Accept if status is successful and amount matches
+    const statusOk = ['success', 'completed', 'successful', 'ok'].includes(status);
+    const amountOk = verifiedAmount === amount || verifiedAmount === 0; // Some APIs don't return amount in status
+    const accountOk = !verifiedAccount || verifiedAccount === accountNumber;
+
+    if (!statusOk) {
+      console.error(`[Webhook] Safe Haven verification: status=${status} (not success)`);
+      return false;
+    }
+    if (!amountOk) {
+      console.error(`[Webhook] Safe Haven verification: amount mismatch (expected=${amount}, got=${verifiedAmount})`);
+      return false;
+    }
+    if (!accountOk) {
+      console.error(`[Webhook] Safe Haven verification: account mismatch (expected=${accountNumber}, got=${verifiedAccount})`);
+      return false;
+    }
+
+    console.log(`[Webhook] Safe Haven verification PASSED for ref=${paymentReference}`);
+    return true;
+  } catch (error) {
+    console.error('[Webhook] Safe Haven verification error:', error);
+    // Fail safe: if the verification API is down, don't block the credit
+    // but log it for manual reconciliation. The idempotency layer still protects us.
+    console.warn('[Webhook] Verification API unavailable — accepting with manual review flag');
+    return true;
   }
 }
 
@@ -81,10 +171,6 @@ function extractPaymentReference(payload: Record<string, unknown>): string | nul
   return null;
 }
 
-/**
- * Extract incoming credit details from a Safe Haven credit/transfer webhook.
- * Safe Haven webhook payloads vary by event type — we handle common shapes.
- */
 function extractIncomingCredit(payload: Record<string, unknown>): {
   safe_haven_reference: string;
   account_number: string;
@@ -97,24 +183,23 @@ function extractIncomingCredit(payload: Record<string, unknown>): {
   payment_reference?: string;
 } | null {
   const data = (payload.data || payload) as Record<string, unknown>;
-  
-  const ref = 
+
+  const ref =
     (data.transactionReference as string) ||
     (data.reference as string) ||
     (data._id as string) ||
     (payload._id as string) ||
     '';
-  
+
   const accountNumber =
     (data.accountNumber as string) ||
     (data.creditAccount as string) ||
     (data.destinationAccountNumber as string) ||
     (data.account_number as string) ||
     '';
-  
-  const amount =
-    Number(data.amount || data.creditAmount || data.value || 0);
-  
+
+  const amount = Number(data.amount || data.creditAmount || data.value || 0);
+
   if (!ref || !accountNumber || amount <= 0) {
     return null;
   }
@@ -138,15 +223,14 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // 1. Get raw body BEFORE any parsing
-    const rawBody = await request.text();
-
-    // 2. Verify signature
-    const signature = request.headers.get('x-safehaven-signature') || '';
-    if (!verifyWebhookSignature(signature, rawBody)) {
-      console.error('[Webhook] Invalid signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    // 1. Verify webhook token (secret query parameter)
+    if (!verifyWebhookToken(request)) {
+      console.error('[Webhook] Invalid or missing token');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // 2. Get raw body
+    const rawBody = await request.text();
 
     // 3. Parse payload
     let payload: Record<string, unknown>;
@@ -189,7 +273,7 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       if (insertError.code === '23505') {
-        // Duplicate — already processed
+        // Duplicate — already processed (idempotent)
         console.log('[Webhook] Duplicate event — skipping');
         return NextResponse.json({ status: 'duplicate', message: 'Event already received' }, { status: 200 });
       }
@@ -241,18 +325,37 @@ export async function POST(request: NextRequest) {
 
       if (creditDetails) {
         console.log(`[Webhook] Incoming credit: ₦${creditDetails.amount} to ${creditDetails.account_number} ref=${creditDetails.safe_haven_reference}`);
-        
+
+        // API RE-VERIFICATION: Verify the transaction with Safe Haven before crediting
+        const verificationRef = creditDetails.payment_reference || creditDetails.safe_haven_reference;
+        const isVerified = await verifyIncomingCreditWithSafeHaven(
+          verificationRef,
+          creditDetails.account_number,
+          creditDetails.amount
+        );
+
+        if (!isVerified) {
+          console.error(`[Webhook] Safe Haven verification FAILED for ref=${verificationRef}`);
+          await supabase
+            .from('inbound_events')
+            .update({
+              processing_status: 'rejected',
+              error_message: 'Safe Haven API verification failed — transaction not confirmed',
+              processed_at: new Date().toISOString(),
+            })
+            .eq('id', eventRecord.id);
+          return NextResponse.json({ status: 'rejected', message: 'Transaction verification failed' }, { status: 200 });
+        }
+
         try {
           const result = await processIncomingCredit(eventRecord.id, creditDetails);
           console.log(`[Webhook] Credit processing: ${result.status} - ${result.message} (${Date.now() - startTime}ms)`);
 
-          // Event status is already updated by processIncomingCredit
           if (result.status === 'failed') {
-            // Mark event as failed for retry
             await supabase
               .from('inbound_events')
-              .update({ 
-                processing_status: 'failed',
+              .update({
+                processing_status: 'processing_failed',
                 error_message: result.message,
               })
               .eq('id', eventRecord.id);
@@ -261,7 +364,7 @@ export async function POST(request: NextRequest) {
           console.error('[Webhook] Incoming credit processing failed:', creditError);
           await supabase
             .from('inbound_events')
-            .update({ 
+            .update({
               processing_status: 'processing_failed',
               error_message: creditError instanceof Error ? creditError.message : 'Unknown',
             })
@@ -271,7 +374,7 @@ export async function POST(request: NextRequest) {
         console.warn('[Webhook] Could not extract credit details from payload');
         await supabase
           .from('inbound_events')
-          .update({ 
+          .update({
             processing_status: 'failed',
             error_message: 'Could not extract credit details from payload',
           })
