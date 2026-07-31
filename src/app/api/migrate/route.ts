@@ -1,82 +1,47 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 
-// POST /api/migrate — executes migration 00036
-// Protected by CRON_SECRET
-export async function POST(request: Request) {
+// GET /api/migrate — checks which RPC functions exist and returns SQL to run manually
+export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
   const expectedKey = process.env.CRON_SECRET;
   if (!expectedKey || authHeader !== `Bearer ${expectedKey}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // The SQL to create the missing RPC functions
-  const statements = [
-    `CREATE OR REPLACE FUNCTION public.get_wallet_confirmed_balance(p_wallet_id UUID)
-RETURNS NUMERIC(15,2) LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_balance NUMERIC(15,2);
-BEGIN
-  SELECT COALESCE(SUM(CASE WHEN direction = 'credit' THEN amount ELSE -amount END), 0)
-  INTO v_balance FROM public.wallet_transactions WHERE wallet_id = p_wallet_id AND status = 'confirmed';
-  RETURN v_balance;
-END; $$;`,
-    `GRANT EXECUTE ON FUNCTION public.get_wallet_confirmed_balance(UUID) TO authenticated;`,
-    `CREATE OR REPLACE FUNCTION public.increment_candidate_votes(p_election_id UUID, p_membership_id UUID)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  UPDATE public.cooperative_election_candidates SET vote_count = vote_count + 1
-  WHERE election_id = p_election_id AND membership_id = p_membership_id;
-END; $$;`,
-    `GRANT EXECUTE ON FUNCTION public.increment_candidate_votes(UUID, UUID) TO authenticated;`,
-    `CREATE OR REPLACE FUNCTION public.increment_product_units(p_product_id UUID, p_units NUMERIC)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  UPDATE public.investment_products SET units_issued = units_issued + p_units, updated_at = now()
-  WHERE id = p_product_id;
-END; $$;`,
-    `GRANT EXECUTE ON FUNCTION public.increment_product_units(UUID, NUMERIC) TO authenticated;`,
-    `CREATE OR REPLACE FUNCTION public.update_group_member_contribution(p_group_account_id UUID, p_wallet_id UUID, p_amount NUMERIC)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_customer_id UUID;
-BEGIN
-  SELECT customer_id INTO v_customer_id FROM public.wallets WHERE id = p_wallet_id;
-  IF v_customer_id IS NULL THEN RETURN; END IF;
-  UPDATE public.group_savings_memberships
-  SET total_contributed = total_contributed + p_amount, contributions_count = contributions_count + 1,
-      last_contribution_at = now(), updated_at = now()
-  WHERE group_account_id = p_group_account_id AND customer_id = v_customer_id AND status = 'active';
-END; $$;`,
-    `GRANT EXECUTE ON FUNCTION public.update_group_member_contribution(UUID, UUID, NUMERIC) TO authenticated;`,
-  ];
-
   const supabase = createServiceClient();
-  const results: string[] = [];
-  
-  // Execute each statement using the supabase-js query method
-  for (const stmt of statements) {
-    try {
-      const { error } = await (supabase as any).rpc('exec_sql', { query: stmt });
-      if (error) {
-        // If exec_sql doesn't exist, try direct query
-        results.push(`SKIP: ${error.message}`);
-      } else {
-        results.push('OK');
-      }
-    } catch (e) {
-      results.push(`ERR: ${e instanceof Error ? e.message : 'unknown'}`);
-    }
-  }
+  const functionChecks: Record<string, boolean> = {};
 
-  // Check if exec_sql RPC exists by testing the functions
-  const testResults: Record<string, boolean> = {};
+  // Test each function to see if it exists
   try {
-    const { data: test1, error: e1 } = await supabase.rpc('get_wallet_confirmed_balance' as any, { p_wallet_id: '00000000-0000-0000-0000-000000000000' });
-    testResults.get_wallet_confirmed_balance = !e1;
-  } catch { testResults.get_wallet_confirmed_balance = false; }
+    const { error } = await supabase.rpc('get_wallet_confirmed_balance' as any, { p_wallet_id: '00000000-0000-0000-0000-000000000000' });
+    functionChecks.get_wallet_confirmed_balance = !error;
+  } catch { functionChecks.get_wallet_confirmed_balance = false; }
 
-  return NextResponse.json({ 
-    statementResults: results,
-    functionTests: testResults,
-    note: 'If exec_sql RPC is not available, functions may need manual application via Supabase SQL Editor'
+  try {
+    const { error } = await supabase.rpc('increment_candidate_votes' as any, { p_election_id: '00000000-0000-0000-0000-000000000000', p_membership_id: '00000000-0000-0000-0000-000000000000' });
+    functionChecks.increment_candidate_votes = !error;
+  } catch { functionChecks.increment_candidate_votes = false; }
+
+  try {
+    const { error } = await supabase.rpc('increment_product_units' as any, { p_product_id: '00000000-0000-0000-0000-000000000000', p_units: 0 });
+    functionChecks.increment_product_units = !error;
+  } catch { functionChecks.increment_product_units = false; }
+
+  try {
+    const { error } = await supabase.rpc('update_group_member_contribution' as any, { p_group_account_id: '00000000-0000-0000-0000-000000000000', p_wallet_id: '00000000-0000-0000-0000-000000000000', p_amount: 0 });
+    functionChecks.update_group_member_contribution = !error;
+  } catch { functionChecks.update_group_member_contribution = false; }
+
+  const allExist = Object.values(functionChecks).every(v => v === true);
+  const missing = Object.entries(functionChecks).filter(([_, v]) => !v).map(([k]) => k);
+
+  return NextResponse.json({
+    allFunctionsExist: allExist,
+    missingFunctions: missing,
+    functionChecks,
+    instructions: allExist 
+      ? 'All RPC functions are already present in the database.'
+      : `Missing: ${missing.join(', ')}. Run supabase/migrations/00036_missing_rpc_functions.sql in the Supabase SQL Editor.`
   });
 }
