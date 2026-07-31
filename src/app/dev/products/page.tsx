@@ -150,7 +150,7 @@ function CreateProductModal({ productType, onClose }: { productType: ProductType
       interest_rate: parseFloat(form.interest_rate) || 0,
     };
 
-    const res = await fetch(`/api/dev/products/${productType}`, {
+    const res = await fetch(`/api/admin/products/${productType}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

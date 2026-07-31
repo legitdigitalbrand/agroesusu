@@ -1,15 +1,16 @@
 "use client";
 
 import { Card } from "@/components/yield";
-import { Bell, Lock, User, Globe, LogOut } from "lucide-react";
+import { Bell, User, Globe, LogOut, Shield, HelpCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
   const settings = [
     { icon: User, label: "Profile & Verification", href: "/profile", desc: "Manage your personal info and KYC" },
-    { icon: Bell, label: "Notifications", href: "/notifications", desc: "Manage your notification preferences" },
-    { icon: Lock, label: "Security", href: "/settings", desc: "Password and session management" },
+    { icon: Bell, label: "Notifications", href: "/notifications", desc: "View your recent account activity" },
+    { icon: Shield, label: "Security & PIN", href: "/settings/security", desc: "Change PIN, manage trusted devices" },
     { icon: Globe, label: "Language & Region", href: "/settings", desc: "English (Nigeria) • GMT+1" },
+    { icon: HelpCircle, label: "Help & Support", href: "/help", desc: "Get help with your account" },
   ];
 
   return (
@@ -42,20 +43,19 @@ export default function SettingsPage() {
       <Card className="border-clay/30">
         <button
           onClick={async () => {
-            // Logout handled by Supabase client
             const { createClient } = await import("@/lib/supabase/client");
             const supabase = createClient();
             await supabase.auth.signOut();
             window.location.href = "/login";
           }}
-          className="flex items-center gap-4 w-full text-left"
+          className="w-full flex items-center gap-4 text-clay hover:text-clay/80 transition"
         >
           <div className="h-10 w-10 rounded-xl bg-clay/10 flex items-center justify-center">
-            <LogOut className="h-5 w-5 text-clay" />
+            <LogOut className="h-5 w-5" />
           </div>
-          <div>
-            <p className="font-medium text-clay">Log out</p>
-            <p className="text-xs text-ink-soft">Sign out of your Agriqcap account</p>
+          <div className="flex-1 text-left">
+            <p className="font-medium">Sign out</p>
+            <p className="text-xs opacity-70">End your session securely</p>
           </div>
         </button>
       </Card>

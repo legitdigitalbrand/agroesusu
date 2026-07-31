@@ -27,7 +27,7 @@ export default function AdminStaffPage() {
   const { data, isLoading, error, refetch } = useQuery<{ staff: StaffMember[] }>({
     queryKey: ["admin-staff", includeInactive],
     queryFn: async () => {
-      const res = await fetch(`/api/dev/staff${includeInactive ? "?include_inactive=true" : ""}`);
+      const res = await fetch(`/api/admin/staff${includeInactive ? "?include_inactive=true" : ""}`);
       if (!res.ok) throw new Error("Failed to load staff");
       return res.json();
     },
@@ -138,7 +138,7 @@ function CreateStaffModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/dev/staff", {
+    const res = await fetch("/api/admin/staff", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),

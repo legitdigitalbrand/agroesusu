@@ -49,7 +49,7 @@ export default function AdminDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery<AdminDashboard>({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
-      const res = await fetch("/api/dev/dashboard");
+      const res = await fetch("/api/admin/dashboard");
       if (!res.ok) throw new Error("Failed to load dashboard");
       return res.json();
     },
