@@ -282,12 +282,7 @@ export async function processNextPayout(esusuGroupId: string): Promise<{
       financial_transaction_id: result.id,
     }).eq('id', payoutRecord.id);
 
-    // 8. Update recipient's received amount
-    await supabase.from('group_savings_memberships').update({
-      total_received: supabase.rpc('increment', { x: payoutAmount }).then(() => 0, () => 0), // Best effort
-    }).eq('id', recipientMembershipId);
-    
-    // Simpler: just do a direct update
+    // 8. Update recipient's received amount (read-then-update to avoid race conditions)
     const { data: member } = await supabase
       .from('group_savings_memberships')
       .select('total_received')

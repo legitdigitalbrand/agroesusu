@@ -100,7 +100,7 @@ export default function InvestmentsPage() {
           ) : (
             <>
               {/* Portfolio summary */}
-              <div className="bg-gradient-to-br from-indigo to-[#0F4A13] rounded-2xl p-[18px] text-white">
+              <div className="bg-gradient-to-br from-indigo to-[indigo-deep] rounded-2xl p-[18px] text-white">
                 <p className="text-xs text-white/60 mb-1">Total portfolio value</p>
                 <p className="font-mono text-[26px] font-medium">
                   ₦{accounts.reduce((s, a) => s + a.current_value, 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}

@@ -10,8 +10,7 @@ interface AuthLayoutProps {
 export function AuthLayout({ children, rightPanel }: AuthLayoutProps) {
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-8 md:px-8 md:py-10"
-      style={{ background: "#f0f4f0" }}
+      className="min-h-screen flex items-center justify-center px-4 py-8 md:px-8 md:py-10 bg-parchment"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.98, y: 10 }}

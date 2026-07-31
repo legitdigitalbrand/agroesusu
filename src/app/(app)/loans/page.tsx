@@ -146,7 +146,7 @@ function ProductEligibility({ product }: { product: LoanProduct }) {
   return (
     <div className="space-y-4">
       {/* ─── Eligibility card (indigo gradient) ─── */}
-      <div className="bg-gradient-to-br from-indigo to-[#0F4A13] rounded-2xl p-[18px] text-white">
+      <div className="bg-gradient-to-br from-indigo to-[indigo-deep] rounded-2xl p-[18px] text-white">
         <p className="text-xs text-white/60 mb-1">You're eligible to borrow up to</p>
         <p className="font-mono text-[26px] font-medium mb-3">{fmtNGN(maxBorrow)}</p>
         <div className="space-y-0">

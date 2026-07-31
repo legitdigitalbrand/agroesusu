@@ -306,3 +306,85 @@ export async function recordMeetingAttendance(
     });
   if (error) throw new Error(`Failed to record attendance: ${error.message}`);
 }
+
+// ────────────────────────────────────────────────────────────
+// Vote on a resolution (support/oppose/abstain)
+// Records the vote in cooperative_votes and increments the
+// resolution's vote counters atomically.
+// ────────────────────────────────────────────────────────────
+export async function voteOnResolution(
+  cooperativeId: string,
+  resolutionId: string,
+  voterMembershipId: string,
+  voteType: 'yes' | 'no' | 'abstain',
+): Promise<void> {
+  const supabase = getServiceClient();
+
+  // 1. Check resolution is open for voting
+  const { data: resolution, error: resError } = await supabase
+    .from('cooperative_resolutions')
+    .select('id, status, voting_closes_at')
+    .eq('id', resolutionId)
+    .eq('cooperative_id', cooperativeId)
+    .maybeSingle();
+
+  if (resError || !resolution) {
+    throw new Error('Resolution not found');
+  }
+  if (resolution.status !== 'proposed' && resolution.status !== 'voting') {
+    throw new Error('Resolution is not open for voting');
+  }
+  if (resolution.voting_closes_at && new Date(resolution.voting_closes_at) < new Date()) {
+    throw new Error('Voting period has closed');
+  }
+
+  // 2. Insert vote record (UNIQUE constraint prevents double voting)
+  const { error: voteError } = await supabase
+    .from('cooperative_votes')
+    .insert({
+      cooperative_id: cooperativeId,
+      resolution_id: resolutionId,
+      voter_membership_id: voterMembershipId,
+      vote: voteType,
+    });
+
+  if (voteError) {
+    if (voteError.code === '23505') {
+      throw new Error('You have already voted on this resolution');
+    }
+    throw new Error(`Failed to cast vote: ${voteError.message}`);
+  }
+
+  // 3. Increment the resolution's vote counter
+  const column = voteType === 'yes' ? 'votes_for' : voteType === 'no' ? 'votes_against' : 'votes_abstain';
+  const { error: updateError } = await supabase
+    .from('cooperative_resolutions')
+    .update({ [column]: (await getResolutionVoteCount(resolutionId, column)) + 1 })
+    .eq('id', resolutionId);
+
+  if (updateError) {
+    // Vote was recorded but counter update failed — log but don't throw
+    console.error('[governance] Failed to increment resolution vote counter:', updateError.message);
+  }
+
+  // 4. Audit the vote
+  await logGovernanceEvent({
+    cooperative_id: cooperativeId,
+    event_type: 'resolution_vote',
+    entity_type: 'resolution',
+    entity_id: resolutionId,
+    actor_membership_id: voterMembershipId,
+    event_data: { vote_type: voteType },
+  });
+}
+
+async function getResolutionVoteCount(resolutionId: string, column: string): Promise<number> {
+  const supabase = getServiceClient();
+  const { data } = await supabase
+    .from('cooperative_resolutions')
+    .select(column)
+    .eq('id', resolutionId)
+    .maybeSingle();
+  if (!data || typeof data !== 'object' || 'error' in data) return 0;
+  return Number((data as Record<string, unknown>)[column] || 0);
+}

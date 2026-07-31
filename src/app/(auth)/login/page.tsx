@@ -203,7 +203,7 @@ function LoginContent() {
 
   if (checkingDevice) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f0f4f0" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "rgb(var(--color-parchment) / 1)" }}>
         <Loader2 className="h-6 w-6 animate-spin text-loam" />
       </div>
     );
@@ -345,7 +345,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f0f4f0" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "rgb(var(--color-parchment) / 1)" }}>
         <Loader2 className="h-6 w-6 animate-spin text-loam" />
       </div>
     }>

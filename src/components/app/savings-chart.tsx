@@ -105,8 +105,8 @@ export default function SavingsChart({ contributions, savingsPlans }: SavingsCha
           >
             <defs>
               <linearGradient id="colorSavings" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0B6B3A" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#0B6B3A" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#1B5E20" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#1B5E20" stopOpacity={0.0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -136,7 +136,7 @@ export default function SavingsChart({ contributions, savingsPlans }: SavingsCha
             <Area
               type="monotone"
               dataKey="amount"
-              stroke="#0B6B3A"
+              stroke="#1B5E20"
               strokeWidth={2.5}
               fillOpacity={1}
               fill="url(#colorSavings)"

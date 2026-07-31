@@ -68,7 +68,7 @@ function VerifyEmailContent() {
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f0f4f0" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "rgb(var(--color-parchment) / 1)" }}>
         <Loader2 className="h-6 w-6 animate-spin text-loam" />
       </div>
     }>
