@@ -79,8 +79,8 @@ export function LoginRightPanel() {
 
         {/* Testimonial — right, rotated +1°, lowest z */}
         <TestimonialCard
-          text='"My Esusu group helped me expand my farm. I got my payout in 3 days."'
-          author="— Musa A., Kano · Member since 2024"
+          text='"Agriqcap lets me save, earn interest, and borrow against my savings — all in one place."'
+          author="— Why members choose Agriqcap"
           delay={0.5}
           rotate={1}
           offsetX={20}
@@ -130,8 +130,8 @@ export function SignupRightPanel() {
         transition={{ duration: 0.45, ease: "easeOut" }}
         className="font-display text-[18px] font-bold text-white text-center leading-relaxed mb-10 relative z-20 px-8"
       >
-        Join thousands<br />
-        <span className="text-ochre">growing their wealth.</span>
+        Start building<br />
+        <span className="text-ochre">your financial future.</span>
       </motion.div>
 
       {/* Feature pills — stacked with spacing */}
@@ -144,21 +144,21 @@ export function SignupRightPanel() {
         />
         <FeaturePill
           icon={<LoanIcon />}
-          title="Cooperative loans"
+          title="Savings-backed loans"
           subtitle="Up to 3× your savings"
           delay={0.3}
         />
         <FeaturePill
           icon={<InvestIcon />}
-          title="Investments"
-          subtitle="Agri-pools from ₦10,000"
+          title="Credit Score"
+          subtitle="Build your borrowing power"
           delay={0.4}
         />
       </div>
 
       {/* Member count */}
       <div className="mt-10 relative z-20">
-        <MemberCount count="50,000+" label="active members" delay={0.55} />
+        <MemberCount count="₦0 fees" label="to start saving" delay={0.55} />
       </div>
     </div>
   );
