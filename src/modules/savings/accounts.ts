@@ -19,10 +19,23 @@ function getServiceClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+/** Account with product info joined (for customer-facing lists) */
+export interface AccountWithProduct extends SavingsAccount {
+  product?: {
+    product_name: string;
+    product_code: string;
+    product_type: string;
+    interest_rate: number;
+    interest_method: string;
+    term_days: number | null;
+  };
+  current_balance?: number;
+}
+
 /**
  * Open a savings account.
- * Captures a snapshot of the product terms at opening — config changes
- * don't retroactively affect existing accounts.
+ * Prevents duplicate flexible accounts. Fixed deposits can have multiple.
+ * Captures a snapshot of the product terms at opening.
  */
 export async function openAccount(request: OpenAccountRequest): Promise<SavingsAccount> {
   const supabase = getServiceClient();
@@ -32,7 +45,22 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
   if (!product) throw new Error('Product not found');
   if (!product.is_active) throw new Error('Product is not active');
 
-  // 2. Capture terms snapshot (so config changes don't affect existing accounts)
+  // 2. Prevent duplicate flexible accounts (one per customer)
+  if (product.product_type === 'flexible') {
+    const { data: existing } = await supabase
+      .from('savings_accounts')
+      .select('id, status')
+      .eq('customer_id', request.customer_id)
+      .eq('product_id', request.product_id)
+      .in('status', ['pending', 'active'])
+      .maybeSingle();
+
+    if (existing) {
+      throw new Error('You already have an active Flexible Savings account. Deposit into it instead of opening a new one.');
+    }
+  }
+
+  // 3. Capture terms snapshot (so config changes don't affect existing accounts)
   const termsSnapshot = {
     interest_rate: product.interest_rate,
     interest_method: product.interest_method,
@@ -44,7 +72,7 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
     term_days: product.term_days,
   };
 
-  // 3. Calculate maturity date for fixed-term products
+  // 4. Calculate maturity date for fixed-term products
   let maturityDate: string | null = null;
   if (product.term_days && product.term_days > 0) {
     const maturity = new Date();
@@ -52,7 +80,7 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
     maturityDate = maturity.toISOString();
   }
 
-  // 4. Create the account (status: pending — activates on first deposit)
+  // 5. Create the account (status: pending — activates on first deposit)
   const { data, error } = await supabase
     .from('savings_accounts')
     .insert({
@@ -71,9 +99,7 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
 
   const account = data as SavingsAccount;
 
-  // 5. If initial deposit provided, activate the account
-  // The actual deposit will be processed by the API layer calling deposit()
-  // after this returns (see POST /api/savings/accounts)
+  // 6. If initial deposit provided, activate the account
   if (request.initial_deposit && request.initial_deposit > 0) {
     await activateAccount(account.id);
   }
@@ -92,42 +118,64 @@ export async function activateAccount(accountId: string): Promise<void> {
       opened_at: new Date().toISOString(),
     })
     .eq('id', accountId)
-    .eq('status', 'pending');  // Only pending accounts can be activated
+    .eq('status', 'pending');
 
-  if (error) throw new Error(`Failed to activate account: ${error.message}`);
+  if (error) throw new Error(`Failed to activate savings account: ${error.message}`);
 }
 
-/** Get a savings account by ID */
-export async function getAccount(accountId: string): Promise<SavingsAccount | null> {
+/** Get a savings account by ID (with product info) */
+export async function getAccount(accountId: string): Promise<AccountWithProduct | null> {
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from('savings_accounts')
-    .select('*')
+    .select(`
+      *,
+      product:savings_products (
+        product_name,
+        product_code,
+        product_type,
+        interest_rate,
+        interest_method,
+        term_days
+      )
+    `)
     .eq('id', accountId)
     .maybeSingle();
 
   if (error) throw new Error(`Failed to get account: ${error.message}`);
-  return data as SavingsAccount | null;
+  return data as AccountWithProduct | null;
 }
 
-/** List all savings accounts for a customer */
-export async function listCustomerAccounts(customerId: string): Promise<SavingsAccount[]> {
+/**
+ * List all savings accounts for a customer — WITH product info joined.
+ * This is the function the API should use so the frontend gets product names.
+ */
+export async function listCustomerAccounts(customerId: string): Promise<AccountWithProduct[]> {
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from('savings_accounts')
-    .select('*')
+    .select(`
+      *,
+      product:savings_products (
+        product_name,
+        product_code,
+        product_type,
+        interest_rate,
+        interest_method,
+        term_days
+      )
+    `)
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to list accounts: ${error.message}`);
-  return (data || []) as SavingsAccount[];
+  return (data || []) as AccountWithProduct[];
 }
 
 /** Get the savings account balance from the Ledger */
 export async function getSavingsBalance(accountId: string): Promise<number> {
   const supabase = getServiceClient();
   
-  // Look up the ledger account for this savings account
   const { data, error } = await supabase.rpc('get_savings_account_id', {
     p_savings_account_id: accountId,
   });

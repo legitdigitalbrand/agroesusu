@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 
 // GET /api/wallets/funding-details
 // Returns the customer's Safe Haven DVA account details for wallet funding.
+// Always returns 200 with a provisioned flag — never 400 for expected states.
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient();
@@ -23,6 +24,8 @@ export async function GET(request: NextRequest) {
     }
 
     const serviceClient = createServiceClient();
+
+    // Check for Safe Haven DVA account
     const { data: safeHavenAccount } = await serviceClient
       .from('safe_haven_accounts')
       .select('account_number, account_name, bank_name, bank_code, status')
@@ -30,20 +33,29 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!safeHavenAccount) {
+      // No DVA provisioned — check KYC status to give specific guidance
+      const kycLevel = customer.kyc_level || 'tier_0';
+      let message = 'You need to complete identity verification to get a funding account.';
+      if (kycLevel === 'tier_1' || kycLevel === 'tier_2') {
+        message = 'Your identity is verified but your funding account is being created. This usually takes a few moments. Please retry or contact support if it persists.';
+      }
+
       return NextResponse.json({
         provisioned: false,
-        message: 'No Safe Haven account provisioned. Complete identity verification first.',
+        message,
+        kyc_level: kycLevel,
       }, { status: 200 });
     }
 
     if (safeHavenAccount.status !== 'active') {
       return NextResponse.json({
-        provisioned: true,
+        provisioned: false,
+        message: `Your funding account is ${safeHavenAccount.status}. Please contact support to resolve this.`,
         account: safeHavenAccount,
-        message: `Account is ${safeHavenAccount.status}. Please contact support.`,
       }, { status: 200 });
     }
 
+    // Check for active wallet
     const { data: wallet } = await serviceClient
       .from('wallets')
       .select('id, status')
@@ -53,7 +65,10 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!wallet) {
-      return NextResponse.json({ error: 'No active wallet found' }, { status: 400 });
+      return NextResponse.json({
+        provisioned: false,
+        message: 'Your wallet is not active yet. Please contact support.',
+      }, { status: 200 });
     }
 
     // Create incoming deposit request to track intent
@@ -85,6 +100,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('[API:funding-details] Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      provisioned: false,
+      message: 'We could not load your funding details. Please try again or contact support.',
+    }, { status: 200 });  // Return 200 so the UI shows a proper state, not a crash
   }
 }

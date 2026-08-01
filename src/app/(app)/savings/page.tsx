@@ -3,43 +3,62 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  LoadingState, Button, ProgressRing,
+  LoadingState, Button,
 } from "@/components/yield";
 import {
-  Clock, Lock, X, Check, AlertCircle, PiggyBank,
+  Clock, Lock, X, Check, AlertCircle, PiggyBank, Calendar, Wallet,
 } from "lucide-react";
 
-
 // ════════════════════════════════════════════════════════════
-// Savings Page — products + accounts + account creation modal
+// Savings Page — Clear products + real accounts + account creation
+// Uses actual DB schema field names (interest_method, lock_period_days, etc.)
 // ════════════════════════════════════════════════════════════
 
 interface SavingsProduct {
   id: string;
   product_code: string;
   product_name: string;
+  product_type: string;
   description: string;
   interest_rate: number;
-  interest_type: string;
-  min_term_days: number;
-  is_locked: boolean;
-  min_opening_amount?: number;
+  interest_method: string;
+  interest_cadence: string;
+  minimum_balance: number;
+  minimum_deposit: number;
+  withdrawal_allowed: boolean;
+  lock_period_days: number;
+  early_withdrawal_penalty_rate: number;
+  early_withdrawal_allowed: boolean;
+  term_days: number | null;
+  is_active: boolean;
+  is_featured: boolean;
 }
 
 interface SavingsAccount {
   id: string;
   status: string;
-  current_balance: number;
+  current_balance?: number;
   target_amount?: number;
-  maturity_date?: string;
-  product: { product_name: string; interest_rate: number };
+  maturity_date?: string | null;
+  opened_at?: string | null;
+  created_at: string;
+  product?: {
+    product_name: string;
+    product_code: string;
+    product_type: string;
+    interest_rate: number;
+    interest_method: string;
+    term_days: number | null;
+  };
 }
 
 const fmtNGN = (v: number) => `₦${(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
+const fmtRate = (rate: number) => rate.toFixed(1).replace(/\.0$/, "");
 
 export default function SavingsPage() {
   const [activeTab, setActiveTab] = useState<"accounts" | "products">("accounts");
   const [openProduct, setOpenProduct] = useState<SavingsProduct | null>(null);
+  const [successAccountId, setSuccessAccountId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: accountsData, isLoading: acctsLoading } = useQuery<{ accounts: SavingsAccount[] }>({
@@ -74,32 +93,27 @@ export default function SavingsPage() {
       if (!res.ok) throw new Error(result.error || "Failed to open account");
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
-      setOpenProduct(null);
+      setSuccessAccountId(data.account?.id || null);
     },
   });
+
+  const hasActiveFlexible = accounts.some(a => a.product?.product_type === 'flexible' && a.status === 'active');
 
   return (
     <div className="space-y-4">
       <h1 className="font-display text-[22px] font-medium text-ink">Savings</h1>
 
-      {/* ─── Goal card with progress ring ─── */}
-      {accounts.length > 0 && activeTab === "accounts" && (
-        <GoalCard account={accounts[0]} />
-      )}
-
-      {/* ─── Tabs ─── */}
       <div className="flex gap-1 bg-parchment rounded-xl p-1">
         <TabButton active={activeTab === "accounts"} onClick={() => setActiveTab("accounts")}>
-          My Accounts
+          My Accounts {accounts.length > 0 && `(${accounts.length})`}
         </TabButton>
         <TabButton active={activeTab === "products"} onClick={() => setActiveTab("products")}>
           Browse Products
         </TabButton>
       </div>
 
-      {/* ─── Accounts tab ─── */}
       {activeTab === "accounts" && (
         <>
           {acctsLoading ? (
@@ -125,7 +139,6 @@ export default function SavingsPage() {
         </>
       )}
 
-      {/* ─── Products tab ─── */}
       {activeTab === "products" && (
         <>
           {prodsLoading ? (
@@ -135,24 +148,39 @@ export default function SavingsPage() {
               <p className="text-sm text-ink-soft">No products available</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} onOpen={() => setOpenProduct(product)} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  hasActiveFlexible={hasActiveFlexible}
+                  onOpen={() => {
+                    setSuccessAccountId(null);
+                    setOpenProduct(product);
+                  }}
+                />
               ))}
             </div>
           )}
         </>
       )}
 
-      {/* ─── Account Creation Modal ─── */}
       {openProduct && (
         <CreateAccountModal
           product={openProduct}
-          onClose={() => setOpenProduct(null)}
+          onClose={() => {
+            setOpenProduct(null);
+            setSuccessAccountId(null);
+          }}
           onCreate={(data) => createMutation.mutate(data)}
           isLoading={createMutation.isPending}
           error={createMutation.error?.message}
-          isSuccess={createMutation.isSuccess}
+          isSuccess={createMutation.isSuccess && !!successAccountId}
+          onViewAccount={() => {
+            setOpenProduct(null);
+            setSuccessAccountId(null);
+            setActiveTab("accounts");
+          }}
         />
       )}
     </div>
@@ -161,7 +189,7 @@ export default function SavingsPage() {
 
 // ─── Create Account Modal ───────────────────────────────────
 function CreateAccountModal({
-  product, onClose, onCreate, isLoading, error, isSuccess,
+  product, onClose, onCreate, isLoading, error, isSuccess, onViewAccount,
 }: {
   product: SavingsProduct;
   onClose: () => void;
@@ -169,20 +197,20 @@ function CreateAccountModal({
   isLoading: boolean;
   error?: string;
   isSuccess: boolean;
+  onViewAccount: () => void;
 }) {
   const [targetAmount, setTargetAmount] = useState("");
   const [initialDeposit, setInitialDeposit] = useState("");
-  const fmtRate = (rate: number) => rate.toFixed(1).replace(/\.0$/, "");
-  const minOpening = product.min_opening_amount || (product.is_locked ? 5000 : 1000);
+  const isFixed = product.product_type === 'fixed_deposit';
+  const minOpening = product.minimum_deposit || (isFixed ? 5000 : 1000);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-indigo-deep/40 backdrop-blur-sm p-4">
       <div className="bg-paper rounded-2xl border border-line w-full max-w-md overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-line">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-loam-light flex items-center justify-center">
-              {product.is_locked
+              {isFixed
                 ? <Lock className="h-5 w-5 text-indigo" strokeWidth={1.8} />
                 : <Clock className="h-5 w-5 text-indigo" strokeWidth={1.8} />}
             </div>
@@ -191,45 +219,53 @@ function CreateAccountModal({
               <p className="text-[12px] text-ink-soft">{fmtRate(product.interest_rate)}% p.a.</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-parchment transition">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-parchment transition" aria-label="Close">
             <X className="w-5 h-5 text-ink-soft" />
           </button>
         </div>
 
-        {/* Body */}
         {isSuccess ? (
           <div className="p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-loam-light flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-loam" />
             </div>
             <h3 className="font-display font-semibold text-[18px] text-ink mb-2">Account opened!</h3>
-            <p className="text-[14px] text-ink-soft mb-6">Your {product.product_name} account is now active.</p>
-            <button onClick={onClose} className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px]">
+            <p className="text-[14px] text-ink-soft mb-6">
+              Your {product.product_name} is now active. You can start depositing right away.
+            </p>
+            <button
+              onClick={onViewAccount}
+              className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition"
+            >
               View my accounts
             </button>
           </div>
         ) : (
           <div className="p-5 space-y-4">
-            {/* Product details */}
-            <div className="bg-parchment rounded-xl p-3.5">
-              <div className="flex justify-between text-[13px] mb-1">
+            <div className="bg-parchment rounded-xl p-3.5 space-y-1.5">
+              <div className="flex justify-between text-[13px]">
                 <span className="text-ink-soft">Interest rate</span>
                 <span className="font-mono text-ink">{fmtRate(product.interest_rate)}% p.a.</span>
               </div>
-              <div className="flex justify-between text-[13px] mb-1">
-                <span className="text-ink-soft">Type</span>
-                <span className="text-ink">{product.interest_type === "compound" ? "Compound" : "Flat"}</span>
+              <div className="flex justify-between text-[13px]">
+                <span className="text-ink-soft">Interest type</span>
+                <span className="text-ink">{product.interest_method === "compound" ? "Compound" : "Flat"}</span>
               </div>
-              {product.is_locked && (
+              {isFixed && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-ink-soft">Lock period</span>
-                  <span className="text-ink">{product.min_term_days} days</span>
+                  <span className="text-ink">{product.lock_period_days} days</span>
+                </div>
+              )}
+              {isFixed && product.early_withdrawal_penalty_rate > 0 && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-ink-soft">Early exit penalty</span>
+                  <span className="text-clay">{product.early_withdrawal_penalty_rate}% of balance</span>
                 </div>
               )}
             </div>
 
-            {/* Target amount */}
-            {product.is_locked && (
+            {isFixed && (
               <div>
                 <label className="text-[13px] text-ink-soft font-medium block mb-1.5">Savings target (optional)</label>
                 <input
@@ -242,7 +278,6 @@ function CreateAccountModal({
               </div>
             )}
 
-            {/* Initial deposit */}
             <div>
               <label className="text-[13px] text-ink-soft font-medium block mb-1.5">
                 Initial deposit (min {fmtNGN(minOpening)})
@@ -257,7 +292,6 @@ function CreateAccountModal({
               <p className="text-[12px] text-ink-soft mt-1.5">Funds will be transferred from your wallet balance.</p>
             </div>
 
-            {/* Error */}
             {error && (
               <div className="bg-clay-light rounded-xl p-3 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-clay mt-0.5 flex-shrink-0" />
@@ -265,7 +299,6 @@ function CreateAccountModal({
               </div>
             )}
 
-            {/* Submit */}
             <button
               onClick={() => onCreate({
                 product_id: product.id,
@@ -281,7 +314,7 @@ function CreateAccountModal({
                   Opening account…
                 </>
               ) : (
-                "Open account"
+                `Open ${product.product_name}`
               )}
             </button>
           </div>
@@ -291,47 +324,68 @@ function CreateAccountModal({
   );
 }
 
-// ─── Goal card with concentric progress ring ───
-function GoalCard({ account }: { account: SavingsAccount }) {
-  const balance = account.current_balance || 0;
-  const target = account.target_amount || 200000;
-  const progress = Math.min(Math.round((balance / target) * 100), 100);
-
-  return (
-    <div className="border border-line rounded-2xl p-4 flex items-center gap-3.5 bg-paper">
-      <ProgressRing progress={progress} size={88} strokeWidth={8} label={`${progress}%`} />
-      <div>
-        <p className="text-[15px] font-medium text-ink">{account.product?.product_name || "Savings goal"}</p>
-        <p className="text-xs text-ink-soft mt-1">
-          {account.maturity_date
-            ? `Matures ${new Date(account.maturity_date).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}`
-            : "Flexible withdrawal"}
-        </p>
-        <p className="font-mono text-[14px] mt-1.5">
-          <strong className="text-ink">{fmtNGN(balance)}</strong>{" "}
-          <span className="text-ink-soft">of {fmtNGN(target)}</span>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Account card ───
+// ─── Account card — shows specific details per account type ───
 function AccountCard({ account }: { account: SavingsAccount }) {
-  const isLocked = account.status === "locked";
+  const productType = account.product?.product_type || 'flexible';
+  const productName = account.product?.product_name || "Savings";
+  const rate = account.product?.interest_rate || 0;
+  const balance = account.current_balance || 0;
+  const isLocked = productType === 'fixed_deposit' && account.status === 'active';
+  const isMatured = account.status === 'matured';
+  const isPending = account.status === 'pending';
+
+  const daysRemaining = account.maturity_date
+    ? Math.max(0, Math.ceil((new Date(account.maturity_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <div className="border border-line rounded-2xl p-4 bg-paper">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-loam-light flex items-center justify-center flex-shrink-0">
-          {isLocked ? <Lock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} /> : <Clock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />}
+      <div className="flex items-start gap-3">
+        <div className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          isLocked ? 'bg-loam-light' : isMatured ? 'bg-ochre' : 'bg-parchment'
+        }`}>
+          {isLocked ? (
+            <Lock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />
+          ) : isMatured ? (
+            <Check className="h-[19px] w-[19px] text-indigo-deep" strokeWidth={1.8} />
+          ) : (
+            <Clock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />
+          )}
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-ink">{account.product?.product_name || "Savings"}</p>
-          <p className="font-mono text-[15px] text-ink mt-0.5">{fmtNGN(account.current_balance)}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-ink truncate">{productName}</p>
+            <StatusBadge status={account.status} />
+          </div>
+          <p className="font-mono text-[20px] font-semibold text-ink mt-1.5">{fmtNGN(balance)}</p>
+
+          {isLocked && daysRemaining !== null && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Calendar className="w-3.5 h-3.5 text-ink-soft" />
+              <p className="text-[12px] text-ink-soft">
+                Matures in {daysRemaining} days · {new Date(account.maturity_date!).toLocaleDateString("en-NG", { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            </div>
+          )}
+
+          {isMatured && account.maturity_date && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Check className="w-3.5 h-3.5 text-loam" />
+              <p className="text-[12px] text-loam">Matured — withdraw anytime</p>
+            </div>
+          )}
+
+          {productType === 'flexible' && account.status === 'active' && (
+            <p className="text-[12px] text-ink-soft mt-1.5">Withdraw anytime · {fmtRate(rate)}% p.a. compound</p>
+          )}
+
+          {isPending && (
+            <p className="text-[12px] text-ink-soft mt-1.5">Make your first deposit to activate</p>
+          )}
         </div>
-        <div className="text-right">
-          <p className="font-mono text-[13px] text-loam">{account.product?.interest_rate || 0}%</p>
+
+        <div className="text-right flex-shrink-0">
+          <p className="font-mono text-[13px] text-loam">{fmtRate(rate)}%</p>
           <p className="text-[12px] text-ink-soft">p.a.</p>
         </div>
       </div>
@@ -339,40 +393,154 @@ function AccountCard({ account }: { account: SavingsAccount }) {
   );
 }
 
-// ─── Product card ───
-function ProductCard({ product, onOpen }: { product: SavingsProduct; onOpen: () => void }) {
-  const fmtRate = (rate: number) => rate.toFixed(1).replace(/\.0$/, "");
-
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    active: 'bg-loam-light text-loam',
+    pending: 'bg-parchment text-ink-soft',
+    matured: 'bg-ochre text-indigo-deep',
+    closed: 'bg-clay-light text-clay',
+    dormant: 'bg-clay-light text-clay',
+  };
+  const labels: Record<string, string> = {
+    active: 'Active',
+    pending: 'Pending',
+    matured: 'Matured',
+    closed: 'Closed',
+    dormant: 'Dormant',
+  };
   return (
-    <div className="border border-line rounded-2xl p-4 bg-paper flex gap-3">
-      <div className="h-[42px] w-[42px] rounded-xl bg-loam-light flex items-center justify-center flex-shrink-0">
-        {product.is_locked
-          ? <Lock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />
-          : <Clock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />}
-      </div>
-      <div className="flex-1">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm font-medium text-ink">{product.product_name}</p>
-            <p className="text-[13px] text-ink-soft mt-0.5">{product.description || "Save and earn interest"}</p>
+    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${styles[status] || styles.pending}`}>
+      {labels[status] || status}
+    </span>
+  );
+}
+
+// ─── Product card — self-explanatory ───
+function ProductCard({ product, hasActiveFlexible, onOpen }: {
+  product: SavingsProduct;
+  hasActiveFlexible: boolean;
+  onOpen: () => void;
+}) {
+  const isCooperative = product.product_type === 'esusu' || product.product_type === 'cooperative' || product.product_type === 'group';
+  const isFlexible = product.product_type === 'flexible';
+  const isFixed = product.product_type === 'fixed_deposit';
+
+  if (isCooperative) {
+    return (
+      <div className="border border-line rounded-2xl p-5 bg-paper opacity-75">
+        <div className="flex items-start gap-3">
+          <div className="h-11 w-11 rounded-xl bg-parchment flex items-center justify-center flex-shrink-0">
+            <PiggyBank className="h-5 w-5 text-ink-soft" strokeWidth={1.5} />
           </div>
-          <div className="text-right">
-            <p className="font-mono text-[13px] text-loam">{fmtRate(product.interest_rate)}%</p>
-            <p className="text-[12px] text-ink-soft">p.a.</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[15px] font-semibold text-ink">{product.product_name}</p>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-parchment text-ink-soft border border-line">
+                Coming Soon
+              </span>
+            </div>
+            <p className="text-[13px] text-ink-soft mt-1">{product.description || 'Group savings with cooperative governance'}</p>
+            <div className="mt-3 flex items-center gap-2 text-[12px] text-ink-soft">
+              <Clock className="w-3.5 h-3.5" />
+              <span>This feature is being built. Check back soon.</span>
+            </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-line rounded-2xl p-5 bg-paper">
+      <div className="flex items-start gap-3 mb-4">
+        <div className={`h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          isFixed ? 'bg-loam-light' : 'bg-ochre'
+        }`}>
+          {isFixed ? (
+            <Lock className="h-5 w-5 text-indigo" strokeWidth={1.8} />
+          ) : (
+            <Wallet className="h-5 w-5 text-indigo-deep" strokeWidth={1.8} />
+          )}
+        </div>
+        <div className="flex-1">
+          <p className="text-[15px] font-semibold text-ink">{product.product_name}</p>
+          <p className="text-[13px] text-ink-soft mt-0.5">
+            {isFlexible ? 'Perfect for everyday saving' : 'Lock your money for higher returns'}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-[16px] text-loam font-semibold">{fmtRate(product.interest_rate)}%</p>
+          <p className="text-[11px] text-ink-soft">per annum</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-[13px] mb-4">
+        {isFlexible ? (
+          <>
+            <Detail label="Withdraw" value="Anytime" />
+            <Detail label="Interest" value={`${fmtRate(product.interest_rate)}% compound daily`} />
+            <Detail label="Minimum" value={fmtNGN(product.minimum_deposit || 0)} />
+            <Detail label="Good for" value="Emergency fund" />
+          </>
+        ) : (
+          <>
+            <Detail label="Lock period" value={`${product.lock_period_days} days`} />
+            <Detail label="Interest" value={`${fmtRate(product.interest_rate)}% ${product.interest_method}`} />
+            <Detail label="Minimum" value={fmtNGN(product.minimum_deposit || 5000)} />
+            <Detail label="Early exit" value={`${product.early_withdrawal_penalty_rate}% penalty`} />
+          </>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {isFlexible ? (
+          <>
+            <Tag>Emergency fund</Tag>
+            <Tag>Farm inputs</Tag>
+            <Tag>Business cash reserve</Tag>
+          </>
+        ) : (
+          <>
+            <Tag>High yield</Tag>
+            <Tag>Harvest cycle</Tag>
+            <Tag>Locked returns</Tag>
+          </>
+        )}
+      </div>
+
+      {hasActiveFlexible && isFlexible ? (
+        <div className="w-full py-3 bg-parchment text-ink-soft rounded-xl font-medium text-[14px] text-center">
+          ✓ You already have a Flexible Savings account
+        </div>
+      ) : (
         <button
           onClick={onOpen}
-          className="inline-block mt-3 text-xs px-3.5 py-1.5 rounded-lg bg-indigo text-white hover:bg-indigo-deep transition"
+          className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition"
         >
-          Open account
+          Open {product.product_name}
         </button>
-      </div>
+      )}
     </div>
   );
 }
 
-// ─── Tab button ───
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-ink-soft">{label}</p>
+      <p className="text-ink font-medium mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[11px] px-2.5 py-1 rounded-full bg-parchment text-ink-soft border border-line">
+      {children}
+    </span>
+  );
+}
+
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button

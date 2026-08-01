@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Profile } from "@/lib/types";
 import { initials } from "@/lib/format";
-import { Bell, Menu, ChevronDown, User, Shield, LogOut, HelpCircle, Settings } from "lucide-react";
+import { Bell, Menu, ChevronDown, User, Shield, LogOut, HelpCircle, Settings, Bell as BellIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface TopbarProps {
@@ -142,6 +142,7 @@ export default function Topbar({
                 <DropdownItem href="/profile" icon={User} label="Profile" onClick={() => setMenuOpen(false)} />
                 <DropdownItem href="/settings/security" icon={Shield} label="Security" onClick={() => setMenuOpen(false)} />
                 <DropdownItem href="/settings" icon={Settings} label="Settings" onClick={() => setMenuOpen(false)} />
+                <DropdownItem href="/notifications" icon={BellIcon} label="Notifications" onClick={() => setMenuOpen(false)} />
                 <DropdownItem href="/help" icon={HelpCircle} label="Help & Support" onClick={() => setMenuOpen(false)} />
                 <div className="my-1 h-px bg-line" />
                 <button
