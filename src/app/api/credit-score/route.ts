@@ -43,6 +43,7 @@ export async function GET() {
 
     return NextResponse.json({
       has_score: true,
+      credit_score: riskProfile.credit_score,
       score: riskProfile.credit_score,
       risk_band: riskProfile.risk_band,
       factors: riskProfile.factors,

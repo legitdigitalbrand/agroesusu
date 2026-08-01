@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   LoadingState, Button,
@@ -132,7 +133,7 @@ export default function SavingsPage() {
           ) : (
             <div className="space-y-3">
               {accounts.map((acct) => (
-                <AccountCard key={acct.id} account={acct} />
+                <Link href={`/savings/${acct.id}`}><AccountCard account={acct} /></Link>
               ))}
             </div>
           )}
