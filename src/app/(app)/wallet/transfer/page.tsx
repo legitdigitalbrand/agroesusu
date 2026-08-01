@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, PiggyBank, Landmark } from "lucide-react";
 import Link from "next/link";
 
-// Transfer page — placeholder until P2P transfer API is wired
+// Transfer page — internal money movement within Agriqcap
 export default function TransferPage() {
   return (
     <div className="max-w-md mx-auto space-y-5">
@@ -18,23 +18,25 @@ export default function TransferPage() {
         <div className="w-14 h-14 rounded-full bg-parchment flex items-center justify-center mx-auto mb-4">
           <Send className="w-7 h-7 text-ink-soft" strokeWidth={1.5} />
         </div>
-        <p className="font-display font-semibold text-[16px] text-ink mb-2">Transfers coming soon</p>
+        <p className="font-display font-semibold text-[16px] text-ink mb-2">Move money from your wallet</p>
         <p className="text-[13px] text-ink-soft leading-relaxed mb-4">
-          Wallet-to-wallet transfers will be available shortly. You can fund your savings or
-          pay into cooperatives from your wallet right now.
+          Use your wallet balance to fund your savings accounts or check your loan eligibility.
+          Direct wallet-to-wallet transfers are coming soon.
         </p>
         <div className="flex gap-3 justify-center">
           <Link
             href="/savings"
-            className="bg-indigo text-white font-semibold text-[13px] px-4 py-2.5 rounded-xl hover:opacity-90 transition"
+            className="flex items-center gap-2 bg-loam text-white font-semibold text-[13px] px-4 py-2.5 rounded-xl hover:opacity-90 transition"
           >
+            <PiggyBank className="w-4 h-4" />
             Fund savings
           </Link>
           <Link
-            href="/cooperative"
-            className="bg-parchment text-ink font-medium text-[13px] px-4 py-2.5 rounded-xl border border-line hover:bg-track transition"
+            href="/loans"
+            className="flex items-center gap-2 bg-indigo-deep text-white font-medium text-[13px] px-4 py-2.5 rounded-xl hover:opacity-90 transition"
           >
-            Pay co-op
+            <Landmark className="w-4 h-4" />
+            Check loans
           </Link>
         </div>
       </div>

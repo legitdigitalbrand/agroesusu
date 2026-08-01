@@ -47,22 +47,82 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [drawerOpen]);
 
   // Client-side guard: only staff users may access admin pages
+  const [bootstrapping, setBootstrapping] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+
   useEffect(() => {
     if (isLoading) return;
     if (error || !me) {
       router.replace("/login?redirect=" + encodeURIComponent(pathname || "/dev"));
       return;
     }
-    if (me.type !== "staff") {
-      router.replace("/dashboard");
-    }
   }, [isLoading, error, me, router, pathname]);
 
+  const handleBootstrap = async () => {
+    setBootstrapping(true);
+    setBootstrapError(null);
+    try {
+      const res = await fetch("/api/dev/bootstrap", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create admin");
+      // Reload to pick up new staff status
+      window.location.reload();
+    } catch (err) {
+      setBootstrapError(err instanceof Error ? err.message : "Failed to create admin");
+      setBootstrapping(false);
+    }
+  };
+
   // Show loading state while checking auth
-  if (isLoading || !me || me.type !== "staff") {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-paper flex items-center justify-center">
         <LoadingState message="Verifying admin access…" />
+      </div>
+    );
+  }
+
+  // Not authenticated
+  if (!me) {
+    return (
+      <div className="min-h-screen bg-paper flex items-center justify-center">
+        <LoadingState message="Redirecting to login…" />
+      </div>
+    );
+  }
+
+  // Authenticated but not staff — show bootstrap option (DEV ONLY)
+  if (me.type !== "staff") {
+    return (
+      <div className="min-h-screen bg-paper flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-paper border border-line rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-indigo flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="font-display font-semibold text-[20px] text-ink mb-2">Admin Access Required</h2>
+          <p className="text-[14px] text-ink-soft mb-6">
+            You are signed in as <span className="font-medium text-ink">{me.profile?.full_name || me.profile?.email}</span> but do not have staff access.
+            In development mode, you can promote yourself to Super Admin to access the admin console.
+          </p>
+          {bootstrapError && (
+            <div className="bg-clay-light rounded-xl p-3 mb-4 text-left">
+              <p className="text-[13px] text-clay">{bootstrapError}</p>
+            </div>
+          )}
+          <button
+            onClick={handleBootstrap}
+            disabled={bootstrapping}
+            className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition disabled:opacity-50"
+          >
+            {bootstrapping ? "Creating admin access…" : "Become Super Admin (Dev Only)"}
+          </button>
+          <Link
+            href="/dashboard"
+            className="block mt-3 text-[13px] text-ink-soft hover:text-ink transition"
+          >
+            Back to dashboard
+          </Link>
+        </div>
       </div>
     );
   }

@@ -6,7 +6,7 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/yield";
 import { formatRelativeTime } from "@/lib/format";
 import {
   ArrowUpRight, ArrowDownLeft, Plus, Send, RefreshCw,
-  Copy, Eye, EyeOff, Wallet,
+  Copy, Eye, EyeOff, Wallet, Info,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -181,6 +181,21 @@ export default function WalletPage() {
               <ArrowUpRight className="w-4 h-4 text-white" strokeWidth={2} />
               <span className="text-[13px] font-medium text-white">Withdraw</span>
             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CONTEXTUAL HELP ── */}
+      <div className="bg-parchment rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-ink-soft flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] font-medium text-ink mb-1">What is the Agriqcap Wallet?</p>
+            <p className="text-[13px] text-ink-soft">
+              Your wallet is your main account on Agriqcap. When you fund it, money appears as your available balance.
+              Use it to deposit into savings, withdraw to your bank, or receive payments.
+              All money in your wallet is held securely with our banking partner.
+            </p>
           </div>
         </div>
       </div>
