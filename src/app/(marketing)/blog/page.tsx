@@ -51,7 +51,7 @@ const posts = [
     author: 'Babajide Bello',
     authorRole: 'Head of Engineering',
     initials: 'BB',
-    bg: 'bg-purple-50 text-purple-800',
+    bg: 'bg-parchment text-indigo',
   },
   {
     id: 'rice-market-updates-2026',
@@ -63,7 +63,7 @@ const posts = [
     author: 'Kolawole Ibrahim',
     authorRole: 'Market Analyst',
     initials: 'KI',
-    bg: 'bg-orange-50 text-orange-800',
+    bg: 'bg-loam-light text-loam',
   },
   {
     id: 'success-ogun-rice-coop',
@@ -75,7 +75,7 @@ const posts = [
     author: 'Agriqcap Outreach',
     authorRole: 'Field Success Team',
     initials: 'AE',
-    bg: 'bg-pink-50 text-pink-800',
+    bg: 'bg-ochre-light text-indigo-deep',
   },
 ];
 

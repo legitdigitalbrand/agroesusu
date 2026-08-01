@@ -45,7 +45,7 @@ const loanTypes = [
     amountRange: '₦1,000,000 – ₦10,000,000',
     term: '30 to 90 Days',
     icon: ShoppingBag,
-    iconBg: 'bg-purple-100 text-purple-800',
+    iconBg: 'bg-parchment text-indigo',
     description: 'Tailored for grain aggregators, food merchants, processors, and agro-exporters. Pay farmers instantly at harvest, sort transport logistics, and sell to corporate off-takers.',
     features: [
       'Very short-term, high-turnover financing',

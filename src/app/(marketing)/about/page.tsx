@@ -52,7 +52,7 @@ const team = [
     role: 'Head of Agricultural Extension',
     bio: 'Agronomist and rural outreach manager. Oversees our network of regional farm validation agents and extension tip broadcasting systems.',
     initials: 'AD',
-    color: 'bg-purple-100 text-purple-800',
+    color: 'bg-parchment text-indigo',
   },
 ];
 
