@@ -11,7 +11,6 @@ const navLinks = [
   { name: "Features", href: "/#features" },
   { name: "How it works", href: "/#how" },
   { name: "Savings & Loans", href: "/#savings" },
-  { name: "Cooperatives", href: "/#cooperatives" },
   { name: "Contact", href: "/#contact" },
 ];
 

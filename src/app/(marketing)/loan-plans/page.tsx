@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Sprout, Users, Tractor, ShoppingBag, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Sprout, Tractor, ShoppingBag, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
 
 const loanTypes = [
   {
@@ -18,23 +18,6 @@ const loanTypes = [
       'Direct disbursement to verified agro-dealers or farm wallets',
       'No collateral required for verified Agriqcap users',
       'Flexible repayment matching harvest calendars',
-    ],
-  },
-  {
-    id: 'cooperative',
-    name: 'Cooperative Joint Loan',
-    tagline: 'Leverage the collective power of your cooperative society.',
-    rate: '1.2% monthly',
-    amountRange: '₦500,000 – ₦5,000,000',
-    term: '3 to 12 Months',
-    icon: Users,
-    iconBg: 'bg-ochre-light text-indigo',
-    description: 'Specialized group credit where members co-guarantee each other. This collective backing allows cooperatives to secure larger funding volumes with lower interest rates.',
-    features: [
-      'Extremely low interest rate',
-      'Shared group accountability limits individual defaults',
-      'Funds can be distributed or spent on collective machines',
-      'Mentorship & training included from Agriqcap extension officers',
     ],
   },
   {
@@ -81,8 +64,8 @@ const steps = [
   },
   {
     num: '2',
-    title: 'Join a Circle or Cooperative',
-    desc: 'Individual farmers can join existing Agriqcap groups or verify their farm status to qualify for individual input loans.',
+    title: 'Verify Your Profile',
+    desc: 'Complete your KYC verification and build your savings to unlock loan eligibility.',
   },
   {
     num: '3',
@@ -92,7 +75,7 @@ const steps = [
   {
     num: '4',
     title: 'Farm Validation',
-    desc: 'Our digital agent or local cooperative head verifies your farm plot using satellite mapping or physical visitation.',
+    desc: 'Our team verifies your profile and savings history to determine your eligible loan amount.',
   },
   {
     num: '5',

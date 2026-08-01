@@ -14,7 +14,7 @@ export const BRAND = {
   shortName: "Agriqcap",
   tagline: "Save. Borrow. Grow Together.",
   description:
-    "Agriqcap is an enterprise digital cooperative finance platform providing digital wallets, savings, loans, investments, and cooperative banking for Nigerian farmers, cooperatives, and agribusinesses.",
+    "Agriqcap is a digital finance platform providing wallets, savings, and loans for Nigerian farmers and small businesses.",
   supportEmail: "support@agriqcap.com",
   infoEmail: "info@agriqcap.com",
   careersEmail: "careers@agriqcap.com",
@@ -25,10 +25,10 @@ export const BRAND = {
   // Social / Open Graph
   ogTitle: "Agriqcap — Save. Borrow. Grow Together.",
   ogDescription:
-    "Digital wallets, savings, loans, investments, and cooperative banking for Nigerian farmers and agribusinesses.",
+    "Digital wallets, savings, and loans for Nigerian farmers and small businesses.",
   // PWA
   pwaName: "Agriqcap",
   pwaShortName: "Agriqcap",
   pwaDescription:
-    "Save. Borrow. Grow Together. Digital cooperative finance for Nigerian agriculture.",
+    "Save. Borrow. Grow Together. Digital finance for Nigerian agribusiness.",
 } as const;

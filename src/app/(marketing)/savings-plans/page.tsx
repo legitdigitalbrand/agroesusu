@@ -1,25 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
-import { Sprout, Users, Lock, Wallet, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Sprout, Lock, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 const plans = [
-  {
-    id: 'cooperative',
-    name: 'Cooperative "Esusu"',
-    tagline: 'Save with your farming association or cooperative group.',
-    interest: '12% per annum',
-    payout: 'Rotational or collective',
-    icon: Users,
-    color: 'bg-loam-light text-indigo border-line',
-    iconColor: 'bg-loam-light text-loam',
-    description: 'Perfect for local farm groups, cluster farmers, and market unions. Save together, track each member\'s ledger online, and easily access joint lending options with collective accountability.',
-    features: [
-      'Digital ledger for all group members',
-      'Transparency in rotational payouts (Ajo/Esusu)',
-      'No paperwork or monthly group admin fees',
-      'Unlocks higher collective borrowing capacity',
-    ],
-  },
+  
   {
     id: 'harvest-lock',
     name: 'Harvest Lock (Fixed Deposit)',
@@ -54,23 +38,7 @@ const plans = [
       'Add family members or farm hands to co-save',
     ],
   },
-  {
-    id: 'group-wallet',
-    name: 'Esusu Group Wallet',
-    tagline: 'Flexible deposit accounts for agribusiness cooperatives.',
-    interest: '8% per annum',
-    payout: 'Immediate access',
-    icon: Wallet,
-    color: 'bg-purple-50 text-purple-800 border-purple-100',
-    iconColor: 'bg-purple-100 text-purple-700',
-    description: 'An open savings wallet for small agri-cooperatives, local unions, and trade groups. Withdraw funds at any point for emergency input needs, member welfare issues, or logistics payments.',
-    features: [
-      'Instant penalty-free withdrawals',
-      'Unlimited deposits via virtual account number',
-      'Monthly interests credited automatically',
-      'Detailed downloadable statement of account',
-    ],
-  },
+  
 ];
 
 const safetyGuarantees = [
@@ -101,7 +69,7 @@ export default function SavingsPlansPage() {
             Agricultural Savings Plans Built to Multiply Your Wealth
           </h1>
           <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
-            Choose from cooperative rotational circles, target-based planners, or locked high-yield deposits. 
+            Choose from flexible savings, target-based planners, or locked high-yield deposits. 
             Automated, secure, and aligned with the Nigerian farming season.
           </p>
         </div>
