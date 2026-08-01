@@ -19,11 +19,11 @@ interface LoanProduct {
   product_code: string;
   product_name: string;
   interest_rate: number;
-  interest_type: string;
+  interest_method: string;
   min_amount: number;
   max_amount: number;
-  term_months: number;
-  min_kyc_level: number;
+  default_term_months: number;
+  min_kyc_level: string;
 }
 
 interface Loan {
@@ -194,9 +194,9 @@ function EligibilityCard({ product }: { product: LoanProduct }) {
   const maxBorrow = result?.max_eligible_amount || result?.approved_amount || product.max_amount || 375000;
   const rating = result ? scoreRating(result.credit_score) : null;
 
-  const monthlyPayment = product.interest_type === "flat"
-    ? Math.round((amount + (amount * product.interest_rate / 100 * product.term_months / 12)) / product.term_months)
-    : Math.round(amount / product.term_months * (1 + product.interest_rate / 100 / 12));
+  const monthlyPayment = product.interest_method === "flat"
+    ? Math.round((amount + (amount * product.interest_rate / 100 * product.default_term_months / 12)) / product.default_term_months)
+    : Math.round(amount / product.default_term_months * (1 + product.interest_rate / 100 / 12));
 
   return (
     <div className="border border-line rounded-2xl p-4 bg-paper">
@@ -208,7 +208,7 @@ function EligibilityCard({ product }: { product: LoanProduct }) {
         <div className="flex-1">
           <p className="font-medium text-[15px] text-ink">{product.product_name}</p>
           <p className="text-[12px] text-ink-soft">
-            {product.interest_rate}% {product.interest_type === "flat" ? "flat" : "reducing"} · {product.term_months} months
+            {product.interest_rate}% {product.interest_method === "flat" ? "flat" : "reducing"} · {product.default_term_months} months
           </p>
         </div>
         <div className="text-right">
@@ -277,8 +277,8 @@ function EligibilityCard({ product }: { product: LoanProduct }) {
             <p className="text-[12px] text-white/70 mb-1">You can borrow up to</p>
             <p className="font-mono text-[26px] font-medium mb-3">{fmtNGN(maxBorrow)}</p>
             <div className="space-y-0">
-              <FactorRow label="Interest rate" value={`${product.interest_rate}% ${product.interest_type === "flat" ? "flat" : "reducing"}`} />
-              <FactorRow label="Term" value={`${product.term_months} months`} />
+              <FactorRow label="Interest rate" value={`${product.interest_rate}% ${product.interest_method === "flat" ? "flat" : "reducing"}`} />
+              <FactorRow label="Term" value={`${product.default_term_months} months`} />
               {result.savings_balance > 0 && (
                 <FactorRow label="Savings balance" value={fmtNGN(result.savings_balance)} />
               )}

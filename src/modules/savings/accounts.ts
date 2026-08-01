@@ -136,7 +136,12 @@ export async function getAccount(accountId: string): Promise<AccountWithProduct 
         product_type,
         interest_rate,
         interest_method,
-        term_days
+        interest_cadence,
+        term_days,
+        lock_period_days,
+        early_withdrawal_penalty_rate,
+        minimum_deposit,
+        withdrawal_allowed
       )
     `)
     .eq('id', accountId)
@@ -162,7 +167,12 @@ export async function listCustomerAccounts(customerId: string): Promise<AccountW
         product_type,
         interest_rate,
         interest_method,
-        term_days
+        interest_cadence,
+        term_days,
+        lock_period_days,
+        early_withdrawal_penalty_rate,
+        minimum_deposit,
+        withdrawal_allowed
       )
     `)
     .eq('customer_id', customerId)

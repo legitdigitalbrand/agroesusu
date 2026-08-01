@@ -20,7 +20,12 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!customer) {
-      return NextResponse.json({ error: 'Customer profile not found' }, { status: 404 });
+      // Customer record doesn't exist yet — this is an expected state for new users
+      // who haven't completed the bootstrap step. Return 200, not 404.
+      return NextResponse.json({
+        provisioned: false,
+        message: 'Your profile is being set up. Please complete your account setup to start funding your wallet.',
+      }, { status: 200 });
     }
 
     const serviceClient = createServiceClient();

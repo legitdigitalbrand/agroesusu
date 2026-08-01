@@ -14,10 +14,10 @@ interface LoanProduct {
   product_code: string;
   product_name: string;
   interest_rate: number;
-  interest_type: string;
+  interest_method: string;
   min_amount: number;
   max_amount: number;
-  term_months: number;
+  default_term_months: number;
 }
 
 function LoanApplyContent() {
@@ -45,7 +45,7 @@ function LoanApplyContent() {
       const res = await fetch("/api/loans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: productId, amount, term_months: product?.term_months }),
+        body: JSON.stringify({ product_id: productId, amount, term_months: product?.default_term_months }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to apply for loan");
@@ -95,11 +95,11 @@ function LoanApplyContent() {
     return <LoadingState message="Loading product details…" />;
   }
 
-  const monthlyPayment = product.interest_type === "flat"
-    ? Math.round((amount + (amount * product.interest_rate / 100 * product.term_months / 12)) / product.term_months)
-    : Math.round(amount / product.term_months * (1 + product.interest_rate / 100 / 12));
+  const monthlyPayment = product.interest_method === "flat"
+    ? Math.round((amount + (amount * product.interest_rate / 100 * product.default_term_months / 12)) / product.default_term_months)
+    : Math.round(amount / product.default_term_months * (1 + product.interest_rate / 100 / 12));
 
-  const totalRepayment = monthlyPayment * product.term_months;
+  const totalRepayment = monthlyPayment * product.default_term_months;
   const totalInterest = totalRepayment - amount;
 
   return (
@@ -118,7 +118,7 @@ function LoanApplyContent() {
           </div>
           <div>
             <p className="font-medium text-[15px] text-ink">{product.product_name}</p>
-            <p className="text-[12px] text-ink-soft">{product.interest_rate}% {product.interest_type === "flat" ? "flat" : "reducing balance"}</p>
+            <p className="text-[12px] text-ink-soft">{product.interest_rate}% {product.interest_method === "flat" ? "flat" : "reducing balance"}</p>
           </div>
         </div>
 
@@ -129,7 +129,7 @@ function LoanApplyContent() {
           </div>
           <div className="flex justify-between">
             <span className="text-ink-soft">Term</span>
-            <span className="text-ink">{product.term_months} months</span>
+            <span className="text-ink">{product.default_term_months} months</span>
           </div>
           <div className="flex justify-between pt-2 border-t border-line">
             <span className="text-ink-soft">Monthly repayment</span>

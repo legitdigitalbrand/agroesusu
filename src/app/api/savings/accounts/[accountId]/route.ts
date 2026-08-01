@@ -36,10 +36,14 @@ export async function GET(
     // Get balance from Ledger
     const balance = await getSavingsBalance(context.params.accountId);
 
+    // Map DB field names to frontend-expected field names
     return NextResponse.json({
       account: {
         ...account,
-        balance,
+        interest_earned: account.total_interest_earned || 0,
+        current_balance: balance,
+        available_balance: balance,
+        locked_balance: 0,
       },
     });
 

@@ -69,7 +69,8 @@ export default function SavingsAccountDetailPage() {
     queryFn: async () => {
       const res = await fetch(`/api/savings/accounts/${accountId}`);
       if (!res.ok) throw new Error("Failed to load account");
-      return res.json();
+      const data = await res.json();
+      return data.account || data;
     },
   });
 
@@ -193,7 +194,7 @@ export default function SavingsAccountDetailPage() {
         <h3 className="font-display font-semibold text-[15px] text-ink mb-3">Account Details</h3>
         <div className="space-y-2.5 text-[14px]">
           <DetailRow label="Account type" value={productName} />
-          <DetailRow label="Status" value={account.status.charAt(0).toUpperCase() + account.status.slice(1)} />
+          <DetailRow label="Status" value={(account.status || "pending").charAt(0).toUpperCase() + (account.status || "pending").slice(1)} />
           <DetailRow label="Interest rate" value={`${fmtRate(rate)}% p.a.`} />
           <DetailRow label="Interest method" value={product?.interest_method === 'compound' ? 'Compound' : 'Flat'} />
           <DetailRow label="Interest cadence" value={product?.interest_cadence || 'daily'} />

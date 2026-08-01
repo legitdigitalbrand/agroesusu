@@ -95,15 +95,32 @@ export async function GET() {
     } : null;
 
     // ─── Savings summary ───
+    // Note: savings_accounts table does NOT have current_balance — balance comes from Ledger.
+    // We use total_interest_earned (correct column name) and count accounts by status.
     const { data: savingsAccounts } = await serviceClient
       .from('savings_accounts')
-      .select('id, status, current_balance, interest_earned')
+      .select('id, status, total_interest_earned')
       .eq('customer_id', customer.id)
-      .in('status', ['active', 'locked']);
+      .in('status', ['active', 'matured', 'pending']);
+    
+    // Fetch actual balances from Ledger for each account
+    let totalSavingsBalance = 0;
+    if (savingsAccounts && savingsAccounts.length > 0) {
+      const { getSavingsBalance } = await import('@/modules/savings');
+      for (const acct of savingsAccounts) {
+        try {
+          const bal = await getSavingsBalance(acct.id);
+          totalSavingsBalance += typeof bal === 'number' ? bal : 0;
+        } catch {
+          // Skip if balance fetch fails
+        }
+      }
+    }
+    
     const savingsSummary = {
       count: savingsAccounts?.length || 0,
-      total_balance: (savingsAccounts || []).reduce((s, a) => s + Number(a.current_balance || 0), 0),
-      total_interest: (savingsAccounts || []).reduce((s, a) => s + Number(a.interest_earned || 0), 0),
+      total_balance: totalSavingsBalance,
+      total_interest: (savingsAccounts || []).reduce((s, a) => s + Number(a.total_interest_earned || 0), 0),
     };
 
     // ─── Loans summary ───

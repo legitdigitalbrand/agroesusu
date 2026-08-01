@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { openAccount, listCustomerAccounts, deposit } from '@/modules/savings';
+import { openAccount, listCustomerAccounts, deposit, getSavingsBalance } from '@/modules/savings';
 
 // POST /api/savings/accounts — open a new savings account
 export async function POST(request: NextRequest) {
@@ -122,7 +122,7 @@ export async function GET(_request: NextRequest) {
     if (!customer) {
       // Staff can list all or filter
       const { data: isStaff } = await supabase.rpc('is_staff');
-      if (!isStaff) return NextResponse.json({ error: 'Customer profile not found' }, { status: 404 });
+      if (!isStaff) return NextResponse.json({ accounts: [] });  // Return empty, not 404
       
       const serviceClient = createServiceClient();
       const { data: accounts } = await serviceClient
@@ -133,7 +133,32 @@ export async function GET(_request: NextRequest) {
     }
 
     const accounts = await listCustomerAccounts(customer.id);
-    return NextResponse.json({ accounts });
+
+    // Enrich each account with balance from Ledger and map field names
+    const enrichedAccounts = await Promise.all(
+      (accounts || []).map(async (acct) => {
+        try {
+          const balance = await getSavingsBalance(acct.id);
+          return {
+            ...acct,
+            interest_earned: acct.total_interest_earned || 0,
+            current_balance: balance,
+            available_balance: balance,
+            locked_balance: 0,
+          };
+        } catch {
+          return {
+            ...acct,
+            interest_earned: acct.total_interest_earned || 0,
+            current_balance: 0,
+            available_balance: 0,
+            locked_balance: 0,
+          };
+        }
+      })
+    );
+
+    return NextResponse.json({ accounts: enrichedAccounts });
 
   } catch (error) {
     console.error('[API:savings-accounts] GET Error:', error);
