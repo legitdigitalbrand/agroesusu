@@ -4,12 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-me";
 import { LoadingState, ErrorState } from "@/components/yield";
 import { OnboardingChecklist } from "@/components/app/onboarding-checklist";
+import { WelcomeBanner } from "@/components/app/welcome-banner";
 import { formatRelativeTime, initials } from "@/lib/format";
 import {
   PiggyBank, Landmark,
   Bell, Wallet, ArrowUpRight, ArrowDownLeft,
   Plus, Send, RefreshCw, Eye, EyeOff, FileText,
-  ChevronRight,
+  ChevronRight, Building2, Copy,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -60,6 +61,26 @@ export default function DashboardPage() {
     enabled: !!walletId,
   });
 
+  // A1: Fetch DVA / funding details for dashboard display
+  const { data: fundingDetails } = useQuery<{ provisioned: boolean; account?: { account_number: string; account_name: string; bank_name: string }; message?: string }>({
+    queryKey: ["wallet-funding-details"],
+    queryFn: async () => {
+      const res = await fetch("/api/wallets/funding-details");
+      if (!res.ok) return { provisioned: false };
+      return res.json();
+    },
+  });
+  const [copiedAcct, setCopiedAcct] = useState(false);
+  const dva = fundingDetails?.provisioned ? fundingDetails.account : null;
+
+  const copyAcctNum = () => {
+    if (dva?.account_number) {
+      navigator.clipboard.writeText(dva.account_number);
+      setCopiedAcct(true);
+      setTimeout(() => setCopiedAcct(false), 2000);
+    }
+  };
+
   if (meLoading) return <LoadingState message="Loading your dashboard…" />;
   if (meError || !me) return <ErrorState message="Couldn't load your dashboard" onRetry={() => refetchMe()} />;
 
@@ -97,6 +118,9 @@ export default function DashboardPage() {
           </Link>
         </div>
 
+        {/* A8: Welcome banner for first-time users */}
+        <WelcomeBanner />
+
         {/* Onboarding checklist — guides users through their journey */}
         <OnboardingChecklist />
 
@@ -106,6 +130,38 @@ export default function DashboardPage() {
           balanceVisible={balanceVisible}
           onToggleBalance={() => setBalanceVisible(!balanceVisible)}
         />
+
+        {/* A1: DVA block on dashboard */}
+        {dva ? (
+          <div className="bg-paper border border-line rounded-2xl p-4">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-loam-light flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-loam" strokeWidth={1.8} />
+              </div>
+              <div>
+                <p className="font-display font-semibold text-[14px] text-ink">Your Account Number</p>
+                <p className="text-[11px] text-ink-soft">{dva.bank_name}</p>
+              </div>
+            </div>
+            <button onClick={copyAcctNum} className="flex items-center gap-1.5 group w-full bg-parchment rounded-xl p-3">
+              <span className="font-mono font-semibold text-[18px] text-ink flex-1 text-left">{dva.account_number}</span>
+              <Copy className="w-4 h-4 text-ink-soft group-hover:text-ink transition" />
+              {copiedAcct && <span className="text-[11px] text-loam ml-1">Copied!</span>}
+            </button>
+          </div>
+        ) : !fundingDetails?.provisioned && fundingDetails ? (
+          <div className="bg-paper border border-line rounded-2xl p-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-ochre-light flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-ochre-dim" strokeWidth={1.8} />
+              </div>
+              <div>
+                <p className="font-display font-semibold text-[14px] text-ink">Setting up account number…</p>
+                <p className="text-[11px] text-ink-soft">{fundingDetails.message || "Complete identity verification to get your account number."}</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Quick actions */}
         <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
@@ -145,6 +201,9 @@ export default function DashboardPage() {
           </p>
         </div>
 
+        {/* A8: Welcome banner for first-time users */}
+        <WelcomeBanner />
+
         {/* Onboarding checklist */}
         <OnboardingChecklist />
 
@@ -155,6 +214,37 @@ export default function DashboardPage() {
           onToggleBalance={() => setBalanceVisible(!balanceVisible)}
           desktop
         />
+
+        {/* A1: DVA block on dashboard (desktop) */}
+        {dva ? (
+          <div className="bg-paper border border-line rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-loam-light flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-5 h-5 text-loam" strokeWidth={1.8} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-display font-semibold text-[14px] text-ink">Your Agriqcap Account</p>
+              <p className="text-[12px] text-ink-soft">{dva.account_name} · {dva.bank_name}</p>
+            </div>
+            <button onClick={copyAcctNum} className="flex items-center gap-1.5 group bg-parchment rounded-xl px-4 py-2.5">
+              <span className="font-mono font-semibold text-[16px] text-ink">{dva.account_number}</span>
+              <Copy className="w-4 h-4 text-ink-soft group-hover:text-ink transition" />
+              {copiedAcct && <span className="text-[11px] text-loam ml-1">Copied!</span>}
+            </button>
+          </div>
+        ) : fundingDetails && !fundingDetails.provisioned ? (
+          <div className="bg-paper border border-line rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-ochre-light flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-5 h-5 text-ochre-dim" strokeWidth={1.8} />
+            </div>
+            <div className="flex-1">
+              <p className="font-display font-semibold text-[14px] text-ink">Setting up account number…</p>
+              <p className="text-[12px] text-ink-soft">{fundingDetails.message || "Complete identity verification to unlock funding."}</p>
+            </div>
+            <Link href="/onboarding" className="text-[13px] font-medium text-indigo hover:text-indigo-deep transition flex-shrink-0">
+              Verify →
+            </Link>
+          </div>
+        ) : null}
 
         {/* Savings + Loans side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

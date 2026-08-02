@@ -135,8 +135,16 @@ export async function GET(_request: NextRequest) {
     const accounts = await listCustomerAccounts(customer.id);
 
     // Enrich each account with balance from Ledger and map field names
+    // A6: Deduplicate accounts by ID to prevent duplicate rendering
+    const seenAccountIds = new Set();
+    const uniqueAccounts = (accounts || []).filter((acct) => {
+      if (seenAccountIds.has(acct.id)) return false;
+      seenAccountIds.add(acct.id);
+      return true;
+    });
+
     const enrichedAccounts = await Promise.all(
-      (accounts || []).map(async (acct) => {
+      uniqueAccounts.map(async (acct) => {
         try {
           const balance = await getSavingsBalance(acct.id);
           return {

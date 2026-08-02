@@ -8,9 +8,8 @@ import { PiggyBank, Landmark } from "lucide-react";
 import Link from "next/link";
 
 // ════════════════════════════════════════════════════════════
-// App layout — right rail uses design system tokens correctly.
-// Investments and Cooperative cards REMOVED from current product.
-// Only Wallet, Savings, Loans promoted.
+// App layout — right rail only renders on dashboard (A3 fix).
+// The nudge cards below are dashboard-only contextual content.
 // ════════════════════════════════════════════════════════════
 
 function DefaultRightRail() {
@@ -20,7 +19,6 @@ function DefaultRightRail() {
 
   return (
     <>
-      {/* Savings nudge */}
       <div className="bg-paper border border-line rounded-2xl p-4">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-8 h-8 rounded-lg bg-loam flex items-center justify-center">
@@ -31,15 +29,11 @@ function DefaultRightRail() {
         <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
           Open a savings account and start building your credit history.
         </p>
-        <Link
-          href="/savings"
-          className="block w-full text-center bg-loam text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-loam-dim transition"
-        >
+        <Link href="/savings" className="block w-full text-center bg-loam text-white font-semibold text-[13px] py-2.5 rounded-xl hover:bg-loam-dim transition">
           Open account
         </Link>
       </div>
 
-      {/* Loan eligibility card */}
       <div className="bg-paper border border-line rounded-2xl p-4">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-8 h-8 rounded-lg bg-indigo flex items-center justify-center">
@@ -48,12 +42,9 @@ function DefaultRightRail() {
           <h3 className="font-display font-semibold text-[14px] text-ink">Loan Eligibility</h3>
         </div>
         <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
-          You can borrow up to 3× your eligible savings balance.
+          You can borrow up to 3x your eligible savings balance.
         </p>
-        <Link
-          href="/loans"
-          className="block w-full text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl hover:opacity-90 transition"
-        >
+        <Link href="/loans" className="block w-full text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl hover:opacity-90 transition">
           Check eligibility
         </Link>
       </div>

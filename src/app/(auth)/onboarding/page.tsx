@@ -39,6 +39,13 @@ export default function OnboardingPage() {
   const [bvn, setBvn] = useState("");
   const [nin, setNin] = useState("");
   const [address, setAddress] = useState("");
+
+  // Safe Haven OTP verification state
+  const [otpStep, setOtpStep] = useState<"enter" | "otp" | "verified">("enter");
+  const [identityId, setIdentityId] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
+  const [verifyType, setVerifyType] = useState<"BVN" | "NIN">("BVN");
+  const [otpMessage, setOtpMessage] = useState<string | null>(null);
   const [state, setState] = useState("");
   const [lga, setLga] = useState("");
   const [occupation, setOccupation] = useState("");
@@ -163,38 +170,160 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Tier 1: BVN + NIN */}
+        {/* Tier 1: BVN + NIN — with Safe Haven OTP verification */}
         {currentTier < 1 && (
           <Card className="mb-4">
             <h2 className="font-display text-lg text-ink mb-1">Tier 1 — Identity Verification</h2>
-            <p className="text-xs text-ink-soft mb-4">Required for deposits above ₦50,000</p>
-            <div className="space-y-3">
-              <div>
-                <label className="ys-label">BVN (11 digits)</label>
-                <input
-                  type="text"
-                  value={bvn}
-                  onChange={(e) => setBvn(e.target.value)}
-                  maxLength={11}
-                  className="ys-input"
-                  placeholder="00000000000"
-                />
+            <p className="text-xs text-ink-soft mb-4">Required for deposits above &#8358;50,000. Verified through Safe Haven MFB.</p>
+
+            {otpStep === "enter" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="ys-label">BVN (11 digits)</label>
+                  <input
+                    type="text"
+                    value={bvn}
+                    onChange={(e) => setBvn(e.target.value.replace(/\D/g, ""))}
+                    maxLength={11}
+                    className="ys-input"
+                    placeholder="00000000000"
+                  />
+                </div>
+                <div>
+                  <label className="ys-label">NIN (11 digits) — optional</label>
+                  <input
+                    type="text"
+                    value={nin}
+                    onChange={(e) => setNin(e.target.value.replace(/\D/g, ""))}
+                    maxLength={11}
+                    className="ys-input"
+                    placeholder="00000000000"
+                  />
+                </div>
+                {error && <p className="text-xs text-clay">{error}</p>}
+                <Button
+                  onClick={async () => {
+                    setSaving(true);
+                    setError(null);
+                    const type = bvn.length === 11 ? "BVN" : nin.length === 11 ? "NIN" : null;
+                    if (!type) {
+                      setError("Enter a valid 11-digit BVN or NIN");
+                      setSaving(false);
+                      return;
+                    }
+                    try {
+                      const res = await fetch("/api/provisioning/identity", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ type, number: type === "BVN" ? bvn : nin }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        setError(data.error || "Verification failed");
+                        setSaving(false);
+                        return;
+                      }
+                      setIdentityId(data.identityId);
+                      setVerifyType(type);
+                      setOtpMessage(data.message || `OTP sent to the phone number registered with your ${type}`);
+                      setOtpStep("otp");
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Network error");
+                    }
+                    setSaving(false);
+                  }}
+                  disabled={saving || (bvn.length !== 11 && nin.length !== 11)}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify with Safe Haven"}
+                </Button>
+                <p className="text-[11px] text-ink-soft leading-relaxed">
+                  Safe Haven will send a one-time password (OTP) to the phone number registered with your BVN/NIN. This verifies your identity with a CBN-licensed institution.
+                </p>
               </div>
-              <div>
-                <label className="ys-label">NIN (11 digits)</label>
-                <input
-                  type="text"
-                  value={nin}
-                  onChange={(e) => setNin(e.target.value)}
-                  maxLength={11}
-                  className="ys-input"
-                  placeholder="00000000000"
-                />
+            )}
+
+            {otpStep === "otp" && (
+              <div className="space-y-3">
+                {otpMessage && (
+                  <div className="bg-loam/5 border border-loam/20 rounded-xl p-3 mb-2">
+                    <p className="text-[13px] text-loam flex items-start gap-2">
+                      <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      {otpMessage}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <label className="ys-label">Enter OTP</label>
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    maxLength={6}
+                    className="ys-input text-center text-lg tracking-widest font-mono"
+                    placeholder="000000"
+                    autoFocus
+                  />
+                </div>
+                {error && <p className="text-xs text-clay">{error}</p>}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      setSaving(true);
+                      setError(null);
+                      try {
+                        const res = await fetch("/api/provisioning/identity/validate", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            identityId,
+                            otp,
+                            type: verifyType,
+                            number: verifyType === "BVN" ? bvn : nin,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                          setError(data.error || "OTP validation failed");
+                          setSaving(false);
+                          return;
+                        }
+                        setOtpStep("verified");
+                        setSuccess(true);
+                        // Update KYC tier in profile
+                        const supabase = createClient();
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (user) {
+                          await supabase.from("profiles").update({ kyc_tier: "tier_1" }).eq("id", user.id);
+                        }
+                        setTimeout(() => {
+                          router.push("/dashboard");
+                          router.refresh();
+                        }, 2000);
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "Network error");
+                      }
+                      setSaving(false);
+                    }}
+                    disabled={saving || otp.length < 4}
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify OTP"}
+                  </Button>
+                  <button
+                    onClick={() => { setOtpStep("enter"); setOtp(""); setError(null); }}
+                    className="px-4 py-2 text-sm text-ink-soft hover:text-ink transition"
+                  >
+                    Back
+                  </button>
+                </div>
               </div>
-              <Button onClick={() => handleSave(1)} disabled={saving || (bvn.length !== 11 && nin.length !== 11)}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save & continue"}
-              </Button>
-            </div>
+            )}
+
+            {otpStep === "verified" && (
+              <div className="flex items-center gap-3 py-2">
+                <Check className="h-5 w-5 text-loam" />
+                <p className="text-sm text-loam font-medium">Identity verified! Your Safe Haven account is being set up. Redirecting...</p>
+              </div>
+            )}
           </Card>
         )}
 

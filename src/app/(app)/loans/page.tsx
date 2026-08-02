@@ -219,13 +219,18 @@ function EligibilityCard({ product }: { product: LoanProduct }) {
 
       {/* Initial state — check button */}
       {!result && !loading && !error && (
-        <button
-          onClick={checkEligibility}
-          className="w-full py-2.5 bg-indigo text-white rounded-xl font-medium text-[14px] hover:bg-indigo-deep transition flex items-center justify-center gap-2"
-        >
-          <Shield className="w-4 h-4" />
-          Check eligibility
-        </button>
+        <div className="space-y-2.5">
+          <button
+            onClick={checkEligibility}
+            className="w-full py-2.5 bg-indigo text-white rounded-xl font-medium text-[14px] hover:bg-indigo-deep transition flex items-center justify-center gap-2"
+          >
+            <Shield className="w-4 h-4" />
+            Check eligibility
+          </button>
+          <p className="text-[11px] text-ink-soft text-center leading-relaxed">
+            Eligibility is based on your savings history and wallet activity within Agriqcap — not a credit bureau check.
+          </p>
+        </div>
       )}
 
       {/* Loading */}
@@ -263,7 +268,7 @@ function EligibilityCard({ product }: { product: LoanProduct }) {
             <div className="flex items-center justify-between bg-parchment rounded-xl p-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-ink-soft" />
-                <span className="text-[13px] text-ink-soft">Credit score</span>
+                <span className="text-[13px] text-ink-soft">Internal credit score</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-[18px] font-semibold text-ink">{result.credit_score}</span>
@@ -324,7 +329,7 @@ function EligibilityCard({ product }: { product: LoanProduct }) {
             <div className="flex items-center justify-between bg-parchment rounded-xl p-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-ink-soft" />
-                <span className="text-[13px] text-ink-soft">Credit score</span>
+                <span className="text-[13px] text-ink-soft">Internal credit score</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-[18px] font-semibold text-ink">{result.credit_score}</span>

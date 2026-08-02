@@ -187,7 +187,7 @@ export function MoneyText({ amount, direction = "neutral", size = "md", classNam
   }[size];
 
   return (
-    <span className={cn("font-mono tabular-nums", colorClass, sizeClass, className)}>
+    <span className={cn("font-mono tabular-nums tracking-tight", colorClass, sizeClass, className)} style={{ fontFeatureSettings: '"tnum"' }}>
       {prefix}{formatted}
     </span>
   );

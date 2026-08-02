@@ -81,7 +81,15 @@ export default function SavingsPage() {
   });
 
   const accounts = accountsData?.accounts || [];
-  const products = productsData?.products || [];
+  const rawProducts = productsData?.products || [];
+  // A5: Sort products so esusu (the brand differentiator) appears first
+  const products = [...rawProducts].sort((a, b) => {
+    const aIsEsusu = a.product_type === 'esusu' || a.product_type === 'cooperative' || a.product_type === 'group';
+    const bIsEsusu = b.product_type === 'esusu' || b.product_type === 'cooperative' || b.product_type === 'group';
+    if (aIsEsusu && !bIsEsusu) return -1;
+    if (!aIsEsusu && bIsEsusu) return 1;
+    return 0;
+  });
 
   const createMutation = useMutation({
     mutationFn: async (data: { product_id: string; target_amount?: number; initial_deposit?: number }) => {
@@ -132,9 +140,19 @@ export default function SavingsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {accounts.map((acct) => (
-                <Link href={`/savings/${acct.id}`}><AccountCard account={acct} /></Link>
-              ))}
+              {(() => {
+                // A6: Deduplicate accounts by product_id to prevent duplicate display
+                const seen = new Set();
+                const dedupedAccounts = accounts.filter((acct: SavingsAccount) => {
+                  const key = acct.id; // dedupe by account id (root cause is duplicate rows)
+                  if (seen.has(key)) return false;
+                  seen.add(key);
+                  return true;
+                });
+                return dedupedAccounts.map((acct) => (
+                  <Link href={`/savings/${acct.id}`}><AccountCard account={acct} /></Link>
+                ));
+              })()}
             </div>
           )}
         </>
@@ -427,28 +445,7 @@ function ProductCard({ product, hasActiveFlexible, onOpen }: {
   const isFixed = product.product_type === 'fixed_deposit';
 
   if (isCooperative) {
-    return (
-      <div className="border border-line rounded-2xl p-5 bg-paper opacity-75">
-        <div className="flex items-start gap-3">
-          <div className="h-11 w-11 rounded-xl bg-parchment flex items-center justify-center flex-shrink-0">
-            <PiggyBank className="h-5 w-5 text-ink-soft" strokeWidth={1.5} />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[15px] font-semibold text-ink">{product.product_name}</p>
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-parchment text-ink-soft border border-line">
-                Coming Soon
-              </span>
-            </div>
-            <p className="text-[13px] text-ink-soft mt-1">{product.description || 'Group savings with cooperative governance'}</p>
-            <div className="mt-3 flex items-center gap-2 text-[12px] text-ink-soft">
-              <Clock className="w-3.5 h-3.5" />
-              <span>This feature is being built. Check back soon.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <EsusuWaitlistCard product={product} />;
   }
 
   return (
@@ -552,5 +549,69 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
     >
       {children}
     </button>
+  );
+}
+
+
+// ─── A5: Esusu waitlist card (replaces dead-end "Coming Soon") ───
+function EsusuWaitlistCard({ product }: { product: SavingsProduct }) {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = () => {
+    if (!email) return;
+    // Store waitlist interest locally for now (no backend table yet)
+    const waitlist = JSON.parse(localStorage.getItem("agriqcap_esusu_waitlist") || "[]");
+    waitlist.push({ email, product: product.product_code, date: new Date().toISOString() });
+    localStorage.setItem("agriqcap_esusu_waitlist", JSON.stringify(waitlist));
+    setSubmitted(true);
+  };
+
+  return (
+    <div className="border border-ochre/40 rounded-2xl p-5 bg-gradient-to-br from-ochre-light/50 to-paper relative overflow-hidden">
+      <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-ochre/10 pointer-events-none" />
+      <div className="relative">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="h-11 w-11 rounded-xl bg-ochre flex items-center justify-center flex-shrink-0">
+            <PiggyBank className="h-5 w-5 text-indigo-deep" strokeWidth={2} />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[15px] font-semibold text-ink">{product.product_name}</p>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ochre text-indigo-deep">
+                Featured
+              </span>
+            </div>
+            <p className="text-[13px] text-ink-soft mt-1">{product.description || 'Rotating group savings with your trusted circle — the traditional esusu, modernized.'}</p>
+          </div>
+        </div>
+
+        {submitted ? (
+          <div className="bg-paper rounded-xl p-3 flex items-center gap-2">
+            <Check className="w-4 h-4 text-loam flex-shrink-0" />
+            <p className="text-[13px] text-ink">You\'re on the waitlist! We\'ll notify you when Esusu goes live.</p>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="flex-1 rounded-xl border border-line bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-indigo placeholder:text-ink-soft"
+            />
+            <button
+              onClick={handleSubmit}
+              className="px-4 py-2.5 bg-indigo text-white rounded-xl font-medium text-[13px] hover:bg-indigo-deep transition flex-shrink-0"
+            >
+              Join waitlist
+            </button>
+          </div>
+        )}
+        <p className="text-[11px] text-ink-soft mt-2">
+          Esusu is our flagship group savings product — we\'re building it next.
+        </p>
+      </div>
+    </div>
   );
 }
