@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { DesktopShell, MobileShell } from "@/components/yield/desktop-shell";
+import { DesktopShell } from "@/components/yield/desktop-shell";
+import { MobileShell } from "@/components/yield/mobile-shell";
 import { useMe } from "@/hooks/use-me";
 import { LoadingState } from "@/components/yield";
 import { PiggyBank, Landmark } from "lucide-react";
