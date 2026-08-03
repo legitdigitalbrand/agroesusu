@@ -23,7 +23,17 @@ export async function POST(request: Request) {
   try {
     // Check if there's a valid session first
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    let session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] = null;
+    try {
+      const result = await supabase.auth.getSession();
+      session = result.data.session;
+    } catch {
+      // Supabase unreachable — treat as no session
+      return NextResponse.json({
+        error: 'Unable to connect to the authentication service. Please try again.',
+        code: 'network_error'
+      }, { status: 503 });
+    }
     if (!session) {
       return NextResponse.json({
         error: 'Session expired. Please sign in with email and password.',
@@ -68,6 +78,18 @@ export async function POST(request: Request) {
 
     if (dbError) {
       console.error('[pin-verify] DB error:', dbError.message, dbError.code);
+      if (dbError.code === '42P01') {
+        return NextResponse.json({
+          error: 'PIN service is not available. Please contact support.',
+          code: 'table_missing'
+        }, { status: 503 });
+      }
+      if (dbError.code === '42501') {
+        return NextResponse.json({
+          error: 'Session expired. Please sign in with email and password.',
+          code: 'no_session'
+        }, { status: 401 });
+      }
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 

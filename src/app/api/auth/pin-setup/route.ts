@@ -21,7 +21,16 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    let user: Awaited<ReturnType<typeof supabase.auth.getUser>>['data']['user'] = null;
+    try {
+      const result = await supabase.auth.getUser();
+      user = result.data.user;
+    } catch {
+      return NextResponse.json({
+        error: 'Unable to connect to the authentication service. Please try again.',
+        code: 'network_error'
+      }, { status: 503 });
+    }
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
@@ -89,6 +98,33 @@ export async function POST(request: Request) {
         // Table doesn't exist — migration not run
         console.error('[pin-setup] device_pins table does not exist. Run migration 00034.');
         return NextResponse.json({ error: 'PIN setup is not available. Please contact support.' }, { status: 503 });
+      }
+      if (error.code === '42703') {
+        // Column doesn't exist — migration 00035 (device metadata) not run
+        console.error('[pin-setup] device_pins missing columns. Run migration 00035.');
+        // Retry without the optional metadata columns
+        const { error: retryError } = await supabase
+          .from('device_pins')
+          .upsert(
+            {
+              user_id: user.id,
+              device_id: deviceId,
+              pin_hash: pinHash,
+              pin_salt: pinSalt,
+              failed_attempts: 0,
+              locked_at: null,
+            },
+            { onConflict: 'user_id,device_id' }
+          );
+        if (retryError) {
+          console.error('[pin-setup] Retry without metadata failed:', retryError.message);
+          return NextResponse.json({ error: 'Failed to save PIN. Please try again.' }, { status: 500 });
+        }
+        // Success on retry — set cookies and return
+        const retryResponse = NextResponse.json({ success: true, deviceId });
+        retryResponse.cookies.set(DEVICE_COOKIE_NAME, deviceId, COOKIE_OPTIONS);
+        retryResponse.cookies.set(PIN_VERIFIED_COOKIE_NAME, 'true', PIN_VERIFIED_COOKIE_OPTIONS);
+        return retryResponse;
       }
 
       console.error('[pin-setup] Full error:', JSON.stringify(error));

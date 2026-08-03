@@ -30,10 +30,21 @@ export default function ForgotPinPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (signInError) {
-      setError(signInError.message);
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Failed to fetch") || msg.includes("ERR_")) {
+        setError("Unable to connect to the authentication service. Please check your internet connection and try again.");
+      } else {
+        setError(msg || "Sign in failed. Please try again.");
+      }
       setLoading(false);
       return;
     }

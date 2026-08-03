@@ -63,23 +63,35 @@ export default function SignupPage() {
     const supabase = createClient();
     const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          phone,
-          signup_method: "manual",
-          profile_complete: true,
+    let data: Awaited<ReturnType<typeof supabase.auth.signUp>>['data'] = { user: null, session: null };
+    try {
+      const result = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            phone,
+            signup_method: "manual",
+            profile_complete: true,
+          },
         },
-      },
-    });
-
-    if (signUpError) {
-      setError(signUpError.message);
+      });
+      data = result.data;
+      if (result.error) {
+        setError(result.error.message);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Failed to fetch") || msg.includes("ERR_")) {
+        setError("Unable to connect to the authentication service. Please check your internet connection and try again.");
+      } else {
+        setError(msg || "Sign up failed. Please try again.");
+      }
       setLoading(false);
       return;
     }

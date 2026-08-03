@@ -83,7 +83,19 @@ export function verifyPin(
     // Tertiary fallback: plain string comparison
     // This catches cases where Buffer.from('hex') produces empty buffers
     // due to invalid hex chars, but the strings themselves match
-    return computedHash === hashToCompare;
+    if (computedHash === hashToCompare) {
+      return true;
+    }
+
+    // Quaternary fallback: case-insensitive hex comparison
+    // Catches rare encoding edge cases where PG or a DB driver uppercases
+    // the hex string (e.g., 'A1B2' vs 'a1b2')
+    if (computedHash.toLowerCase() === hashToCompare.toLowerCase()) {
+      console.warn('[verifyPin] Hashes matched only after case normalization — possible DB encoding issue');
+      return true;
+    }
+
+    return false;
   } catch (err) {
     console.error('[verifyPin] Error during verification:', err instanceof Error ? err.message : err);
     return false;

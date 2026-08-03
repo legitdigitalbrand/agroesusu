@@ -17,7 +17,16 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    let session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] = null;
+    try {
+      const result = await supabase.auth.getSession();
+      session = result.data.session;
+    } catch {
+      return NextResponse.json({
+        error: 'Unable to connect to the authentication service. Please try again.',
+        code: 'network_error'
+      }, { status: 503 });
+    }
 
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
