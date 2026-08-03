@@ -33,6 +33,8 @@ export function hasPinVerifiedCookie(): boolean {
 
 export const DEVICE_COOKIE_NAME = DEVICE_COOKIE;
 export const PIN_VERIFIED_COOKIE_NAME = PIN_VERIFIED_COOKIE;
+export const LAST_ACTIVITY_COOKIE_NAME = 'agriqcap_last_activity';
+export const INACTIVITY_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours in ms
 
 export const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -48,4 +50,12 @@ export const PIN_VERIFIED_COOKIE_OPTIONS = {
   sameSite: 'lax' as const,
   path: '/',
   // Session-scoped: no maxAge means it clears when browser closes
+};
+
+export const LAST_ACTIVITY_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 30 * 24 * 60 * 60, // 30 days so cookie persists to evaluate inactivity timestamp
 };

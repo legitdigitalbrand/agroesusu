@@ -7,6 +7,7 @@ import {
   PIN_VERIFIED_COOKIE_NAME,
   PIN_VERIFIED_COOKIE_OPTIONS,
 } from '@/lib/auth/device';
+import { hashPin, isValidPinFormat } from '@/lib/auth/pin';
 import crypto from 'crypto';
 
 // POST /api/auth/pin-setup
@@ -15,50 +16,60 @@ import crypto from 'crypto';
 // Sets the device_id as an httpOnly cookie.
 
 export async function POST(request: Request) {
-  const limited = applyRateLimit(request, "/api/auth/pin-setup", RATE_LIMITS.AUTH);
+  const limited = applyRateLimit(request, '/api/auth/pin-setup', RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
     const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
+    if (!user.email_confirmed_at) {
+      return NextResponse.json(
+        { error: 'Email verification required before setting up a PIN' },
+        { status: 403 }
+      );
+    }
+
     const { pin, deviceName } = await request.json();
 
-    if (!pin || typeof pin !== 'string' || !/^\d{4}$/.test(pin)) {
+    if (!isValidPinFormat(pin)) {
       return NextResponse.json({ error: 'PIN must be exactly 4 digits' }, { status: 400 });
     }
 
-    // Generate a secure device ID (server-side, not client-provided)
-    const deviceId = crypto.randomUUID();
+    // Get existing device_id from httpOnly cookie if available, or generate a new one server-side
+    const cookieHeader = request.headers.get('cookie') || '';
+    const deviceMatch = cookieHeader
+      .split('; ')
+      .find((c) => c.startsWith(`${DEVICE_COOKIE_NAME}=`));
+    const existingDeviceId = deviceMatch ? deviceMatch.split('=')[1] : null;
+
+    const deviceId = existingDeviceId || crypto.randomUUID();
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
-    // Hash the PIN with a per-row salt
-    const salt = crypto.randomBytes(16).toString('hex');
-    const pinHash = crypto.pbkdf2Sync(pin, salt, 10000, 64, 'sha256').toString('hex');
+    // Hash the PIN using canonical PBKDF2 function from src/lib/auth/pin.ts
+    const { pinHash, pinSalt } = hashPin(pin);
 
-    // Insert the device PIN record
+    // Upsert the device PIN record (resets lockout state and failed attempts)
     const { error } = await supabase
       .from('device_pins')
-      .insert({
-        user_id: user.id,
-        device_id: deviceId,
-        pin_hash: pinHash,
-        pin_salt: salt,
-        failed_attempts: 0,
-        locked_at: null,
-        device_name: deviceName || null,
-        user_agent: userAgent,
-        last_used_at: new Date().toISOString(),
-      });
+      .upsert(
+        {
+          user_id: user.id,
+          device_id: deviceId,
+          pin_hash: pinHash,
+          pin_salt: pinSalt,
+          failed_attempts: 0,
+          locked_at: null,
+          device_name: deviceName || null,
+          user_agent: userAgent,
+          last_used_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,device_id' }
+      );
 
     if (error) {
-      // If device already exists (shouldn't happen since we generate server-side),
-      // update the PIN instead
-      if (error.code === '23505') {
-        return NextResponse.json({ error: 'Device already registered' }, { status: 409 });
-      }
       console.error('[pin-setup] DB error:', error.message);
       return NextResponse.json({ error: 'Failed to save PIN' }, { status: 500 });
     }

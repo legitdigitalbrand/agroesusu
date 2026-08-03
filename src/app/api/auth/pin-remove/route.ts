@@ -6,11 +6,11 @@ import { createClient } from '@/lib/supabase/server';
 // Removes the PIN for a specific device (e.g., revoking a lost or compromised device)
 
 export async function POST(request: Request) {
-  const limited = applyRateLimit(request, "/api/auth/pin-remove", RATE_LIMITS.AUTH);
+  const limited = applyRateLimit(request, '/api/auth/pin-remove', RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
     const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

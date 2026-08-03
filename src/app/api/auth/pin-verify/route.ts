@@ -6,7 +6,7 @@ import {
   PIN_VERIFIED_COOKIE_NAME,
   PIN_VERIFIED_COOKIE_OPTIONS,
 } from '@/lib/auth/device';
-import crypto from 'crypto';
+import { verifyPin, isValidPinFormat } from '@/lib/auth/pin';
 
 // POST /api/auth/pin-verify
 // Verifies a 4-digit PIN for a trusted device.
@@ -17,7 +17,7 @@ import crypto from 'crypto';
 const MAX_PIN_ATTEMPTS = 5;
 
 export async function POST(request: Request) {
-  const limited = applyRateLimit(request, "/api/auth/pin-verify", RATE_LIMITS.AUTH);
+  const limited = applyRateLimit(request, '/api/auth/pin-verify', RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
     // Check if there's a valid session first (before body parsing)
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
     const { pin } = await request.json();
 
-    if (!pin || !/^\d{4}$/.test(pin)) {
+    if (!isValidPinFormat(pin)) {
       return NextResponse.json({ error: 'PIN must be 4 digits' }, { status: 400 });
     }
 
@@ -55,12 +55,17 @@ export async function POST(request: Request) {
     // Look up the PIN record for this device
     const { data: pinRecord, error: dbError } = await supabase
       .from('device_pins')
-      .select('id, pin_hash, failed_attempts, locked_at')
+      .select('id, pin_hash, pin_salt, failed_attempts, locked_at')
       .eq('user_id', userId)
       .eq('device_id', deviceId)
-      .single();
+      .maybeSingle();
 
-    if (dbError || !pinRecord) {
+    if (dbError) {
+      console.error('[pin-verify] DB error:', dbError.message);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+
+    if (!pinRecord) {
       return NextResponse.json({
         error: 'No PIN set for this device. Please set up a PIN.',
         code: 'no_pin'
@@ -75,14 +80,11 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // Hash the provided PIN with the stored salt
-    const [storedHash, salt] = pinRecord.pin_hash.split(':');
-    const providedHash = crypto
-      .pbkdf2Sync(pin, salt, 100000, 64, 'sha512')
-      .toString('hex');
+    // Verify PIN against stored hash and salt using canonical PBKDF2 function from src/lib/auth/pin.ts
+    const isPinValid = verifyPin(pin, pinRecord.pin_hash, pinRecord.pin_salt);
 
-    if (providedHash !== storedHash) {
-      // Increment failed attempts
+    if (!isPinValid) {
+      // Increment failed attempts on existing record
       const newFailedAttempts = (pinRecord.failed_attempts || 0) + 1;
       const shouldLock = newFailedAttempts >= MAX_PIN_ATTEMPTS;
 
@@ -103,10 +105,13 @@ export async function POST(request: Request) {
       }, { status: 401 });
     }
 
-    // PIN is correct — reset failed attempts
+    // PIN is correct — reset failed attempts and update last_used_at
     await supabase
       .from('device_pins')
-      .update({ failed_attempts: 0 })
+      .update({
+        failed_attempts: 0,
+        last_used_at: new Date().toISOString(),
+      })
       .eq('id', pinRecord.id);
 
     // Set pin_verified cookie

@@ -1,15 +1,23 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  LAST_ACTIVITY_COOKIE_NAME,
+  INACTIVITY_TIMEOUT_MS,
+  LAST_ACTIVITY_COOKIE_OPTIONS,
+  PIN_VERIFIED_COOKIE_NAME,
+} from '@/lib/auth/device';
 
 // ════════════════════════════════════════════════════════════
 // Agriqcap — Authentication Middleware
 //
 //  1. Session refresh on every request
-//  2. Redirect unauthenticated → /login (for protected routes)
-//  3. Redirect authenticated from /login & /signup → /dashboard
-//  4. PIN gate: authenticated users without pin_verified cookie
+//  2. Inactivity expiry: 2-hour inactivity forces re-login
+//  3. Email verification guard: email must be confirmed before proceeding
+//  4. Redirect unauthenticated → /login (for protected routes)
+//  5. Redirect authenticated from /login & /signup → /dashboard
+//  6. PIN gate: authenticated users without pin_verified cookie
 //     → /set-pin (if no device cookie) or /pin-login (if device cookie)
-//  5. Admin-only access for /admin/* (staff check)
+//  7. Admin-only access for /admin/* or /dev/* (staff check)
 // ════════════════════════════════════════════════════════════
 
 const PUBLIC_ROUTES = [
@@ -42,6 +50,7 @@ const PIN_BYPASS_ROUTES = [
   '/set-pin',
   '/forgot-pin',
   '/pin-login',
+  '/verify-email',
 ];
 
 function isPublicRoute(pathname: string): boolean {
@@ -59,17 +68,15 @@ function isPinBypassRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip API routes and static files
-  if (pathname.startsWith('/api')) {
-    return NextResponse.next();
-  }
-
+  // Skip static files, webhooks, and cron jobs
   if (
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico' ||
     pathname === '/favicon.svg' ||
     pathname === '/manifest.json' ||
-    pathname.startsWith('/icon')
+    pathname.startsWith('/icon') ||
+    pathname.startsWith('/api/webhooks') ||
+    pathname.startsWith('/api/cron')
   ) {
     return NextResponse.next();
   }
@@ -100,7 +107,36 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // ── No session ──
+  const now = Date.now();
+
+  // ── Handling API routes with Session ──
+  if (pathname.startsWith('/api')) {
+    if (!session) {
+      return NextResponse.next();
+    }
+
+    // Check inactivity for API routes
+    const lastActivityCookie = request.cookies.get(LAST_ACTIVITY_COOKIE_NAME)?.value;
+    if (lastActivityCookie) {
+      const lastActivity = parseInt(lastActivityCookie, 10);
+      if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
+        await supabase.auth.signOut();
+        const apiResponse = NextResponse.json(
+          { error: 'Session expired due to inactivity. Please sign in again.' },
+          { status: 401 }
+        );
+        apiResponse.cookies.delete(LAST_ACTIVITY_COOKIE_NAME);
+        apiResponse.cookies.delete(PIN_VERIFIED_COOKIE_NAME);
+        return apiResponse;
+      }
+    }
+
+    // Touch last activity
+    response.cookies.set(LAST_ACTIVITY_COOKIE_NAME, now.toString(), LAST_ACTIVITY_COOKIE_OPTIONS);
+    return response;
+  }
+
+  // ── No session (Page Routes) ──
   if (!session) {
     if (isPublicRoute(pathname)) {
       return response;
@@ -111,7 +147,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // ── Has session ──
+  // ── Has session (Page Routes) ──
+
+  // Check 2-hour inactivity expiry
+  const lastActivityCookie = request.cookies.get(LAST_ACTIVITY_COOKIE_NAME)?.value;
+  if (lastActivityCookie) {
+    const lastActivity = parseInt(lastActivityCookie, 10);
+    if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
+      await supabase.auth.signOut();
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('redirect', pathname);
+      redirectUrl.searchParams.set('reason', 'inactivity');
+      const expiredResponse = NextResponse.redirect(redirectUrl);
+      expiredResponse.cookies.delete(LAST_ACTIVITY_COOKIE_NAME);
+      expiredResponse.cookies.delete(PIN_VERIFIED_COOKIE_NAME);
+      return expiredResponse;
+    }
+  }
+
+  // Update last_activity cookie on response
+  response.cookies.set(LAST_ACTIVITY_COOKIE_NAME, now.toString(), LAST_ACTIVITY_COOKIE_OPTIONS);
+
+  // Email verification guard: if user is not confirmed, force /verify-email
+  if (!session.user.email_confirmed_at && pathname !== '/verify-email') {
+    const verifyUrl = new URL('/verify-email', request.url);
+    if (session.user.email) {
+      verifyUrl.searchParams.set('email', session.user.email);
+    }
+    return NextResponse.redirect(verifyUrl);
+  }
 
   // Redirect from login/signup → dashboard (or set-pin if no device cookie)
   if (pathname === '/login' || pathname === '/signup') {
@@ -137,7 +201,7 @@ export async function middleware(request: NextRequest) {
   // ── PIN Gate ──
   // For protected routes, check if PIN has been verified this session
   if (!isPublicRoute(pathname) && !isPinBypassRoute(pathname) && !isDevRoute(pathname)) {
-    const hasPinVerified = request.cookies.has('agriqcap_pin_verified');
+    const hasPinVerified = request.cookies.has(PIN_VERIFIED_COOKIE_NAME);
     const hasDeviceCookie = request.cookies.has('agriqcap_device');
 
     if (!hasPinVerified) {
@@ -146,10 +210,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/set-pin', request.url));
       } else {
         // Has device PIN but hasn't verified this session → PIN login
-        // (But if they just authenticated via password, they should go to dashboard)
-        // The login page handles this: after password auth, we skip the gate
-        // by setting the pin_verified cookie server-side.
-        // For now, redirect to pin-login.
         return NextResponse.redirect(new URL('/pin-login', request.url));
       }
     }

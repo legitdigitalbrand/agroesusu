@@ -2,27 +2,27 @@ import { NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { DEVICE_COOKIE_NAME } from '@/lib/auth/device';
-import crypto from 'crypto';
+import { hashPin, verifyPin, isValidPinFormat } from '@/lib/auth/pin';
 
 // POST /api/auth/pin-change
 // Changes the PIN for the current device. Requires the current PIN for verification.
 
 export async function POST(request: Request) {
-  const limited = applyRateLimit(request, "/api/auth/pin-change", RATE_LIMITS.AUTH);
+  const limited = applyRateLimit(request, '/api/auth/pin-change', RATE_LIMITS.AUTH);
   if (limited) return limited;
   try {
     const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     const { currentPin, newPin } = await request.json();
 
-    if (!currentPin || !/^\d{4}$/.test(currentPin)) {
+    if (!isValidPinFormat(currentPin)) {
       return NextResponse.json({ error: 'Current PIN must be 4 digits' }, { status: 400 });
     }
-    if (!newPin || !/^\d{4}$/.test(newPin)) {
+    if (!isValidPinFormat(newPin)) {
       return NextResponse.json({ error: 'New PIN must be 4 digits' }, { status: 400 });
     }
     if (currentPin === newPin) {
@@ -50,15 +50,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No PIN found for this device' }, { status: 404 });
     }
 
-    // Verify current PIN
-    const computedHash = crypto.pbkdf2Sync(currentPin, pinRecord.pin_salt, 10000, 64, 'sha256').toString('hex');
-    if (computedHash !== pinRecord.pin_hash) {
+    // Verify current PIN using timing-safe comparison
+    if (!verifyPin(currentPin, pinRecord.pin_hash, pinRecord.pin_salt)) {
       return NextResponse.json({ error: 'Current PIN is incorrect' }, { status: 401 });
     }
 
-    // Set new PIN
-    const newSalt = crypto.randomBytes(16).toString('hex');
-    const newHash = crypto.pbkdf2Sync(newPin, newSalt, 10000, 64, 'sha256').toString('hex');
+    // Set new PIN using canonical PBKDF2 function from src/lib/auth/pin.ts
+    const { pinHash: newHash, pinSalt: newSalt } = hashPin(newPin);
 
     await supabase
       .from('device_pins')
@@ -67,6 +65,7 @@ export async function POST(request: Request) {
         pin_salt: newSalt,
         failed_attempts: 0,
         locked_at: null,
+        last_used_at: new Date().toISOString(),
       })
       .eq('id', pinRecord.id);
 
