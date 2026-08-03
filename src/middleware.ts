@@ -49,6 +49,8 @@ const ADMIN_ROUTES = ['/dev'];
 const PIN_BYPASS_ROUTES = [
   '/set-pin',
   '/forgot-pin',
+  '/forgot-password',
+  '/reset-password',
   '/pin-login',
   '/verify-email',
 ];

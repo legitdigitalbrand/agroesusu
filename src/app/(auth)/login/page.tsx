@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +22,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/dashboard";
+  const isResetSuccess = searchParams.get("reset") === "success";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +35,12 @@ function LoginContent() {
 
   // On mount: check if this device has a PIN and session is still valid
   useEffect(() => {
+    if (isResetSuccess) {
+      setMode("password");
+      setCheckingDevice(false);
+      return;
+    }
+
     const checkDevice = async () => {
       const deviceId = getDeviceId();
       if (!deviceId) {
@@ -50,7 +58,7 @@ function LoginContent() {
       setCheckingDevice(false);
     };
     checkDevice();
-  }, []);
+  }, [isResetSuccess]);
 
   // ── Password login ──
   const handlePasswordLogin = async (e: React.FormEvent) => {
@@ -329,11 +337,20 @@ function LoginContent() {
 
             <div className="text-center mt-5">
               <button
+                type="button"
                 onClick={switchToPassword}
                 className="text-[13px] text-loam font-medium hover:text-indigo transition"
               >
                 Use password instead
               </button>
+            </div>
+            <div className="text-center mt-3">
+              <Link
+                href="/forgot-pin"
+                className="text-[13px] text-loam font-medium hover:text-indigo transition"
+              >
+                Forgot PIN?
+              </Link>
             </div>
           </motion.div>
         )}

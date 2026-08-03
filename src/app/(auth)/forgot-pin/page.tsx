@@ -10,6 +10,7 @@ import { AuthLogo } from "@/components/auth/AuthLogo";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
+import { SwitchAuthLink } from "@/components/auth/SwitchAuthLink";
 import { PinInput } from "@/components/auth/PinInput";
 import { LoginRightPanel } from "@/components/auth/RightPanel";
 
@@ -126,6 +127,12 @@ export default function ForgotPinPage() {
                 Verify identity
               </PrimaryButton>
             </form>
+
+            <SwitchAuthLink
+              text="Forgot password too?"
+              linkText="Reset password →"
+              href="/forgot-password"
+            />
           </motion.div>
         )}
 
