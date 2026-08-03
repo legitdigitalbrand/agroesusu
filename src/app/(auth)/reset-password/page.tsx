@@ -86,7 +86,7 @@ function ResetPasswordContent() {
     }
 
     // c. After successful password update, sign the user out before redirecting
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch (err) { console.warn('[reset-password] Remote signOut failed:', err); }
 
     router.push("/login?reset=success");
     router.refresh();

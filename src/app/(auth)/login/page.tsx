@@ -49,12 +49,17 @@ function LoginContent() {
         return;
       }
 
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
 
-      if (session) {
-        // Session valid + device has cookie → try PIN mode
-        setMode("pin");
+        if (session) {
+          // Session valid + device has cookie → try PIN mode
+          setMode("pin");
+        }
+      } catch (err) {
+        // Supabase unreachable (DNS failure, paused project) — default to password mode
+        console.warn("[login] Session check failed, defaulting to password mode:", err);
       }
       setCheckingDevice(false);
     };
@@ -68,7 +73,20 @@ function LoginContent() {
     setError(null);
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    let signInError: { message: string } | null = null;
+    try {
+      const result = await supabase.auth.signInWithPassword({ email, password });
+      signInError = result.error;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Failed to fetch") || msg.includes("ERR_")) {
+        setError("Unable to connect to the authentication service. Please check your internet connection and try again.");
+      } else {
+        setError(msg || "Sign in failed. Please try again.");
+      }
+      setLoading(false);
+      return;
+    }
 
     if (signInError) {
       setError(signInError.message);

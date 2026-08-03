@@ -170,6 +170,19 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[API:provisioning-validate] Error:', error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const isNetworkError = errMsg.includes('ERR_NAME_NOT_RESOLVED') ||
+      errMsg.includes('ERR_INTERNET_DISCONNECTED') ||
+      errMsg.includes('fetch failed') ||
+      errMsg.includes('ECONNREFUSED') ||
+      errMsg.includes('ENOTFOUND') ||
+      errMsg.includes('Failed to fetch');
+    if (isNetworkError) {
+      return NextResponse.json(
+        { error: 'Unable to connect to the authentication service. Please check your internet connection and try again.', code: 'network_error' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Validation failed' },
       { status: 500 }

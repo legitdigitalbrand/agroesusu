@@ -75,7 +75,13 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    // Best-effort remote signOut — always clear local state and redirect,
+    // even if the network call fails (DNS error, paused project, etc.)
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('[logout] Remote signOut failed, clearing local session:', err);
+    }
     router.push("/login");
     router.refresh();
   };

@@ -58,7 +58,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch (err) { console.warn('[logout] Remote signOut failed:', err); }
     router.push("/login");
     router.refresh();
   };

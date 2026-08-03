@@ -54,7 +54,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'NIN already verified', alreadyVerified: true }, { status: 409 });
     }
 
-    // Get the Safe Haven banking provider
+    // Get the Safe Haven banking provider.
+    // In mock mode (SAFE_HAVEN_ENV=mock), this returns a MockBankingProvider that
+    // makes NO outbound HTTP calls — all responses are local and deterministic.
+    // However, this route still requires Supabase for auth + DB storage.
+    // If Supabase is unreachable (DNS failure, paused project), the error is
+    // from Supabase, not from the banking provider.
     const provider = getBankingProvider();
 
     // We need a debit account number for Safe Haven identity verification
@@ -88,6 +93,20 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[API:provisioning-identity] Error:', error);
+    // Detect network/DNS errors (Supabase unreachable, paused project, wrong URL)
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const isNetworkError = errMsg.includes('ERR_NAME_NOT_RESOLVED') ||
+      errMsg.includes('ERR_INTERNET_DISCONNECTED') ||
+      errMsg.includes('fetch failed') ||
+      errMsg.includes('ECONNREFUSED') ||
+      errMsg.includes('ENOTFOUND') ||
+      errMsg.includes('Failed to fetch');
+    if (isNetworkError) {
+      return NextResponse.json(
+        { error: 'Unable to connect to the authentication service. Please check your internet connection and try again.', code: 'network_error' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Identity verification failed' },
       { status: 500 }

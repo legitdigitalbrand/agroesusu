@@ -110,9 +110,22 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // If Supabase is unreachable (DNS failure, paused project), getSession will throw.
+  // Treat it as "no session" — redirect to login — rather than crashing the middleware.
+  let session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] = null;
+  try {
+    const result = await supabase.auth.getSession();
+    session = result.data.session;
+  } catch {
+    // Network/DNS error — no valid session, proceed as unauthenticated
+    if (!isPublicRoute(pathname)) {
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('redirect', pathname);
+      redirectUrl.searchParams.set('reason', 'connection_error');
+      return NextResponse.redirect(redirectUrl);
+    }
+    return response;
+  }
 
   const now = Date.now();
 
@@ -127,7 +140,8 @@ export async function middleware(request: NextRequest) {
     if (lastActivityCookie) {
       const lastActivity = parseInt(lastActivityCookie, 10);
       if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
-        await supabase.auth.signOut();
+        // Best-effort remote signOut — don't let a failed network call block local cleanup
+        try { await supabase.auth.signOut(); } catch {}
         const apiResponse = NextResponse.json(
           { error: 'Session expired due to inactivity. Please sign in again.', code: 'session_expired' },
           { status: 401 }
@@ -161,7 +175,8 @@ export async function middleware(request: NextRequest) {
   if (lastActivityCookie) {
     const lastActivity = parseInt(lastActivityCookie, 10);
     if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
-      await supabase.auth.signOut();
+      // Best-effort remote signOut — clear local state regardless of network outcome
+      try { await supabase.auth.signOut(); } catch {}
       const redirectUrl = new URL('/login', request.url);
       redirectUrl.searchParams.set('redirect', pathname);
       redirectUrl.searchParams.set('reason', 'inactivity');

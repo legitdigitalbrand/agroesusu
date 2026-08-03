@@ -53,6 +53,15 @@ interface MeResponse {
   roles?: string[];
 }
 
+function isNetworkError(err: Error): boolean {
+  const msg = err.message.toLowerCase();
+  return msg.includes("failed to fetch") ||
+    msg.includes("err_name_not_resolved") ||
+    msg.includes("err_internet_disconnected") ||
+    msg.includes("networkerror") ||
+    msg.includes("network request failed");
+}
+
 export function useMe() {
   return useQuery<MeResponse>({
     queryKey: ["me"],
@@ -74,6 +83,11 @@ export function useMe() {
       return res.json() as Promise<MeResponse>;
     },
     staleTime: 60 * 1000, // 1 min
-    retry: 1,
+    // Don't retry on network errors — Supabase is likely unreachable (DNS failure,
+    // paused project). Retrying would compound the sign-out loop described in §2.
+    retry: (failureCount, error) => {
+      if (isNetworkError(error as Error)) return false;
+      return failureCount < 1;
+    },
   });
 }

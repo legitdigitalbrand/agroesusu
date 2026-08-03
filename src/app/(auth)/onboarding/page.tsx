@@ -265,7 +265,12 @@ export default function OnboardingPage() {
                       setResendCooldown(60);
                     } catch (err) {
                       if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
-                      setError(err instanceof Error ? err.message : "Network error. Please try again.");
+                      const msg = err instanceof Error ? err.message : String(err);
+                      if (msg.includes('Failed to fetch') || msg.includes('ERR_')) {
+                        setError("Unable to connect to the server. Please check your internet connection and try again.");
+                      } else {
+                        setError(msg || "Network error. Please try again.");
+                      }
                     }
                     setSaving(false);
                   }}
@@ -357,7 +362,12 @@ export default function OnboardingPage() {
                         }, 2000);
                       } catch (err) {
                         if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
-                        setError(err instanceof Error ? err.message : "Network error");
+                        const msg = err instanceof Error ? err.message : String(err);
+                        if (msg.includes('Failed to fetch') || msg.includes('ERR_')) {
+                          setError("Unable to connect to the server. Please check your internet connection and try again.");
+                        } else {
+                          setError(msg || "Network error");
+                        }
                       }
                       setSaving(false);
                     }}
