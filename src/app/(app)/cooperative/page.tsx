@@ -1,5 +1,7 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
+// Redirect /cooperative (singular) → /cooperatives (plural)
+// The canonical route is /cooperatives
 export default function CooperativePage() {
-  return notFound();
+  redirect("/cooperatives");
 }
