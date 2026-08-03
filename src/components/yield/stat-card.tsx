@@ -40,14 +40,14 @@ export function StatCard({
       variant={isDark ? "dark" : variant === "flat" ? "flat" : "elevated"}
       padding="md"
       className={cn(
-        "relative flex flex-col justify-between transition-all duration-200 min-w-0",
+        "relative flex flex-col justify-between transition-all duration-200 min-w-0 overflow-visible",
         variant === "ochre" && "bg-ochre-light/50 border border-ochre/30 text-indigo-deep",
         className
       )}
       {...props}
     >
       {/* Header Row */}
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {icon && (
             <div
@@ -63,7 +63,7 @@ export function StatCard({
           )}
           <span
             className={cn(
-              "text-xs font-semibold uppercase tracking-wider truncate",
+              "text-[11px] sm:text-xs font-semibold uppercase tracking-wide leading-tight break-words",
               isDark ? "text-white/80" : "text-ink-soft"
             )}
           >
@@ -82,7 +82,7 @@ export function StatCard({
       <div className="mt-1 min-w-0">
         <div
           className={cn(
-            "font-mono text-xl sm:text-2xl lg:text-2xl font-semibold tracking-normal tabular-nums",
+            "font-mono text-xl sm:text-2xl lg:text-2xl font-semibold tracking-normal tabular-nums break-words leading-tight",
             isDark ? "text-white" : "text-ink"
           )}
         >
@@ -112,7 +112,7 @@ export function StatCard({
             {subtitle && (
               <span
                 className={cn(
-                  "text-xs truncate",
+                  "text-xs leading-tight break-words",
                   isDark ? "text-white/70" : "text-ink-soft"
                 )}
               >
@@ -152,11 +152,11 @@ export function MetricCard({
       {...props}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-ink-soft truncate">{label}</p>
-        <p className="mt-1 font-mono text-lg sm:text-xl font-semibold text-ink tracking-normal tabular-nums truncate">
+        <p className="text-xs font-medium text-ink-soft leading-tight break-words">{label}</p>
+        <p className="mt-1 font-mono text-lg sm:text-xl font-semibold text-ink tracking-normal tabular-nums break-words leading-tight">
           {value}
         </p>
-        {subtext && <p className="mt-0.5 text-xs text-ink-soft truncate">{subtext}</p>}
+        {subtext && <p className="mt-0.5 text-xs text-ink-soft leading-tight break-words">{subtext}</p>}
       </div>
 
       {(icon || trend) && (
