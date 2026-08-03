@@ -12,12 +12,13 @@ import crypto from 'crypto';
 
 // POST /api/auth/pin-setup
 // Sets up a mandatory 4-digit PIN for the authenticated user's device.
-// Called after successful Email + Password authentication.
+// Called after successful Email + Password authentication + OTP verification.
 // Sets the device_id as an httpOnly cookie.
 
 export async function POST(request: Request) {
-  const limited = applyRateLimit(request, '/api/auth/pin-setup', RATE_LIMITS.AUTH);
+  const limited = applyRateLimit(request, "/api/auth/pin-setup", RATE_LIMITS.AUTH);
   if (limited) return limited;
+
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -27,12 +28,17 @@ export async function POST(request: Request) {
 
     if (!user.email_confirmed_at) {
       return NextResponse.json(
-        { error: 'Email verification required before setting up a PIN' },
+        { error: 'Email verification required before setting up a PIN', code: 'email_not_verified' },
         { status: 403 }
       );
     }
 
-    const { pin, deviceName } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body.pin !== 'string') {
+      return NextResponse.json({ error: 'PIN is required' }, { status: 400 });
+    }
+
+    const { pin, deviceName } = body;
 
     if (!isValidPinFormat(pin)) {
       return NextResponse.json({ error: 'PIN must be exactly 4 digits' }, { status: 400 });
@@ -70,8 +76,19 @@ export async function POST(request: Request) {
       );
 
     if (error) {
-      console.error('[pin-setup] DB error:', error.message);
-      return NextResponse.json({ error: 'Failed to save PIN' }, { status: 500 });
+      console.error('[pin-setup] DB error:', error.message, error.code, error.details);
+
+      // Handle specific DB errors with helpful messages
+      if (error.code === '23505') {
+        // Unique constraint violation — shouldn't happen with upsert, but handle gracefully
+        return NextResponse.json({ error: 'PIN already exists for this device. Try changing it instead.' }, { status: 409 });
+      }
+      if (error.code === '42501') {
+        // RLS policy violation
+        return NextResponse.json({ error: 'Permission denied. Please sign in again.' }, { status: 403 });
+      }
+
+      return NextResponse.json({ error: 'Failed to save PIN. Please try again.' }, { status: 500 });
     }
 
     // Set the device_id and pin_verified cookies
@@ -81,7 +98,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (err) {
-    console.error('[pin-setup] Error:', err);
+    console.error('[pin-setup] Unexpected error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

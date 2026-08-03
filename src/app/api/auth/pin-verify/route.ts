@@ -19,8 +19,9 @@ const MAX_PIN_ATTEMPTS = 5;
 export async function POST(request: Request) {
   const limited = applyRateLimit(request, '/api/auth/pin-verify', RATE_LIMITS.AUTH);
   if (limited) return limited;
+
   try {
-    // Check if there's a valid session first (before body parsing)
+    // Check if there's a valid session first
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -30,7 +31,12 @@ export async function POST(request: Request) {
       }, { status: 401 });
     }
 
-    const { pin } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body.pin !== 'string') {
+      return NextResponse.json({ error: 'PIN is required' }, { status: 400 });
+    }
+
+    const { pin } = body;
 
     if (!isValidPinFormat(pin)) {
       return NextResponse.json({ error: 'PIN must be 4 digits' }, { status: 400 });
@@ -61,7 +67,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (dbError) {
-      console.error('[pin-verify] DB error:', dbError.message);
+      console.error('[pin-verify] DB error:', dbError.message, dbError.code);
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
@@ -80,7 +86,19 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // Verify PIN against stored hash and salt using canonical PBKDF2 function from src/lib/auth/pin.ts
+    // ── Fix: Handle null/missing pin_salt ──
+    // Older records may have pin_hash in "hash:salt" format without a separate pin_salt column.
+    // The verifyPin function handles this fallback internally, but we log it for debugging.
+    if (!pinRecord.pin_salt && !pinRecord.pin_hash?.includes(':')) {
+      console.error('[pin-verify] PIN record has no salt and hash is not in hash:salt format:', pinRecord.id);
+      return NextResponse.json({
+        error: 'PIN data corrupted. Please reset your PIN.',
+        code: 'pin_corrupted'
+      }, { status: 500 });
+    }
+
+    // Verify PIN using timing-safe comparison from src/lib/auth/pin.ts
+    // verifyPin handles: null salt fallback (extracts from hash:salt format), timing attacks
     const isPinValid = verifyPin(pin, pinRecord.pin_hash, pinRecord.pin_salt);
 
     if (!isPinValid) {
@@ -88,13 +106,17 @@ export async function POST(request: Request) {
       const newFailedAttempts = (pinRecord.failed_attempts || 0) + 1;
       const shouldLock = newFailedAttempts >= MAX_PIN_ATTEMPTS;
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('device_pins')
         .update({
           failed_attempts: newFailedAttempts,
           locked_at: shouldLock ? new Date().toISOString() : null,
         })
         .eq('id', pinRecord.id);
+
+      if (updateError) {
+        console.error('[pin-verify] Failed to update failed_attempts:', updateError.message);
+      }
 
       return NextResponse.json({
         error: shouldLock
@@ -106,13 +128,19 @@ export async function POST(request: Request) {
     }
 
     // PIN is correct — reset failed attempts and update last_used_at
-    await supabase
+    const { error: resetError } = await supabase
       .from('device_pins')
       .update({
         failed_attempts: 0,
+        locked_at: null,
         last_used_at: new Date().toISOString(),
       })
       .eq('id', pinRecord.id);
+
+    if (resetError) {
+      console.error('[pin-verify] Failed to reset failed_attempts:', resetError.message);
+      // Don't fail the request — PIN was correct, let the user through
+    }
 
     // Set pin_verified cookie
     const response = NextResponse.json({
@@ -129,12 +157,13 @@ export async function POST(request: Request) {
     // Refresh the Supabase session
     const { error: refreshError } = await supabase.auth.refreshSession();
     if (refreshError) {
-      console.error('[pin-verify] Session refresh error:', refreshError);
+      console.error('[pin-verify] Session refresh error:', refreshError.message);
+      // Don't fail — PIN was correct, session refresh is best-effort
     }
 
     return response;
   } catch (err) {
-    console.error('[pin-verify] Error:', err);
+    console.error('[pin-verify] Unexpected error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

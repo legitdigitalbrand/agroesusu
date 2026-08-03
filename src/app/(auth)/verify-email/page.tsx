@@ -14,13 +14,16 @@ function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
+
   // Poll for email confirmation (auto-confirm in sandbox = instant)
   useEffect(() => {
     const check = async () => {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push("/set-pin");
+        // Email confirmed — redirect to onboarding for OTP verification
+        // (OTP verification must happen BEFORE PIN setup per security policy)
+        router.push("/onboarding");
         router.refresh();
       }
     };

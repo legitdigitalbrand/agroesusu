@@ -10,6 +10,7 @@ import { hashPin, verifyPin, isValidPinFormat } from '@/lib/auth/pin';
 export async function POST(request: Request) {
   const limited = applyRateLimit(request, '/api/auth/pin-change', RATE_LIMITS.AUTH);
   if (limited) return limited;
+
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -17,7 +18,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { currentPin, newPin } = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: 'Request body required' }, { status: 400 });
+    }
+
+    const { currentPin, newPin } = body;
 
     if (!isValidPinFormat(currentPin)) {
       return NextResponse.json({ error: 'Current PIN must be 4 digits' }, { status: 400 });
@@ -41,24 +47,34 @@ export async function POST(request: Request) {
 
     const { data: pinRecord, error: dbError } = await supabase
       .from('device_pins')
-      .select('id, pin_hash, pin_salt')
+      .select('id, pin_hash, pin_salt, locked_at')
       .eq('user_id', user.id)
       .eq('device_id', deviceId)
       .maybeSingle();
 
-    if (dbError || !pinRecord) {
-      return NextResponse.json({ error: 'No PIN found for this device' }, { status: 404 });
+    if (dbError) {
+      console.error('[pin-change] DB error:', dbError.message, dbError.code);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+
+    if (!pinRecord) {
+      return NextResponse.json({ error: 'No PIN found for this device', code: 'no_pin' }, { status: 404 });
+    }
+
+    // Check if PIN is locked
+    if (pinRecord.locked_at) {
+      return NextResponse.json({ error: 'PIN is locked. Please sign in with email and password first.', code: 'pin_locked' }, { status: 403 });
     }
 
     // Verify current PIN using timing-safe comparison
     if (!verifyPin(currentPin, pinRecord.pin_hash, pinRecord.pin_salt)) {
-      return NextResponse.json({ error: 'Current PIN is incorrect' }, { status: 401 });
+      return NextResponse.json({ error: 'Current PIN is incorrect', code: 'wrong_pin' }, { status: 401 });
     }
 
-    // Set new PIN using canonical PBKDF2 function from src/lib/auth/pin.ts
+    // Set new PIN using canonical PBKDF2 function
     const { pinHash: newHash, pinSalt: newSalt } = hashPin(newPin);
 
-    await supabase
+    const { error: updateError } = await supabase
       .from('device_pins')
       .update({
         pin_hash: newHash,
@@ -69,9 +85,14 @@ export async function POST(request: Request) {
       })
       .eq('id', pinRecord.id);
 
+    if (updateError) {
+      console.error('[pin-change] DB error:', updateError.message, updateError.code);
+      return NextResponse.json({ error: 'Failed to update PIN' }, { status: 500 });
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[pin-change] Error:', err);
+    console.error('[pin-change] Unexpected error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

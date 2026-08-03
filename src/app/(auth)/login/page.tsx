@@ -23,6 +23,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/dashboard";
   const isResetSuccess = searchParams.get("reset") === "success";
+  const isInactivity = searchParams.get("reason") === "inactivity";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -231,6 +232,14 @@ function LoginContent() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
+            {isInactivity && (
+              <div className="mb-4 rounded-lg bg-clay/5 border border-clay/20 px-4 py-3">
+                <p className="text-[13px] text-clay font-medium">
+                  ⏱ Your session expired after 2 hours of inactivity. Please sign in again.
+                </p>
+              </div>
+            )}
+
             {isResetSuccess && (
               <div className="mb-4 rounded-lg bg-loam/5 border border-loam/20 px-4 py-3">
                 <p className="text-[13px] text-loam font-medium">
@@ -246,7 +255,7 @@ function LoginContent() {
               Sign in to manage your savings &amp; loans
             </p>
 
-            <form onSubmit={handlePasswordLogin}>
+            <form onSubmit={handlePasswordLogin} autoComplete="off" spellCheck={false}>
               <AuthInput
                 label="Email address"
                 type="email"
@@ -254,7 +263,7 @@ function LoginContent() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                autoComplete="email"
+                autoComplete="email" autoCapitalize="off" spellCheck={false}
               />
 
               <PasswordInput
@@ -319,7 +328,7 @@ function LoginContent() {
               Quick sign-in for this device.
             </p>
 
-            <form onSubmit={handlePinLogin}>
+            <form onSubmit={handlePinLogin} autoComplete="off" spellCheck={false}>
               <PinInput value={pin} onChange={setPin} error={!!error} />
 
               {error && (

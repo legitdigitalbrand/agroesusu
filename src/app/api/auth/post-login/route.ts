@@ -8,11 +8,13 @@ import {
 
 // POST /api/auth/post-login
 // Called after successful password authentication.
-// Sets the pin_verified cookie and checks if the user needs PIN setup.
+// Sets the pin_verified cookie if user already has a device PIN.
+// Returns needsPinSetup flag for the client to redirect appropriately.
 
 export async function POST(request: Request) {
   const limited = applyRateLimit(request, "/api/auth/post-login", RATE_LIMITS.AUTH);
   if (limited) return limited;
+
   try {
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
@@ -22,16 +24,20 @@ export async function POST(request: Request) {
     }
 
     // Check if the user has ANY device PINs
-    const { count } = await supabase
+    const { count, error: pinCountError } = await supabase
       .from('device_pins')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', session.user.id);
+
+    if (pinCountError) {
+      console.error('[post-login] Error checking device_pins:', pinCountError.message);
+    }
 
     const hasAnyPin = (count || 0) > 0;
 
     // Only set pin_verified cookie if user already has a device PIN.
     // If they need PIN setup, DON'T set pin_verified — middleware will
-    // redirect them to /set-pin, preventing access without a PIN.
+    // redirect them to /set-pin (which itself redirects to /onboarding if OTP not done).
     const response = NextResponse.json({
       success: true,
       needsPinSetup: !hasAnyPin,
@@ -43,7 +49,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (err) {
-    console.error('[post-login] Error:', err);
+    console.error('[post-login] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -11,13 +11,14 @@ import {
 // Agriqcap — Authentication Middleware
 //
 //  1. Session refresh on every request
-//  2. Inactivity expiry: 2-hour inactivity forces re-login
+//  2. Inactivity expiry: 2-hour inactivity forces re-login (server-side)
 //  3. Email verification guard: email must be confirmed before proceeding
-//  4. Redirect unauthenticated → /login (for protected routes)
-//  5. Redirect authenticated from /login & /signup → /dashboard
-//  6. PIN gate: authenticated users without pin_verified cookie
+//  4. OTP verification gate: BVN/NIN OTP must be done before PIN setup
+//  5. Redirect unauthenticated → /login (for protected routes)
+//  6. Redirect authenticated from /login & /signup → /dashboard
+//  7. PIN gate: authenticated users without pin_verified cookie
 //     → /set-pin (if no device cookie) or /pin-login (if device cookie)
-//  7. Admin-only access for /admin/* or /dev/* (staff check)
+//  8. Admin-only access for /admin/* or /dev/* (staff check)
 // ════════════════════════════════════════════════════════════
 
 const PUBLIC_ROUTES = [
@@ -27,8 +28,10 @@ const PUBLIC_ROUTES = [
   '/forgot-password',
   '/reset-password',
   '/verify-email',
+  '/verify-phone',
   '/set-pin',
   '/forgot-pin',
+  '/onboarding',
   '/about',
   '/blog',
   '/careers',
@@ -53,6 +56,8 @@ const PIN_BYPASS_ROUTES = [
   '/reset-password',
   '/pin-login',
   '/verify-email',
+  '/verify-phone',
+  '/onboarding',
 ];
 
 function isPublicRoute(pathname: string): boolean {
@@ -124,7 +129,7 @@ export async function middleware(request: NextRequest) {
       if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
         await supabase.auth.signOut();
         const apiResponse = NextResponse.json(
-          { error: 'Session expired due to inactivity. Please sign in again.' },
+          { error: 'Session expired due to inactivity. Please sign in again.', code: 'session_expired' },
           { status: 401 }
         );
         apiResponse.cookies.delete(LAST_ACTIVITY_COOKIE_NAME);
@@ -151,7 +156,7 @@ export async function middleware(request: NextRequest) {
 
   // ── Has session (Page Routes) ──
 
-  // Check 2-hour inactivity expiry
+  // Check 2-hour inactivity expiry (server-side, cannot be bypassed by client)
   const lastActivityCookie = request.cookies.get(LAST_ACTIVITY_COOKIE_NAME)?.value;
   if (lastActivityCookie) {
     const lastActivity = parseInt(lastActivityCookie, 10);
@@ -167,7 +172,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Update last_activity cookie on response
+  // Update last_activity cookie on response (server-side session keepalive)
   response.cookies.set(LAST_ACTIVITY_COOKIE_NAME, now.toString(), LAST_ACTIVITY_COOKIE_OPTIONS);
 
   // Email verification guard: if user is not confirmed, force /verify-email
@@ -197,6 +202,27 @@ export async function middleware(request: NextRequest) {
       }
     } catch {
       // Let client-side handle it
+    }
+  }
+
+  // ── OTP Before PIN Gate ──
+  // If user is on /set-pin but hasn't completed onboarding (kyc_level < 1),
+  // redirect to /onboarding to force OTP verification first.
+  // Skip this check for /onboarding itself and other bypass routes.
+  if (pathname === '/set-pin') {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('kyc_level')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      // If profile exists and kyc_level is 0 (no OTP verification done), force onboarding
+      if (profile && (profile.kyc_level === 0 || profile.kyc_level === null)) {
+        return NextResponse.redirect(new URL('/onboarding', request.url));
+      }
+    } catch {
+      // If we can't check, allow proceeding (don't block on DB error)
     }
   }
 

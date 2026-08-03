@@ -94,7 +94,7 @@ export default function ForgotPinPage() {
               Verify your identity with email and password to set a new PIN.
             </p>
 
-            <form onSubmit={handleAuth}>
+            <form onSubmit={handleAuth} autoComplete="off" spellCheck={false}>
               <AuthInput
                 label="Email address"
                 type="email"
@@ -102,7 +102,7 @@ export default function ForgotPinPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                autoComplete="email"
+                autoComplete="email" autoCapitalize="off" spellCheck={false}
               />
               <PasswordInput
                 label="Password"
@@ -151,7 +151,7 @@ export default function ForgotPinPage() {
               Set a new 4-digit PIN for this device.
             </p>
 
-            <form onSubmit={handleNewPin}>
+            <form onSubmit={handleNewPin} autoComplete="off" spellCheck={false}>
               <div className="mb-6">
                 <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft block mb-3 text-center">
                   New PIN

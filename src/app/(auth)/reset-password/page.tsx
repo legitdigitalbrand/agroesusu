@@ -150,7 +150,7 @@ function ResetPasswordContent() {
           Choose a new password for your account.
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off" spellCheck={false}>
           <PasswordInput
             label="New password"
             value={password}

@@ -97,11 +97,11 @@ export default function SignupPage() {
       console.error("[signup] Bootstrap error:", err);
     }
 
-    // If email confirmation is required (production), redirect to verify-email
-    // If auto-confirm is on (sandbox), user is authenticated — go to set-pin
+    // After signup, always go to verify-email (which redirects to onboarding after confirmation)
+    // Even in sandbox (auto-confirm), go through onboarding for OTP verification
     if (data.session) {
       // Auto-confirmed — go to mandatory PIN setup
-      router.push("/set-pin");
+      router.push("/onboarding");
       router.refresh();
     } else {
       // Email verification required
@@ -126,7 +126,7 @@ export default function SignupPage() {
           Open your account in under 2 minutes
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off" spellCheck={false}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AuthInput
               label="First name"
@@ -157,7 +157,7 @@ export default function SignupPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="you@example.com"
-            autoComplete="email"
+            autoComplete="email" autoCapitalize="off" spellCheck={false}
           />
 
           <AuthInput

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getDeviceId } from "@/lib/auth/device";
 import {
   ShieldCheck, Check, Loader2, ArrowRight, ChevronRight,
 } from "lucide-react";
@@ -99,6 +100,7 @@ export default function OnboardingPage() {
       updateData.bvn = bvn || null;
       updateData.nin = nin || null;
       updateData.kyc_tier = "tier_1";
+      updateData.kyc_level = 1;
     }
     if (tier >= 2) {
       updateData.residential_address = address;
@@ -106,6 +108,7 @@ export default function OnboardingPage() {
       updateData.lga = lga;
       updateData.occupation = occupation;
       updateData.kyc_tier = "tier_2";
+      updateData.kyc_level = 2;
     }
     if (tier >= 3) {
       updateData.farm_type = farmType;
@@ -114,6 +117,7 @@ export default function OnboardingPage() {
       updateData.nok_phone = nokPhone;
       updateData.nok_relationship = nokRelationship;
       updateData.kyc_tier = "tier_3";
+      updateData.kyc_level = 3;
     }
 
     const { error: updateError } = await supabase
@@ -138,7 +142,9 @@ export default function OnboardingPage() {
     setSaving(false);
     setSuccess(true);
     setTimeout(() => {
-      router.push("/dashboard");
+      // After saving verification, redirect to set-pin if no device PIN, else dashboard
+      const hasDevice = getDeviceId();
+      router.push(hasDevice ? "/dashboard" : "/set-pin");
       router.refresh();
     }, 1500);
   };
@@ -337,14 +343,16 @@ export default function OnboardingPage() {
                         }
                         setOtpStep("verified");
                         setSuccess(true);
-                        // Update KYC tier in profile
+                        // Update KYC level in profile
                         const supabase = createClient();
                         const { data: { user } } = await supabase.auth.getUser();
                         if (user) {
-                          await supabase.from("profiles").update({ kyc_tier: "tier_1" }).eq("id", user.id);
+                          await supabase.from("profiles").update({ kyc_level: 1, kyc_tier: "tier_1" }).eq("id", user.id);
                         }
                         setTimeout(() => {
-                          router.push("/dashboard");
+                          // After OTP verification, redirect to set-pin if no device PIN, else dashboard
+                          const hasDevice = getDeviceId();
+                          router.push(hasDevice ? "/dashboard" : "/set-pin");
                           router.refresh();
                         }, 2000);
                       } catch (err) {
@@ -519,7 +527,7 @@ export default function OnboardingPage() {
             <ShieldCheck className="h-12 w-12 text-loam mx-auto mb-3" />
             <h2 className="font-display text-xl text-ink">Fully verified</h2>
             <p className="text-sm text-ink-soft mt-1">You have access to all Agriqcap features.</p>
-            <Button className="mt-6" onClick={() => router.push("/dashboard")}>
+            <Button className="mt-6" onClick={() => { const hasDevice = getDeviceId(); router.push(hasDevice ? "/dashboard" : "/set-pin"); }}>
               Go to dashboard <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </Card>
@@ -532,7 +540,7 @@ export default function OnboardingPage() {
         {/* Skip link — always allow going to dashboard */}
         <div className="text-center mt-6">
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => { const hasDevice = getDeviceId(); router.push(hasDevice ? "/dashboard" : "/set-pin"); }}
             className="text-sm text-ink-soft hover:text-indigo inline-flex items-center gap-1"
           >
             Skip for now <ChevronRight className="h-4 w-4" />

@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
               Enter your email and we'll send you a reset link.
             </p>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} autoComplete="off" spellCheck={false}>
               <AuthInput
                 label="Email address"
                 type="email"
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                autoComplete="email"
+                autoComplete="email" autoCapitalize="off" spellCheck={false}
               />
 
               {error && (

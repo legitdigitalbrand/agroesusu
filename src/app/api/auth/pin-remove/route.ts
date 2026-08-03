@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: Request) {
   const limited = applyRateLimit(request, '/api/auth/pin-remove', RATE_LIMITS.AUTH);
   if (limited) return limited;
+
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -16,11 +17,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { deviceId } = await request.json();
-
-    if (!deviceId) {
+    const body = await request.json().catch(() => null);
+    if (!body || !body.deviceId) {
       return NextResponse.json({ error: 'Device ID required' }, { status: 400 });
     }
+
+    const { deviceId } = body;
 
     const { error } = await supabase
       .from('device_pins')
@@ -29,13 +31,16 @@ export async function POST(request: Request) {
       .eq('device_id', deviceId);
 
     if (error) {
-      console.error('[pin-remove] DB error:', error.message);
+      console.error('[pin-remove] DB error:', error.message, error.code);
+      if (error.code === '42501') {
+        return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'Failed to remove PIN' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[pin-remove] Error:', err);
+    console.error('[pin-remove] Unexpected error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
