@@ -1,19 +1,53 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  PiggyBank,
+  Landmark,
+  Bell,
+  Wallet,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Plus,
+  Send,
+  Eye,
+  EyeOff,
+  FileText,
+  ChevronRight,
+  Building2,
+  Copy,
+  TrendingUp,
+} from "lucide-react";
+
 import { useMe } from "@/hooks/use-me";
-import { LoadingState, ErrorState } from "@/components/yield";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  StatCard,
+  Button,
+  StatusBadge,
+  MoneyText,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+} from "@/components/yield";
 import { OnboardingChecklist } from "@/components/app/onboarding-checklist";
 import { WelcomeBanner } from "@/components/app/welcome-banner";
 import { formatRelativeTime, initials } from "@/lib/format";
-import {
-  PiggyBank, Landmark,
-  Bell, Wallet, ArrowUpRight, ArrowDownLeft,
-  Plus, Send, RefreshCw, Eye, EyeOff, FileText,
-  ChevronRight, Building2, Copy,
-} from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
 
 interface WalletTransaction {
   id: string;
@@ -26,6 +60,15 @@ interface WalletTransaction {
   created_at: string;
 }
 
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  type?: string;
+  created_at: string;
+}
+
 const fmtNGN = (v: number) =>
   new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -33,24 +76,56 @@ const fmtNGN = (v: number) =>
     minimumFractionDigits: 0,
   }).format(v || 0);
 
-// ════════════════════════════════════════════════════════════
-// Dashboard — Customer Journey Layout
-//
-// The dashboard guides users through their financial journey:
-//   1. Onboarding checklist (shows until all steps complete)
-//   2. Wallet hero card (balance + actions)
-//   3. Quick actions (Fund, Save, Borrow, Statements)
-//   4. Savings & Loans summaries with helpful empty states
-//   5. Recent activity
-//
-// Every empty state explains WHY it matters and WHAT to do next.
-// ════════════════════════════════════════════════════════════
+function buildChartData(transactions: WalletTransaction[], currentBalance: number) {
+  if (!transactions || transactions.length === 0) {
+    return [];
+  }
+  const sorted = [...transactions].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  const netTotal = sorted.reduce((acc, tx) => {
+    return acc + (tx.direction === "credit" ? Number(tx.amount) : -Number(tx.amount));
+  }, 0);
+
+  const startBalance = Math.max(0, currentBalance - netTotal);
+  let runningBalance = startBalance;
+
+  const points = sorted.map((tx) => {
+    const delta = tx.direction === "credit" ? Number(tx.amount) : -Number(tx.amount);
+    runningBalance += delta;
+    const dateStr = new Date(tx.created_at).toLocaleDateString("en-NG", {
+      month: "short",
+      day: "numeric",
+    });
+    return {
+      date: dateStr,
+      amount: Math.max(0, runningBalance),
+    };
+  });
+
+  if (points.length === 1) {
+    const firstDate = new Date(sorted[0].created_at);
+    firstDate.setDate(firstDate.getDate() - 1);
+    const prevDateStr = firstDate.toLocaleDateString("en-NG", {
+      month: "short",
+      day: "numeric",
+    });
+    return [{ date: prevDateStr, amount: startBalance }, points[0]];
+  }
+
+  return points;
+}
 
 export default function DashboardPage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [copiedAcct, setCopiedAcct] = useState(false);
+
   const { data: me, isLoading: meLoading, error: meError, refetch: refetchMe } = useMe();
 
   const walletId = me?.wallet?.id;
+
+  // Transactions query
   const { data: txData, isLoading: txLoading } = useQuery<{ transactions: WalletTransaction[] }>({
     queryKey: ["wallet-transactions", walletId],
     queryFn: async () => {
@@ -61,8 +136,12 @@ export default function DashboardPage() {
     enabled: !!walletId,
   });
 
-  // A1: Fetch DVA / funding details for dashboard display
-  const { data: fundingDetails } = useQuery<{ provisioned: boolean; account?: { account_number: string; account_name: string; bank_name: string }; message?: string }>({
+  // Wallet DVA query
+  const { data: fundingDetails } = useQuery<{
+    provisioned: boolean;
+    account?: { account_number: string; account_name: string; bank_name: string };
+    message?: string;
+  }>({
     queryKey: ["wallet-funding-details"],
     queryFn: async () => {
       const res = await fetch("/api/wallets/funding-details");
@@ -70,8 +149,57 @@ export default function DashboardPage() {
       return res.json();
     },
   });
-  const [copiedAcct, setCopiedAcct] = useState(false);
+
+  // Credit score query
+  const { data: creditScoreData } = useQuery<{
+    has_score?: boolean;
+    credit_score?: number;
+    score?: number;
+    risk_band?: string;
+  }>({
+    queryKey: ["credit-score"],
+    queryFn: async () => {
+      const res = await fetch("/api/credit-score");
+      if (!res.ok) return {};
+      return res.json();
+    },
+  });
+
+  // Notifications query
+  const { data: notifData, isLoading: notifLoading } = useQuery<{
+    notifications: NotificationItem[];
+  }>({
+    queryKey: ["dashboard-notifications"],
+    queryFn: async () => {
+      const res = await fetch("/api/notifications?limit=4");
+      if (!res.ok) return { notifications: [] };
+      return res.json();
+    },
+  });
+
+  if (meLoading) return <LoadingState message="Loading your dashboard…" />;
+  if (meError || !me)
+    return <ErrorState message="Couldn't load your dashboard" onRetry={() => refetchMe()} />;
+
+  const wallet = me.wallet;
+  const transactions = txData?.transactions || [];
+  const notifications = notifData?.notifications || [];
   const dva = fundingDetails?.provisioned ? fundingDetails.account : null;
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = me.profile.full_name?.split(" ")[0] || "there";
+
+  const savingsTotal = me?.summaries?.savings?.total_balance || 0;
+  const savingsCount = me?.summaries?.savings?.count || 0;
+  const savingsInterest = me?.summaries?.savings?.total_interest || 0;
+  const loanTotal = me?.summaries?.loans?.total_outstanding || 0;
+  const loanCount = me?.summaries?.loans?.count || 0;
+  const hasKyc = (me.profile?.kyc_level || 0) >= 1;
+
+  const scoreVal = creditScoreData?.credit_score ?? creditScoreData?.score;
+  const creditScoreDisplay =
+    creditScoreData?.has_score && scoreVal ? `${scoreVal}` : scoreVal ? `${scoreVal}` : "Building";
 
   const copyAcctNum = () => {
     if (dva?.account_number) {
@@ -81,477 +209,542 @@ export default function DashboardPage() {
     }
   };
 
-  if (meLoading) return <LoadingState message="Loading your dashboard…" />;
-  if (meError || !me) return <ErrorState message="Couldn't load your dashboard" onRetry={() => refetchMe()} />;
-
-  const wallet = me.wallet;
-  const transactions = txData?.transactions || [];
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = me.profile.full_name?.split(" ")[0] || "there";
-
-  const savingsTotal = me?.summaries?.savings?.total_balance || 0;
-  const savingsCount = me?.summaries?.savings?.count || 0;
-  const loanTotal = me?.summaries?.loans?.total_outstanding || 0;
-  const loanCount = me?.summaries?.loans?.count || 0;
-  const hasKyc = (me.profile?.kyc_level || 0) >= 1;
+  const chartData = buildChartData(transactions, wallet?.available_balance || 0);
 
   return (
-    <>
-      {/* ══════════════════════════════════════════════
-          MOBILE LAYOUT
-         ══════════════════════════════════════════════ */}
-      <div className="md:hidden space-y-4">
-        {/* Greeting */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-full bg-indigo flex items-center justify-center text-white font-display font-semibold text-sm">
-              {initials(me.profile.full_name)}
-            </div>
-            <div>
-              <p className="font-display font-semibold text-[16px] text-ink leading-tight">{me.profile.full_name}</p>
-              <p className="text-[11px] text-ink-soft">{greeting}</p>
-            </div>
+    <div className="space-y-6">
+      {/* ── Top Header / Greeting ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-full bg-indigo flex items-center justify-center text-white font-display font-semibold text-base shadow-xs shrink-0">
+            {initials(me.profile.full_name)}
           </div>
-          <Link href="/notifications" className="h-9 w-9 rounded-full bg-ochre flex items-center justify-center">
-            <Bell className="h-[18px] w-[18px] text-indigo-deep" strokeWidth={2} />
+          <div>
+            <h1 className="font-display font-bold text-xl sm:text-2xl text-ink leading-tight">
+              {greeting}, {firstName}
+            </h1>
+            <p className="text-xs sm:text-sm text-ink-soft">
+              Here&apos;s what&apos;s happening with your money today.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <Link
+            href="/notifications"
+            className="relative p-2.5 rounded-xl bg-paper border border-line text-ink hover:bg-parchment transition shrink-0"
+            aria-label="Notifications"
+          >
+            <Bell className="w-5 h-5 text-indigo-deep" strokeWidth={1.8} />
+            {notifications.some((n) => !n.read) && (
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-clay" />
+            )}
           </Link>
-        </div>
-
-        {/* A8: Welcome banner for first-time users */}
-        <WelcomeBanner />
-
-        {/* Onboarding checklist — guides users through their journey */}
-        <OnboardingChecklist />
-
-        {/* Wallet hero card */}
-        <WalletHeroCard
-          wallet={wallet}
-          balanceVisible={balanceVisible}
-          onToggleBalance={() => setBalanceVisible(!balanceVisible)}
-        />
-
-        {/* A1: DVA block on dashboard */}
-        {dva ? (
-          <div className="bg-paper border border-line rounded-2xl p-4">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-loam-light flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-loam" strokeWidth={1.8} />
-              </div>
-              <div>
-                <p className="font-display font-semibold text-[14px] text-ink">Your Account Number</p>
-                <p className="text-[11px] text-ink-soft">{dva.bank_name}</p>
-              </div>
-            </div>
-            <button onClick={copyAcctNum} className="flex items-center gap-1.5 group w-full bg-parchment rounded-xl p-3">
-              <span className="font-mono font-semibold text-[18px] text-ink flex-1 text-left">{dva.account_number}</span>
-              <Copy className="w-4 h-4 text-ink-soft group-hover:text-ink transition" />
-              {copiedAcct && <span className="text-[11px] text-loam ml-1">Copied!</span>}
-            </button>
-          </div>
-        ) : !fundingDetails?.provisioned && fundingDetails ? (
-          <div className="bg-paper border border-line rounded-2xl p-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-ochre-light flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-ochre-dim" strokeWidth={1.8} />
-              </div>
-              <div>
-                <p className="font-display font-semibold text-[14px] text-ink">Setting up account number…</p>
-                <p className="text-[11px] text-ink-soft">{fundingDetails.message || "Complete identity verification to get your account number."}</p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Quick actions */}
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-          <QuickAction icon={Plus} label="Fund Wallet" href="/wallet/deposit" color="bg-indigo" />
-          <QuickAction icon={PiggyBank} label="Open Savings" href="/savings" color="bg-loam" />
-          <QuickAction icon={Landmark} label="Check Loans" href="/loans" color="bg-indigo-deep" />
-          <QuickAction icon={FileText} label="Statements" href="/statements" color="bg-loam-dim" />
-        </div>
-
-        {/* Savings summary card */}
-        <SavingsSummaryCard total={savingsTotal} count={savingsCount} />
-
-        {/* Loans summary card */}
-        <LoanSummaryCard total={loanTotal} count={loanCount} hasKyc={hasKyc} />
-
-        {/* Recent activity */}
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="font-display font-semibold text-[16px] text-ink">Recent activity</h2>
-            <Link href="/statements" className="text-[14px] text-indigo font-medium">See all</Link>
-          </div>
-          <ActivityList transactions={transactions} loading={txLoading} />
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════
-          DESKTOP LAYOUT
-         ══════════════════════════════════════════════ */}
-      <div className="hidden md:block space-y-5">
-        {/* Greeting */}
-        <div>
-          <h1 className="font-display font-bold text-[24px] text-ink">
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-[14px] text-ink-soft mt-1">
-            Here&apos;s what&apos;s happening with your money today.
-          </p>
-        </div>
+      {/* ── Banners ── */}
+      <WelcomeBanner />
+      <OnboardingChecklist />
 
-        {/* A8: Welcome banner for first-time users */}
-        <WelcomeBanner />
-
-        {/* Onboarding checklist */}
-        <OnboardingChecklist />
-
-        {/* Wallet hero */}
-        <WalletHeroCard
-          wallet={wallet}
-          balanceVisible={balanceVisible}
-          onToggleBalance={() => setBalanceVisible(!balanceVisible)}
-          desktop
+      {/* ── 1. Overview Row: 4 StatCards in responsive grid ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Wallet Balance"
+          value={balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "••••••••"}
+          subtitle={wallet?.status ? `Wallet: ${wallet.status}` : "Available funds"}
+          icon={<Wallet className="w-5 h-5 text-indigo" />}
+          action={
+            <button
+              onClick={() => setBalanceVisible(!balanceVisible)}
+              className="p-1 text-ink-soft hover:text-ink transition"
+              title={balanceVisible ? "Hide balance" : "Show balance"}
+            >
+              {balanceVisible ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          }
         />
 
-        {/* A1: DVA block on dashboard (desktop) */}
-        {dva ? (
-          <div className="bg-paper border border-line rounded-2xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-loam-light flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-loam" strokeWidth={1.8} />
+        <StatCard
+          title="Savings Balance"
+          value={fmtNGN(savingsTotal)}
+          subtitle={`${savingsCount} active ${savingsCount === 1 ? "account" : "accounts"}`}
+          icon={<PiggyBank className="w-5 h-5 text-indigo" />}
+        />
+
+        <StatCard
+          title="Outstanding Loan"
+          value={fmtNGN(loanTotal)}
+          subtitle={`${loanCount} active ${loanCount === 1 ? "loan" : "loans"}`}
+          icon={<Landmark className="w-5 h-5 text-indigo" />}
+        />
+
+        <StatCard
+          title="Credit Score"
+          value={creditScoreDisplay}
+          subtitle={
+            creditScoreData?.risk_band
+              ? `Band: ${creditScoreData.risk_band}`
+              : "Save to build credit score"
+          }
+          icon={<TrendingUp className="w-5 h-5 text-indigo" />}
+        />
+      </div>
+
+      {/* ── 2. Wallet Hero Card ── */}
+      <Card variant="dark" padding="lg" className="relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider text-white/80 font-semibold">
+                Available Wallet Balance
+              </span>
+              <button
+                onClick={() => setBalanceVisible(!balanceVisible)}
+                className="p-1 text-white/70 hover:text-white transition"
+              >
+                {balanceVisible ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-display font-semibold text-[14px] text-ink">Your Agriqcap Account</p>
-              <p className="text-[12px] text-ink-soft">{dva.account_name} · {dva.bank_name}</p>
+            <div className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-white tabular-nums">
+              {balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "••••••••"}
             </div>
-            <button onClick={copyAcctNum} className="flex items-center gap-1.5 group bg-parchment rounded-xl px-4 py-2.5">
-              <span className="font-mono font-semibold text-[16px] text-ink">{dva.account_number}</span>
-              <Copy className="w-4 h-4 text-ink-soft group-hover:text-ink transition" />
-              {copiedAcct && <span className="text-[11px] text-loam ml-1">Copied!</span>}
-            </button>
+
+            {/* DVA Account strip */}
+            {dva ? (
+              <div className="pt-2 flex items-center gap-3 text-xs text-white/90 flex-wrap">
+                <span className="px-2.5 py-1 rounded-lg bg-white/10 font-mono font-medium">
+                  {dva.bank_name}: {dva.account_number}
+                </span>
+                <button
+                  onClick={copyAcctNum}
+                  className="inline-flex items-center gap-1 text-white/80 hover:text-white underline font-medium transition"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  {copiedAcct ? "Copied!" : "Copy account number"}
+                </button>
+              </div>
+            ) : !fundingDetails?.provisioned && fundingDetails ? (
+              <p className="text-xs text-white/70">
+                {fundingDetails.message ||
+                  "Complete identity verification to get your account number."}
+              </p>
+            ) : null}
           </div>
-        ) : fundingDetails && !fundingDetails.provisioned ? (
-          <div className="bg-paper border border-line rounded-2xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-ochre-light flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-ochre-dim" strokeWidth={1.8} />
-            </div>
-            <div className="flex-1">
-              <p className="font-display font-semibold text-[14px] text-ink">Setting up account number…</p>
-              <p className="text-[12px] text-ink-soft">{fundingDetails.message || "Complete identity verification to unlock funding."}</p>
-            </div>
-            <Link href="/onboarding" className="text-[13px] font-medium text-indigo hover:text-indigo-deep transition flex-shrink-0">
-              Verify →
+
+          {/* 3 Quick action buttons */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link href="/wallet/deposit">
+              <Button
+                variant="secondary"
+                size="md"
+                leftIcon={<Plus className="w-4 h-4 text-indigo-deep" />}
+              >
+                Fund
+              </Button>
+            </Link>
+            <Link href="/wallet/transfer">
+              <Button
+                variant="outline"
+                size="md"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30"
+                leftIcon={<Send className="w-4 h-4 text-white" />}
+              >
+                Transfer
+              </Button>
+            </Link>
+            <Link href="/wallet/withdraw">
+              <Button
+                variant="outline"
+                size="md"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30"
+                leftIcon={<Building2 className="w-4 h-4 text-white" />}
+              >
+                Withdraw
+              </Button>
             </Link>
           </div>
-        ) : null}
-
-        {/* Savings + Loans side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <SavingsSummaryCard total={savingsTotal} count={savingsCount} />
-          <LoanSummaryCard total={loanTotal} count={loanCount} hasKyc={hasKyc} />
         </div>
+      </Card>
 
-        {/* Bottom: activity + quick actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
-          <div className="bg-paper border border-line rounded-2xl p-5">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-display font-semibold text-[17px] text-ink">Recent activity</h3>
-              <Link href="/statements" className="text-[13px] text-indigo font-medium hover:underline">
-                See all →
+      {/* ── 4. Quick Actions Tiles (4 tiles) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link href="/wallet/deposit">
+          <Card
+            variant="interactive"
+            padding="sm"
+            className="flex flex-col items-center text-center gap-2 group p-4"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-indigo text-white flex items-center justify-center transition-transform group-hover:scale-105">
+              <Plus className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-semibold text-ink">Fund Wallet</span>
+          </Card>
+        </Link>
+
+        <Link href="/savings">
+          <Card
+            variant="interactive"
+            padding="sm"
+            className="flex flex-col items-center text-center gap-2 group p-4"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-loam text-white flex items-center justify-center transition-transform group-hover:scale-105">
+              <PiggyBank className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-semibold text-ink">Open Savings</span>
+          </Card>
+        </Link>
+
+        <Link href="/loans">
+          <Card
+            variant="interactive"
+            padding="sm"
+            className="flex flex-col items-center text-center gap-2 group p-4"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-indigo-deep text-white flex items-center justify-center transition-transform group-hover:scale-105">
+              <Landmark className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-semibold text-ink">Check Loans</span>
+          </Card>
+        </Link>
+
+        <Link href="/statements">
+          <Card
+            variant="interactive"
+            padding="sm"
+            className="flex flex-col items-center text-center gap-2 group p-4"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-loam-dim text-white flex items-center justify-center transition-transform group-hover:scale-105">
+              <FileText className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-semibold text-ink">Statements</span>
+          </Card>
+        </Link>
+      </div>
+
+      {/* ── 3. Two-Column Layout (desktop) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Summaries + Chart */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Savings Summary */}
+          <Card variant="elevated">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Savings Summary</CardTitle>
+                <CardDescription>Target &amp; flexible savings accounts</CardDescription>
+              </div>
+              <Link
+                href="/savings"
+                className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
+              >
+                Manage <ChevronRight className="w-4 h-4" />
               </Link>
-            </div>
-            <ActivityList transactions={transactions} loading={txLoading} />
-          </div>
+            </CardHeader>
 
-          <div className="space-y-3">
-            <div className="bg-paper border border-line rounded-2xl p-4">
-              <h4 className="font-display font-semibold text-[14px] text-ink mb-3">Quick actions</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <QuickAction icon={Plus} label="Fund Wallet" href="/wallet/deposit" color="bg-indigo" />
-                <QuickAction icon={PiggyBank} label="Open Savings" href="/savings" color="bg-loam" />
-                <QuickAction icon={Landmark} label="Check Loans" href="/loans" color="bg-indigo-deep" />
-                <QuickAction icon={FileText} label="Statements" href="/statements" color="bg-loam-dim" />
+            <CardContent>
+              {savingsCount > 0 ? (
+                <div className="space-y-4 pt-1">
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-parchment border border-line">
+                    <div>
+                      <p className="text-xs text-ink-soft font-medium">Total Savings</p>
+                      <p className="font-mono text-2xl font-semibold text-ink mt-0.5">
+                        {fmtNGN(savingsTotal)}
+                      </p>
+                    </div>
+                    {savingsInterest > 0 && (
+                      <div className="text-right">
+                        <p className="text-xs text-ink-soft font-medium">Earned Interest</p>
+                        <p className="font-mono text-sm font-semibold text-loam mt-0.5">
+                          +{fmtNGN(savingsInterest)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-ink-soft">
+                    <span>{savingsCount} active plan{savingsCount === 1 ? "" : "s"}</span>
+                    <Link href="/savings" className="text-indigo font-medium underline">
+                      View details
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  title="No active savings plans"
+                  message="Start saving today with flexible or locked target plans earning up to 14% p.a. to grow your farming capital."
+                  icon={<PiggyBank className="w-6 h-6 text-indigo" />}
+                  action={
+                    <Link href="/savings">
+                      <Button variant="primary" size="sm">
+                        Open Savings Plan
+                      </Button>
+                    </Link>
+                  }
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Loan Summary */}
+          <Card variant="elevated">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Loan Summary</CardTitle>
+                <CardDescription>Borrow against your savings</CardDescription>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
+              <Link
+                href="/loans"
+                className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
+              >
+                View Loans <ChevronRight className="w-4 h-4" />
+              </Link>
+            </CardHeader>
 
-// ─── Wallet Hero Card ────────────────────────────────────────
-function WalletHeroCard({
-  wallet,
-  balanceVisible,
-  onToggleBalance,
-  desktop = false,
-}: {
-  wallet: { available_balance: number; ledger_balance: number; pending_balance: number; reserved_balance: number; account_number?: string | null } | null;
-  balanceVisible: boolean;
-  onToggleBalance: () => void;
-  desktop?: boolean;
-}) {
-  if (!wallet || wallet.available_balance === 0) {
-    return (
-      <div className="relative bg-gradient-to-br from-indigo to-indigo-deep rounded-2xl overflow-hidden text-white">
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-paper/5 pointer-events-none" />
-        <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-paper/5 pointer-events-none" />
-        <div className="relative p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-paper/15 flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-ochre" />
+            <CardContent>
+              {loanCount > 0 ? (
+                <div className="space-y-4 pt-1">
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-parchment border border-line">
+                    <div>
+                      <p className="text-xs text-ink-soft font-medium">Outstanding Balance</p>
+                      <p className="font-mono text-2xl font-semibold text-ink mt-0.5">
+                        {fmtNGN(loanTotal)}
+                      </p>
+                    </div>
+                    <StatusBadge status="active" />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-ink-soft">
+                    <span>{loanCount} active loan{loanCount === 1 ? "" : "s"}</span>
+                    <Link href="/loans" className="text-indigo font-medium underline">
+                      Loan details
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  title="No active loans"
+                  message={
+                    hasKyc
+                      ? "Build your savings to unlock borrowing power — you can borrow up to 3× your active savings balance."
+                      : "Verify your identity (KYC) and build savings to unlock loan eligibility up to 3× your balance."
+                  }
+                  icon={<Landmark className="w-6 h-6 text-indigo" />}
+                  action={
+                    <Link href="/loans">
+                      <Button variant="outline" size="sm">
+                        Check Loan Eligibility
+                      </Button>
+                    </Link>
+                  }
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Balance Trend Area Chart */}
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Balance Trend</CardTitle>
+              <CardDescription>Historical wallet balance trajectory</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              {chartData.length > 0 ? (
+                <div className="h-[220px] w-full pt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chartData}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#1B5E20" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#1B5E20" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D6E8D2" />
+                      <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: "#4A5A44" }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: "#4A5A44" }}
+                        tickFormatter={(val) =>
+                          `₦${val >= 1000 ? (val / 1000).toFixed(0) + "k" : val}`
+                        }
+                      />
+                      <Tooltip
+                        formatter={(val: number) => [fmtNGN(val), "Balance"]}
+                        contentStyle={{
+                          backgroundColor: "#FBFDF9",
+                          borderRadius: "12px",
+                          border: "1px solid #D6E8D2",
+                          boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                          fontSize: "12px",
+                        }}
+                        labelStyle={{ fontWeight: "600", color: "#1A2417" }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="amount"
+                        stroke="#1B5E20"
+                        strokeWidth={2.5}
+                        fillOpacity={1}
+                        fill="url(#colorBalance)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-ink-soft">
+                  Fund your wallet or make transactions to view your balance trend over time.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Recent Activity + Notifications */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Recent Activity */}
+          <Card variant="elevated">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Latest wallet transactions</CardDescription>
               </div>
-              <span className="text-[13px] text-white/80 font-medium">Agriqcap Wallet</span>
-            </div>
-          </div>
-          <p className="text-[12px] text-white/70 mb-1">Available balance</p>
-          <p className="font-mono font-bold text-[32px] leading-tight">
-            {balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "₦ ••••••"}
-          </p>
-          {/* Empty state with guidance */}
-          <div className="mt-3 mb-4 bg-paper/10 rounded-xl p-3">
-            <p className="text-[13px] text-white/90 font-medium mb-1">Your wallet is empty</p>
-            <p className="text-[12px] text-white/70">
-              Fund your wallet to start saving and unlock loan eligibility. You&apos;ll need at least ₦1,000.
-            </p>
-          </div>
-          <Link
-            href="/wallet/deposit"
-            className="flex items-center justify-center gap-2 bg-ochre py-3 rounded-xl hover:opacity-90 transition w-full"
-          >
-            <Plus className="w-4 h-4 text-indigo-deep" strokeWidth={2.5} />
-            <span className="text-[13px] font-semibold text-indigo-deep">Fund your wallet</span>
-          </Link>
+              <Link
+                href="/statements"
+                className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
+              >
+                See all <ChevronRight className="w-4 h-4" />
+              </Link>
+            </CardHeader>
+
+            <CardContent>
+              {txLoading ? (
+                <LoadingState message="Loading activity…" />
+              ) : transactions.length === 0 ? (
+                <EmptyState
+                  title="No transactions yet"
+                  message="Your transaction history will appear here once you start using Agriqcap."
+                  icon={<Wallet className="w-6 h-6 text-ink-soft" />}
+                  action={
+                    <Link href="/wallet/deposit">
+                      <Button variant="primary" size="sm">
+                        Fund Wallet
+                      </Button>
+                    </Link>
+                  }
+                />
+              ) : (
+                <div className="divide-y divide-line/60">
+                  {transactions.slice(0, 8).map((tx) => (
+                    <div key={tx.id} className="flex items-center gap-3 py-3">
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                          tx.direction === "credit" ? "bg-loam-light text-loam" : "bg-clay-light text-clay"
+                        }`}
+                      >
+                        {tx.direction === "credit" ? (
+                          <ArrowDownLeft className="w-4 h-4" strokeWidth={2} />
+                        ) : (
+                          <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-ink capitalize truncate">
+                          {(tx.description || tx.transaction_type).replace(/_/g, " ")}
+                        </p>
+                        <p className="text-[11px] text-ink-soft mt-0.5">
+                          {formatRelativeTime(tx.created_at)}
+                        </p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <MoneyText
+                          amount={tx.amount}
+                          direction={tx.direction}
+                          size="sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Notifications */}
+          <Card variant="elevated">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Notifications</CardTitle>
+                <CardDescription>Updates and account alerts</CardDescription>
+              </div>
+              <Link
+                href="/notifications"
+                className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
+              >
+                View all <ChevronRight className="w-4 h-4" />
+              </Link>
+            </CardHeader>
+
+            <CardContent>
+              {notifLoading ? (
+                <LoadingState message="Loading notifications…" />
+              ) : notifications.length === 0 ? (
+                <EmptyState
+                  title="No notifications"
+                  message="You'll see activity alerts and updates here."
+                  icon={<Bell className="w-6 h-6 text-ink-soft" />}
+                />
+              ) : (
+                <div className="divide-y divide-line/60">
+                  {notifications.slice(0, 4).map((notif) => (
+                    <Link
+                      key={notif.id}
+                      href="/notifications"
+                      className="flex items-start gap-3 py-3 group hover:bg-parchment/30 -mx-2 px-2 rounded-xl transition"
+                    >
+                      <div className="p-2 rounded-xl bg-parchment text-indigo shrink-0 mt-0.5">
+                        <Bell className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-semibold text-ink truncate">
+                            {notif.title}
+                          </p>
+                          {!notif.read && (
+                            <span className="w-2 h-2 rounded-full bg-clay shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-ink-soft truncate mt-0.5">
+                          {notif.message}
+                        </p>
+                        <p className="text-[10px] text-ink-soft/80 mt-1">
+                          {formatRelativeTime(notif.created_at)}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="relative bg-gradient-to-br from-indigo to-indigo-deep rounded-2xl overflow-hidden text-white">
-      <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-paper/5 pointer-events-none" />
-      <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-paper/5 pointer-events-none" />
-      <div className={`relative p-5 ${desktop ? "pb-5" : "pb-4"}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-paper/15 flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-ochre" />
-            </div>
-            <span className="text-[13px] text-white/80 font-medium">Agriqcap Wallet</span>
-          </div>
-          <button
-            onClick={onToggleBalance}
-            className="w-8 h-8 rounded-lg bg-paper/10 flex items-center justify-center hover:bg-paper/20 transition"
-            aria-label="Toggle balance visibility"
-          >
-            {balanceVisible ? <EyeOff className="w-4 h-4 text-white/70" /> : <Eye className="w-4 h-4 text-white/70" />}
-          </button>
-        </div>
-        <p className="text-[12px] text-white/70 mb-1">Available balance</p>
-        <p className="font-mono font-bold text-[32px] leading-tight">
-          {balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "₦ ••••••"}
-        </p>
-        <div className="flex gap-4 mt-2">
-          <div>
-            <p className="text-[10px] text-white/60">Ledger</p>
-            <p className="font-mono text-[13px] text-white/90">{balanceVisible ? fmtNGN(wallet?.ledger_balance || 0) : "••••"}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-white/60">Pending</p>
-            <p className="font-mono text-[13px] text-white/90">{balanceVisible ? fmtNGN(wallet?.pending_balance || 0) : "••••"}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 mt-4">
-          <Link href="/wallet/deposit" className="flex flex-col items-center gap-1.5 bg-ochre rounded-xl py-2.5 px-3 flex-1 hover:opacity-90 transition">
-            <Plus className="w-4 h-4 text-indigo-deep" strokeWidth={2.5} />
-            <span className="text-[11px] font-semibold text-indigo-deep">Add money</span>
-          </Link>
-          <Link href="/wallet/withdraw" className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 px-3 flex-1 hover:bg-paper/20 transition">
-            <Send className="w-4 h-4 text-white" strokeWidth={2} />
-            <span className="text-[11px] font-medium text-white">Withdraw</span>
-          </Link>
-          <Link href="/wallet" className="flex flex-col items-center gap-1.5 bg-paper/15 rounded-xl py-2.5 px-3 flex-1 hover:bg-paper/20 transition">
-            <RefreshCw className="w-4 h-4 text-white" strokeWidth={2} />
-            <span className="text-[11px] font-medium text-white">History</span>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Savings Summary Card — with helpful empty state ───────
-function SavingsSummaryCard({ total, count }: { total: number; count: number }) {
-  if (count === 0) {
-    return (
-      <div className="bg-paper border border-line rounded-2xl p-5">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-9 h-9 rounded-xl bg-loam flex items-center justify-center">
-            <PiggyBank className="w-[18px] h-[18px] text-white" strokeWidth={1.8} />
-          </div>
-          <div>
-            <h3 className="font-display font-semibold text-[15px] text-ink">Savings</h3>
-            <p className="text-[12px] text-ink-soft">Earn interest, build credit</p>
-          </div>
-        </div>
-        <p className="text-[13px] text-ink-soft mb-3">
-          No savings account yet. Opening one helps you earn interest and build eligibility for future loans.
-        </p>
-        <Link
-          href="/savings"
-          className="flex items-center justify-between w-full py-2.5 px-3.5 bg-loam-light rounded-xl hover:bg-loam/10 transition"
-        >
-          <span className="text-[13px] font-medium text-loam">Open a savings account</span>
-          <ChevronRight className="w-4 h-4 text-loam" />
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-paper border border-line rounded-2xl p-5">
-      <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-9 h-9 rounded-xl bg-loam flex items-center justify-center">
-          <PiggyBank className="w-[18px] h-[18px] text-white" strokeWidth={1.8} />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-display font-semibold text-[15px] text-ink">Savings</h3>
-          <p className="text-[12px] text-ink-soft">{count} active {count === 1 ? "account" : "accounts"}</p>
-        </div>
-        <Link href="/savings" className="text-[12px] text-indigo font-medium hover:underline">
-          View →
-        </Link>
-      </div>
-      <p className="font-mono text-[22px] font-semibold text-ink">{fmtNGN(total)}</p>
-      <p className="text-[12px] text-ink-soft mt-0.5">Total savings balance</p>
-    </div>
-  );
-}
-
-// ─── Loan Summary Card — with helpful empty state ─────────
-function LoanSummaryCard({ total, count, hasKyc }: { total: number; count: number; hasKyc: boolean }) {
-  if (count === 0) {
-    return (
-      <div className="bg-paper border border-line rounded-2xl p-5">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-deep flex items-center justify-center">
-            <Landmark className="w-[18px] h-[18px] text-white" strokeWidth={1.8} />
-          </div>
-          <div>
-            <h3 className="font-display font-semibold text-[15px] text-ink">Loans</h3>
-            <p className="text-[12px] text-ink-soft">Borrow against your savings</p>
-          </div>
-        </div>
-        <p className="text-[13px] text-ink-soft mb-3">
-          {hasKyc
-            ? "No active loans. Build your savings to unlock borrowing power — you can borrow up to 3× your savings."
-            : "No active loans. Verify your identity first, then build savings to unlock borrowing."}
-        </p>
-        <Link
-          href="/loans"
-          className="flex items-center justify-between w-full py-2.5 px-3.5 bg-indigo-light rounded-xl hover:bg-indigo/10 transition"
-        >
-          <span className="text-[13px] font-medium text-indigo">Check loan eligibility</span>
-          <ChevronRight className="w-4 h-4 text-indigo" />
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-paper border border-line rounded-2xl p-5">
-      <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-9 h-9 rounded-xl bg-indigo-deep flex items-center justify-center">
-          <Landmark className="w-[18px] h-[18px] text-white" strokeWidth={1.8} />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-display font-semibold text-[15px] text-ink">Loans</h3>
-          <p className="text-[12px] text-ink-soft">{count} active {count === 1 ? "loan" : "loans"}</p>
-        </div>
-        <Link href="/loans" className="text-[12px] text-indigo font-medium hover:underline">
-          View →
-        </Link>
-      </div>
-      <p className="font-mono text-[22px] font-semibold text-ink">{fmtNGN(total)}</p>
-      <p className="text-[12px] text-ink-soft mt-0.5">Outstanding balance</p>
-    </div>
-  );
-}
-
-// ─── Quick action chip ───────────────────────────────────────
-function QuickAction({
-  icon: Icon, label, href, color,
-}: {
-  icon: React.ElementType;
-  label: string;
-  href: string;
-  color: string;
-}) {
-  return (
-    <Link href={href} className="flex flex-col items-center gap-1.5">
-      <div className={`w-full aspect-square rounded-2xl ${color} flex items-center justify-center max-w-[52px] mx-auto`}>
-        <Icon className="w-[20px] h-[20px] text-white" strokeWidth={1.8} />
-      </div>
-      <span className="text-[11px] font-medium text-ink-soft">{label}</span>
-    </Link>
-  );
-}
-
-// ─── Activity list ───────────────────────────────────────────
-function ActivityList({
-  transactions,
-  loading,
-}: {
-  transactions: WalletTransaction[];
-  loading: boolean;
-}) {
-  if (loading) return <LoadingState message="Loading activity…" />;
-  if (transactions.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <div className="w-12 h-12 rounded-full bg-parchment flex items-center justify-center mx-auto mb-3">
-          <Wallet className="w-6 h-6 text-ink-soft" strokeWidth={1.5} />
-        </div>
-        <p className="font-medium text-[14px] text-ink">No transactions yet</p>
-        <p className="text-[12px] text-ink-soft mt-1">
-          Your transaction history will appear here once you start using Agriqcap.{" "}
-          <Link href="/wallet/deposit" className="text-indigo font-medium underline">Fund your wallet</Link>{" "}
-          to get started.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      {transactions.map((tx) => (
-        <div key={tx.id} className="flex items-center gap-3 py-3 border-b border-line last:border-0">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-            tx.direction === "credit" ? "bg-loam" : "bg-clay"
-          }`}>
-            {tx.direction === "credit"
-              ? <ArrowDownLeft className="w-5 h-5 text-white" strokeWidth={2} />
-              : <ArrowUpRight className="w-5 h-5 text-white" strokeWidth={2} />
-            }
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-[14px] text-ink capitalize leading-tight">
-              {(tx.description || tx.transaction_type).replace(/_/g, " ")}
-            </p>
-            <p className="text-[12px] text-ink-soft mt-0.5">{formatRelativeTime(tx.created_at)}</p>
-          </div>
-          <div className="text-right">
-            <p className={`font-mono font-semibold text-[14px] ${
-              tx.direction === "credit" ? "text-loam" : "text-clay"
-            }`}>
-              {tx.direction === "credit" ? "+" : "−"}{fmtNGN(tx.amount)}
-            </p>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

@@ -4,18 +4,43 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  LoadingState, Button,
+  ScreenHeader,
+  StatCard,
+  Card,
+  Button,
+  StatusBadge,
+  MoneyText,
+  ProgressRing,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/yield";
 import {
-  Clock, Lock, X, Check, AlertCircle, PiggyBank, Calendar, Wallet,
+  PiggyBank,
+  Clock,
+  Lock,
+  Users,
+  Check,
+  AlertCircle,
+  TrendingUp,
+  Calendar,
+  Wallet,
+  ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 
 // ════════════════════════════════════════════════════════════
-// Savings Page — Clear products + real accounts + account creation
-// Uses actual DB schema field names (interest_method, lock_period_days, etc.)
+// Savings Page — Premium Fintech Design
+// Rebuilt with Agriqcap Yield UI Primitives
 // ════════════════════════════════════════════════════════════
 
-interface SavingsProduct {
+export interface SavingsProduct {
   id: string;
   product_code: string;
   product_name: string;
@@ -35,7 +60,7 @@ interface SavingsProduct {
   is_featured: boolean;
 }
 
-interface SavingsAccount {
+export interface SavingsAccount {
   id: string;
   status: string;
   current_balance?: number;
@@ -54,45 +79,87 @@ interface SavingsAccount {
 }
 
 const fmtNGN = (v: number) => `₦${(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
-const fmtRate = (rate: number) => rate.toFixed(1).replace(/\.0$/, "");
+const fmtRate = (rate: number) => (rate || 0).toFixed(1).replace(/\.0$/, "");
+
+function getProductIcon(productType: string) {
+  switch (productType) {
+    case "flexible":
+      return <PiggyBank className="w-5 h-5 text-indigo" strokeWidth={1.8} />;
+    case "target":
+    case "daily":
+      return <Clock className="w-5 h-5 text-indigo" strokeWidth={1.8} />;
+    case "fixed_deposit":
+      return <Lock className="w-5 h-5 text-indigo" strokeWidth={1.8} />;
+    case "esusu":
+    case "cooperative":
+    case "group":
+      return <Users className="w-5 h-5 text-indigo-deep" strokeWidth={1.8} />;
+    default:
+      return <Wallet className="w-5 h-5 text-indigo" strokeWidth={1.8} />;
+  }
+}
 
 export default function SavingsPage() {
-  const [activeTab, setActiveTab] = useState<"accounts" | "products">("accounts");
   const [openProduct, setOpenProduct] = useState<SavingsProduct | null>(null);
   const [successAccountId, setSuccessAccountId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: accountsData, isLoading: acctsLoading } = useQuery<{ accounts: SavingsAccount[] }>({
+  const {
+    data: accountsData,
+    isLoading: acctsLoading,
+    isError: acctsError,
+    refetch: refetchAccounts,
+  } = useQuery<{ accounts: SavingsAccount[] }>({
     queryKey: ["savings-accounts"],
     queryFn: async () => {
       const res = await fetch("/api/savings/accounts");
-      if (!res.ok) return { accounts: [] };
+      if (!res.ok) throw new Error("Failed to load savings accounts");
       return res.json();
     },
   });
 
-  const { data: productsData, isLoading: prodsLoading } = useQuery<{ products: SavingsProduct[] }>({
+  const {
+    data: productsData,
+    isLoading: prodsLoading,
+    isError: prodsError,
+    refetch: refetchProducts,
+  } = useQuery<{ products: SavingsProduct[] }>({
     queryKey: ["savings-products"],
     queryFn: async () => {
       const res = await fetch("/api/savings/products");
-      if (!res.ok) return { products: [] };
+      if (!res.ok) throw new Error("Failed to load savings products");
       return res.json();
     },
   });
 
-  const accounts = accountsData?.accounts || [];
+  const rawAccounts = accountsData?.accounts || [];
   const rawProducts = productsData?.products || [];
-  // A5: Sort products so esusu (the brand differentiator) appears first
+
+  // Deduplicate accounts by id
+  const seenIds = new Set<string>();
+  const accounts = rawAccounts.filter((acct) => {
+    if (!acct.id || seenIds.has(acct.id)) return false;
+    seenIds.add(acct.id);
+    return true;
+  });
+
+  // Sort products so esusu / group savings appear first
   const products = [...rawProducts].sort((a, b) => {
-    const aIsEsusu = a.product_type === 'esusu' || a.product_type === 'cooperative' || a.product_type === 'group';
-    const bIsEsusu = b.product_type === 'esusu' || b.product_type === 'cooperative' || b.product_type === 'group';
+    const aIsEsusu =
+      a.product_type === "esusu" || a.product_type === "cooperative" || a.product_type === "group";
+    const bIsEsusu =
+      b.product_type === "esusu" || b.product_type === "cooperative" || b.product_type === "group";
     if (aIsEsusu && !bIsEsusu) return -1;
     if (!aIsEsusu && bIsEsusu) return 1;
     return 0;
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { product_id: string; target_amount?: number; initial_deposit?: number }) => {
+    mutationFn: async (data: {
+      product_id: string;
+      target_amount?: number;
+      initial_deposit?: number;
+    }) => {
       const res = await fetch("/api/savings/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,85 +175,134 @@ export default function SavingsPage() {
     },
   });
 
-  const hasActiveFlexible = accounts.some(a => a.product?.product_type === 'flexible' && a.status === 'active');
+  const hasActiveFlexible = accounts.some(
+    (a) => a.product?.product_type === "flexible" && a.status === "active"
+  );
+
+  const isLoading = acctsLoading || prodsLoading;
+  const isError = acctsError || prodsError;
+
+  if (isLoading) {
+    return <LoadingState message="Loading savings and investment products…" />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        message="Unable to load your savings information."
+        onRetry={() => {
+          refetchAccounts();
+          refetchProducts();
+        }}
+      />
+    );
+  }
+
+  const totalBalance = accounts.reduce((sum, a) => sum + (a.current_balance || 0), 0);
+  const activeAccountsCount = accounts.filter((a) => a.status === "active").length;
+  const maxInterestRate =
+    products.length > 0 ? Math.max(...products.map((p) => p.interest_rate || 0)) : 0;
+
+  const hasAccounts = accounts.length > 0;
 
   return (
-    <div className="space-y-4">
-      <h1 className="font-display text-[22px] font-medium text-ink">Savings</h1>
+    <div className="space-y-8 pb-12">
+      {/* Screen Header */}
+      <ScreenHeader
+        title="Savings & Yield"
+        subtitle="Grow your wealth with competitive interest rates tailored for agricultural cycles."
+      />
 
-      <div className="flex gap-1 bg-parchment rounded-xl p-1">
-        <TabButton active={activeTab === "accounts"} onClick={() => setActiveTab("accounts")}>
-          My Accounts {accounts.length > 0 && `(${accounts.length})`}
-        </TabButton>
-        <TabButton active={activeTab === "products"} onClick={() => setActiveTab("products")}>
-          Browse Products
-        </TabButton>
+      {/* Summary Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard
+          title="Total Savings Balance"
+          value={<MoneyText amount={totalBalance} size="2xl" />}
+          variant="dark"
+          icon={<Wallet className="w-5 h-5" />}
+          subtitle={`${activeAccountsCount} active ${activeAccountsCount === 1 ? "account" : "accounts"}`}
+        />
+        <StatCard
+          title="Active Accounts"
+          value={activeAccountsCount}
+          icon={<PiggyBank className="w-5 h-5" />}
+          subtitle="Performing savings plans"
+        />
+        <StatCard
+          title="Max Annual Yield"
+          value={`${fmtRate(maxInterestRate)}% p.a.`}
+          variant="ochre"
+          icon={<TrendingUp className="w-5 h-5" />}
+          subtitle="Highest available yield"
+        />
       </div>
 
-      {activeTab === "accounts" && (
-        <>
-          {acctsLoading ? (
-            <LoadingState message="Loading your savings…" />
-          ) : accounts.length === 0 ? (
-            <div className="border border-line rounded-2xl p-8 text-center bg-paper">
-              <div className="w-12 h-12 rounded-full bg-parchment flex items-center justify-center mx-auto mb-3">
-                <PiggyBank className="w-6 h-6 text-ink-soft" strokeWidth={1.5} />
-              </div>
-              <p className="font-medium text-[14px] text-ink mb-1">No savings accounts yet</p>
-              <p className="text-[12px] text-ink-soft mb-4">Open an account to start earning interest</p>
-              <Button size="sm" onClick={() => setActiveTab("products")}>
-                Browse products
-              </Button>
+      {/* Active Accounts Section */}
+      {hasAccounts && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-xl font-semibold text-ink">My Savings Accounts</h2>
+              <p className="text-xs text-ink-soft mt-0.5">
+                Manage your active deposits, view earnings, and make quick transfers.
+              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {(() => {
-                // A6: Deduplicate accounts by product_id to prevent duplicate display
-                const seen = new Set();
-                const dedupedAccounts = accounts.filter((acct: SavingsAccount) => {
-                  const key = acct.id; // dedupe by account id (root cause is duplicate rows)
-                  if (seen.has(key)) return false;
-                  seen.add(key);
-                  return true;
-                });
-                return dedupedAccounts.map((acct) => (
-                  <Link href={`/savings/${acct.id}`}><AccountCard account={acct} /></Link>
-                ));
-              })()}
-            </div>
-          )}
-        </>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-parchment text-ink border border-line">
+              {accounts.length} {accounts.length === 1 ? "Account" : "Accounts"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {accounts.map((acct) => (
+              <ActiveAccountCard key={acct.id} account={acct} />
+            ))}
+          </div>
+        </section>
       )}
 
-      {activeTab === "products" && (
-        <>
-          {prodsLoading ? (
-            <LoadingState message="Loading products…" />
-          ) : products.length === 0 ? (
-            <div className="border border-line rounded-2xl p-8 text-center bg-paper">
-              <p className="text-sm text-ink-soft">No products available</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  hasActiveFlexible={hasActiveFlexible}
-                  onOpen={() => {
-                    setSuccessAccountId(null);
-                    setOpenProduct(product);
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+      {/* Products Showcase Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-ink">
+              {hasAccounts ? "Open Another Account" : "Available Savings Products"}
+            </h2>
+            <p className="text-xs text-ink-soft mt-0.5">
+              {hasAccounts
+                ? "Explore additional high-yield options to accelerate your savings goals."
+                : "Choose a savings plan that aligns with your financial timeline and returns."}
+            </p>
+          </div>
+        </div>
 
+        {products.length === 0 ? (
+          <EmptyState
+            title="No Products Available"
+            message="Check back soon for new high-yield savings plans."
+            icon={<PiggyBank className="w-6 h-6 text-ink-soft" />}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {products.map((product) => (
+              <ProductShowcaseCard
+                key={product.id}
+                product={product}
+                hasActiveFlexible={hasActiveFlexible}
+                onOpen={() => {
+                  setSuccessAccountId(null);
+                  setOpenProduct(product);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Create Account Modal */}
       {openProduct && (
-        <CreateAccountModal
+        <CreateAccountDialog
           product={openProduct}
+          isOpen={!!openProduct}
           onClose={() => {
             setOpenProduct(null);
             setSuccessAccountId(null);
@@ -198,7 +314,6 @@ export default function SavingsPage() {
           onViewAccount={() => {
             setOpenProduct(null);
             setSuccessAccountId(null);
-            setActiveTab("accounts");
           }}
         />
       )}
@@ -206,11 +321,382 @@ export default function SavingsPage() {
   );
 }
 
-// ─── Create Account Modal ───────────────────────────────────
-function CreateAccountModal({
-  product, onClose, onCreate, isLoading, error, isSuccess, onViewAccount,
+// ─── Active Account Card ───────────────────────────────────
+function ActiveAccountCard({ account }: { account: SavingsAccount }) {
+  const productType = account.product?.product_type || "flexible";
+  const productName = account.product?.product_name || "Savings Account";
+  const rate = account.product?.interest_rate || 0;
+  const balance = account.current_balance || 0;
+  const target = account.target_amount || 0;
+
+  const isLocked = productType === "fixed_deposit" && account.status === "active";
+  const isMatured = account.status === "matured";
+
+  const daysRemaining = account.maturity_date
+    ? Math.max(0, Math.ceil((new Date(account.maturity_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+  const hasTarget = target > 0;
+  const progressPercent = hasTarget ? Math.min(100, Math.round((balance / target) * 100)) : 0;
+
+  return (
+    <Card variant="light" padding="md" className="flex flex-col justify-between space-y-4 hover:border-line transition-all">
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-parchment border border-line text-indigo shrink-0">
+              {getProductIcon(productType)}
+            </div>
+            <div>
+              <h3 className="font-display font-semibold text-base text-ink leading-tight">
+                {productName}
+              </h3>
+              <p className="text-xs text-ink-soft mt-0.5">
+                {fmtRate(rate)}% p.a. • {account.product?.interest_method || "standard"}
+              </p>
+            </div>
+          </div>
+          <StatusBadge status={account.status} />
+        </div>
+
+        <div className="flex items-end justify-between gap-4 mt-2">
+          <div>
+            <p className="text-xs text-ink-soft uppercase font-medium tracking-wider mb-1">
+              Current Balance
+            </p>
+            <MoneyText amount={balance} size="2xl" />
+          </div>
+
+          {hasTarget && (
+            <ProgressRing
+              progress={progressPercent}
+              size={64}
+              strokeWidth={6}
+              label={`${progressPercent}%`}
+              sublabel="target"
+              variant="indigo"
+            />
+          )}
+        </div>
+
+        {/* Maturity / Lock / Target info */}
+        <div className="mt-4 pt-3 border-t border-line/60 flex flex-wrap items-center justify-between text-xs text-ink-soft gap-2">
+          {isLocked && daysRemaining !== null && (
+            <div className="flex items-center gap-1.5 text-indigo">
+              <Calendar className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                Matures in {daysRemaining} days (
+                {new Date(account.maturity_date!).toLocaleDateString("en-NG", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+                )
+              </span>
+            </div>
+          )}
+
+          {isMatured && (
+            <div className="flex items-center gap-1.5 text-loam font-semibold">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>Matured — available for withdrawal</span>
+            </div>
+          )}
+
+          {!isLocked && !isMatured && (
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-loam shrink-0" />
+              <span>Flexible withdrawal anytime</span>
+            </div>
+          )}
+
+          {hasTarget && (
+            <div className="font-mono text-ink">
+              Target: {fmtNGN(target)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Action Row */}
+      <div className="pt-2 flex items-center gap-2">
+        <Link href={`/savings/${account.id}`} className="flex-1">
+          <Button variant="outline" size="sm" fullWidth>
+            Manage & Transactions <ChevronRight className="w-3.5 h-3.5 ml-1" />
+          </Button>
+        </Link>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Product Showcase Card ─────────────────────────────────
+function ProductShowcaseCard({
+  product,
+  hasActiveFlexible,
+  onOpen,
 }: {
   product: SavingsProduct;
+  hasActiveFlexible: boolean;
+  onOpen: () => void;
+}) {
+  const isCooperative =
+    product.product_type === "esusu" ||
+    product.product_type === "cooperative" ||
+    product.product_type === "group";
+  const isFlexible = product.product_type === "flexible";
+  const isFixed = product.product_type === "fixed_deposit";
+
+  if (isCooperative) {
+    return <EsusuWaitlistCard product={product} />;
+  }
+
+  const isFeatured = product.is_featured;
+
+  return (
+    <Card
+      variant="light"
+      padding="lg"
+      className={`flex flex-col justify-between relative transition-all duration-200 ${
+        isFeatured ? "border-ochre/60 bg-gradient-to-br from-paper via-paper to-ochre-light/20 shadow-md" : ""
+      }`}
+    >
+      <div>
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-3 rounded-2xl shrink-0 ${
+                isFixed ? "bg-loam-light/80 text-loam" : "bg-ochre-light/80 text-indigo-deep"
+              }`}
+            >
+              {getProductIcon(product.product_type)}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-display font-semibold text-lg text-ink">
+                  {product.product_name}
+                </h3>
+                {isFeatured && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ochre text-indigo-deep uppercase tracking-wider">
+                    Featured
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-ink-soft mt-0.5">
+                {isFlexible
+                  ? "Flexible daily access with compound interest"
+                  : isFixed
+                  ? "High-yield locked investment for fixed terms"
+                  : "Targeted savings plan for agricultural milestones"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Rate Banner */}
+        <div className="p-4 rounded-2xl bg-parchment border border-line/80 mb-5 flex items-center justify-between">
+          <div>
+            <span className="text-xs text-ink-soft font-medium uppercase tracking-wider block">
+              Annual Interest Rate
+            </span>
+            <span className="font-mono text-2xl font-bold text-loam">
+              +{fmtRate(product.interest_rate)}% <span className="text-xs font-normal text-ink-soft">p.a.</span>
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-xs text-ink-soft font-medium uppercase tracking-wider block">
+              Calculation
+            </span>
+            <span className="text-xs font-semibold text-ink capitalize">
+              {product.interest_method || "compound"} ({product.interest_cadence || "daily"})
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        {product.description && (
+          <p className="text-xs text-ink-soft leading-relaxed mb-5">{product.description}</p>
+        )}
+
+        {/* Features / Bullet Details */}
+        <div className="grid grid-cols-2 gap-3 text-xs mb-6 p-3 rounded-xl bg-paper border border-line/60">
+          <div>
+            <span className="text-ink-soft block font-medium">Withdrawal Rules</span>
+            <span className="text-ink font-semibold mt-0.5 block">
+              {product.withdrawal_allowed ? "Anytime access" : `Locked (${product.lock_period_days || 0} days)`}
+            </span>
+          </div>
+          <div>
+            <span className="text-ink-soft block font-medium">Min Deposit</span>
+            <span className="text-ink font-semibold mt-0.5 block font-mono">
+              {fmtNGN(product.minimum_deposit || 0)}
+            </span>
+          </div>
+          {isFixed && (
+            <div>
+              <span className="text-ink-soft block font-medium">Lock Period</span>
+              <span className="text-ink font-semibold mt-0.5 block">
+                {product.lock_period_days || 30} Days
+              </span>
+            </div>
+          )}
+          {isFixed && product.early_withdrawal_penalty_rate > 0 && (
+            <div>
+              <span className="text-ink-soft block font-medium">Early Exit Fee</span>
+              <span className="text-clay font-semibold mt-0.5 block">
+                {product.early_withdrawal_penalty_rate}% penalty
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Feature Tags */}
+        <div className="flex flex-wrap gap-1.5 mb-6">
+          {isFlexible ? (
+            <>
+              <Tag>Emergency Reserve</Tag>
+              <Tag>Farm Inputs</Tag>
+              <Tag>Daily Compound</Tag>
+            </>
+          ) : (
+            <>
+              <Tag>Harvest Cycle Yield</Tag>
+              <Tag>Guaranteed Rate</Tag>
+              <Tag>Locked Growth</Tag>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Button */}
+      <div>
+        {hasActiveFlexible && isFlexible ? (
+          <Button variant="outline" disabled fullWidth className="cursor-not-allowed">
+            ✓ Active Flexible Account Exists
+          </Button>
+        ) : (
+          <Button variant="secondary" fullWidth onClick={onOpen}>
+            Open {product.product_name}
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// ─── Tag Helper ───────────────────────────────────────────
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-parchment text-ink border border-line/60">
+      {children}
+    </span>
+  );
+}
+
+// ─── Esusu Waitlist Card ──────────────────────────────────
+function EsusuWaitlistCard({ product }: { product: SavingsProduct }) {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      const waitlist = JSON.parse(localStorage.getItem("agriqcap_esusu_waitlist") || "[]");
+      waitlist.push({ email, product: product.product_code, date: new Date().toISOString() });
+      localStorage.setItem("agriqcap_esusu_waitlist", JSON.stringify(waitlist));
+    } catch {
+      // Ignore storage errors
+    }
+    setSubmitted(true);
+  };
+
+  return (
+    <Card
+      variant="light"
+      padding="lg"
+      className="border-ochre/40 bg-gradient-to-br from-ochre-light/30 via-paper to-paper relative overflow-hidden flex flex-col justify-between"
+    >
+      <div>
+        <div className="flex items-start gap-3 mb-4">
+          <div className="p-3 rounded-2xl bg-ochre text-indigo-deep shrink-0">
+            <Users className="w-5 h-5" strokeWidth={2} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-semibold text-lg text-ink">
+                {product.product_name}
+              </h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ochre text-indigo-deep uppercase tracking-wider">
+                Flagship
+              </span>
+            </div>
+            <p className="text-xs text-ink-soft mt-1">
+              {product.description ||
+                "Rotating group savings with your trusted community circle — traditional esusu, modernized."}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-paper border border-line mb-4">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-ink-soft">Group Yield Benefit</span>
+            <span className="font-mono font-semibold text-loam">
+              +{fmtRate(product.interest_rate || 15)}% p.a.
+            </span>
+          </div>
+        </div>
+
+        {submitted ? (
+          <div className="bg-loam-light/60 border border-loam/20 rounded-xl p-3.5 flex items-center gap-2.5">
+            <Check className="w-4 h-4 text-loam shrink-0" />
+            <p className="text-xs font-semibold text-loam">
+              You&apos;re on the waitlist! We&apos;ll notify you when Esusu goes live.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <label className="block text-xs font-medium text-ink-soft">
+              Join the priority waitlist for early access:
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                className="flex-1 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs text-ink outline-none focus:border-indigo placeholder:text-ink-soft"
+              />
+              <Button type="submit" variant="primary" size="sm">
+                Join Waitlist
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      <p className="text-[11px] text-ink-soft mt-4 pt-3 border-t border-line/60">
+        Esusu group savings empowers agricultural co-operatives with collective returns.
+      </p>
+    </Card>
+  );
+}
+
+// ─── Create Account Dialog Modal ───────────────────────────
+function CreateAccountDialog({
+  product,
+  isOpen,
+  onClose,
+  onCreate,
+  isLoading,
+  error,
+  isSuccess,
+  onViewAccount,
+}: {
+  product: SavingsProduct;
+  isOpen: boolean;
   onClose: () => void;
   onCreate: (data: { product_id: string; target_amount?: number; initial_deposit?: number }) => void;
   isLoading: boolean;
@@ -220,398 +706,137 @@ function CreateAccountModal({
 }) {
   const [targetAmount, setTargetAmount] = useState("");
   const [initialDeposit, setInitialDeposit] = useState("");
-  const isFixed = product.product_type === 'fixed_deposit';
+
+  const isFixed = product.product_type === "fixed_deposit";
   const minOpening = product.minimum_deposit || (isFixed ? 5000 : 1000);
 
+  const handleSubmit = () => {
+    onCreate({
+      product_id: product.id,
+      target_amount: targetAmount ? parseFloat(targetAmount) : undefined,
+      initial_deposit: initialDeposit ? parseFloat(initialDeposit) : undefined,
+    });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-indigo-deep/40 backdrop-blur-sm p-4">
-      <div className="bg-paper rounded-2xl border border-line w-full max-w-md overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-loam-light flex items-center justify-center">
-              {isFixed
-                ? <Lock className="h-5 w-5 text-indigo" strokeWidth={1.8} />
-                : <Clock className="h-5 w-5 text-indigo" strokeWidth={1.8} />}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2.5 rounded-xl bg-loam-light text-loam shrink-0">
+              {getProductIcon(product.product_type)}
             </div>
             <div>
-              <p className="font-display font-semibold text-[16px] text-ink">{product.product_name}</p>
-              <p className="text-[12px] text-ink-soft">{fmtRate(product.interest_rate)}% p.a.</p>
+              <DialogTitle>{product.product_name}</DialogTitle>
+              <DialogDescription>
+                Earn {fmtRate(product.interest_rate)}% annual interest
+              </DialogDescription>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-parchment transition" aria-label="Close">
-            <X className="w-5 h-5 text-ink-soft" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {isSuccess ? (
-          <div className="p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-loam-light flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-loam" />
+          <div className="py-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-loam-light border border-loam/30 flex items-center justify-center mx-auto text-loam">
+              <Check className="w-8 h-8" strokeWidth={2.5} />
             </div>
-            <h3 className="font-display font-semibold text-[18px] text-ink mb-2">Account opened!</h3>
-            <p className="text-[14px] text-ink-soft mb-6">
-              Your {product.product_name} is now active. You can start depositing right away.
-            </p>
-            <button
-              onClick={onViewAccount}
-              className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition"
-            >
-              View my accounts
-            </button>
+            <div>
+              <h3 className="font-display text-xl font-semibold text-ink">Account Opened!</h3>
+              <p className="text-xs text-ink-soft mt-1 max-w-xs mx-auto">
+                Your new {product.product_name} account is active and ready for deposits.
+              </p>
+            </div>
+
+            <DialogFooter className="sm:justify-center">
+              <Button variant="secondary" fullWidth onClick={onViewAccount}>
+                View My Accounts
+              </Button>
+            </DialogFooter>
           </div>
         ) : (
-          <div className="p-5 space-y-4">
-            <div className="bg-parchment rounded-xl p-3.5 space-y-1.5">
-              <div className="flex justify-between text-[13px]">
-                <span className="text-ink-soft">Interest rate</span>
-                <span className="font-mono text-ink">{fmtRate(product.interest_rate)}% p.a.</span>
+          <div className="space-y-4 pt-2">
+            {/* Rate & Terms Summary Box */}
+            <div className="p-3.5 rounded-2xl bg-parchment border border-line space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-ink-soft">Interest Rate</span>
+                <span className="font-mono font-semibold text-loam">
+                  +{fmtRate(product.interest_rate)}% p.a.
+                </span>
               </div>
-              <div className="flex justify-between text-[13px]">
-                <span className="text-ink-soft">Interest type</span>
-                <span className="text-ink">{product.interest_method === "compound" ? "Compound" : "Flat"}</span>
+              <div className="flex justify-between">
+                <span className="text-ink-soft">Interest Type</span>
+                <span className="text-ink font-medium capitalize">
+                  {product.interest_method || "compound"} ({product.interest_cadence || "daily"})
+                </span>
               </div>
               {isFixed && (
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-ink-soft">Lock period</span>
-                  <span className="text-ink">{product.lock_period_days} days</span>
+                <div className="flex justify-between">
+                  <span className="text-ink-soft">Lock Period</span>
+                  <span className="text-ink font-medium">{product.lock_period_days || 30} Days</span>
                 </div>
               )}
               {isFixed && product.early_withdrawal_penalty_rate > 0 && (
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-ink-soft">Early exit penalty</span>
-                  <span className="text-clay">{product.early_withdrawal_penalty_rate}% of balance</span>
+                <div className="flex justify-between">
+                  <span className="text-ink-soft">Early Exit Fee</span>
+                  <span className="text-clay font-medium">
+                    {product.early_withdrawal_penalty_rate}% penalty
+                  </span>
                 </div>
               )}
             </div>
 
+            {/* Target Amount (Optional) */}
             {isFixed && (
-              <div>
-                <label className="text-[13px] text-ink-soft font-medium block mb-1.5">Savings target (optional)</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-ink block">
+                  Savings Target (Optional)
+                </label>
                 <input
                   type="number"
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
                   placeholder="e.g. 100000"
-                  className="w-full px-4 py-3 border border-line rounded-xl text-[16px] bg-paper text-ink focus:outline-none focus:border-indigo"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo"
                 />
               </div>
             )}
 
-            <div>
-              <label className="text-[13px] text-ink-soft font-medium block mb-1.5">
-                Initial deposit (min {fmtNGN(minOpening)})
+            {/* Initial Deposit */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-ink block">
+                Initial Deposit (Min {fmtNGN(minOpening)})
               </label>
               <input
                 type="number"
                 value={initialDeposit}
                 onChange={(e) => setInitialDeposit(e.target.value)}
                 placeholder={String(minOpening)}
-                className="w-full px-4 py-3 border border-line rounded-xl text-[16px] bg-paper text-ink focus:outline-none focus:border-indigo"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo"
               />
-              <p className="text-[12px] text-ink-soft mt-1.5">Funds will be transferred from your wallet balance.</p>
+              <p className="text-[11px] text-ink-soft">
+                Funds will be deducted from your main wallet balance upon confirmation.
+              </p>
             </div>
 
+            {/* Error Message */}
             {error && (
-              <div className="bg-clay-light rounded-xl p-3 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-clay mt-0.5 flex-shrink-0" />
-                <p className="text-[13px] text-clay">{error}</p>
+              <div className="p-3 rounded-xl bg-clay-light/80 border border-clay/20 flex items-start gap-2 text-clay text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
 
-            <button
-              onClick={() => onCreate({
-                product_id: product.id,
-                target_amount: targetAmount ? parseFloat(targetAmount) : undefined,
-                initial_deposit: initialDeposit ? parseFloat(initialDeposit) : undefined,
-              })}
-              disabled={isLoading}
-              className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] disabled:opacity-50 transition flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-indigo-deep border-t-transparent rounded-full animate-spin" />
-                  Opening account…
-                </>
-              ) : (
-                `Open ${product.product_name}`
-              )}
-            </button>
+            <DialogFooter className="pt-2">
+              <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+                Cancel
+              </Button>
+              <Button variant="secondary" onClick={handleSubmit} isLoading={isLoading}>
+                Confirm & Open Account
+              </Button>
+            </DialogFooter>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Account card — shows specific details per account type ───
-function AccountCard({ account }: { account: SavingsAccount }) {
-  const productType = account.product?.product_type || 'flexible';
-  const productName = account.product?.product_name || "Savings";
-  const rate = account.product?.interest_rate || 0;
-  const balance = account.current_balance || 0;
-  const isLocked = productType === 'fixed_deposit' && account.status === 'active';
-  const isMatured = account.status === 'matured';
-  const isPending = account.status === 'pending';
-
-  const daysRemaining = account.maturity_date
-    ? Math.max(0, Math.ceil((new Date(account.maturity_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null;
-
-  return (
-    <div className="border border-line rounded-2xl p-4 bg-paper">
-      <div className="flex items-start gap-3">
-        <div className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          isLocked ? 'bg-loam-light' : isMatured ? 'bg-ochre' : 'bg-parchment'
-        }`}>
-          {isLocked ? (
-            <Lock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />
-          ) : isMatured ? (
-            <Check className="h-[19px] w-[19px] text-indigo-deep" strokeWidth={1.8} />
-          ) : (
-            <Clock className="h-[19px] w-[19px] text-indigo" strokeWidth={1.8} />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-ink truncate">{productName}</p>
-            <StatusBadge status={account.status} />
-          </div>
-          <p className="font-mono text-[20px] font-semibold text-ink mt-1.5">{fmtNGN(balance)}</p>
-
-          {isLocked && daysRemaining !== null && (
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <Calendar className="w-3.5 h-3.5 text-ink-soft" />
-              <p className="text-[12px] text-ink-soft">
-                Matures in {daysRemaining} days · {new Date(account.maturity_date!).toLocaleDateString("en-NG", { day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
-            </div>
-          )}
-
-          {isMatured && account.maturity_date && (
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <Check className="w-3.5 h-3.5 text-loam" />
-              <p className="text-[12px] text-loam">Matured — withdraw anytime</p>
-            </div>
-          )}
-
-          {productType === 'flexible' && account.status === 'active' && (
-            <p className="text-[12px] text-ink-soft mt-1.5">Withdraw anytime · {fmtRate(rate)}% p.a. compound</p>
-          )}
-
-          {isPending && (
-            <p className="text-[12px] text-ink-soft mt-1.5">Make your first deposit to activate</p>
-          )}
-        </div>
-
-        <div className="text-right flex-shrink-0">
-          <p className="font-mono text-[13px] text-loam">{fmtRate(rate)}%</p>
-          <p className="text-[12px] text-ink-soft">p.a.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    active: 'bg-loam-light text-loam',
-    pending: 'bg-parchment text-ink-soft',
-    matured: 'bg-ochre text-indigo-deep',
-    closed: 'bg-clay-light text-clay',
-    dormant: 'bg-clay-light text-clay',
-  };
-  const labels: Record<string, string> = {
-    active: 'Active',
-    pending: 'Pending',
-    matured: 'Matured',
-    closed: 'Closed',
-    dormant: 'Dormant',
-  };
-  return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${styles[status] || styles.pending}`}>
-      {labels[status] || status}
-    </span>
-  );
-}
-
-// ─── Product card — self-explanatory ───
-function ProductCard({ product, hasActiveFlexible, onOpen }: {
-  product: SavingsProduct;
-  hasActiveFlexible: boolean;
-  onOpen: () => void;
-}) {
-  const isCooperative = product.product_type === 'esusu' || product.product_type === 'cooperative' || product.product_type === 'group';
-  const isFlexible = product.product_type === 'flexible';
-  const isFixed = product.product_type === 'fixed_deposit';
-
-  if (isCooperative) {
-    return <EsusuWaitlistCard product={product} />;
-  }
-
-  return (
-    <div className="border border-line rounded-2xl p-5 bg-paper">
-      <div className="flex items-start gap-3 mb-4">
-        <div className={`h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          isFixed ? 'bg-loam-light' : 'bg-ochre'
-        }`}>
-          {isFixed ? (
-            <Lock className="h-5 w-5 text-indigo" strokeWidth={1.8} />
-          ) : (
-            <Wallet className="h-5 w-5 text-indigo-deep" strokeWidth={1.8} />
-          )}
-        </div>
-        <div className="flex-1">
-          <p className="text-[15px] font-semibold text-ink">{product.product_name}</p>
-          <p className="text-[13px] text-ink-soft mt-0.5">
-            {isFlexible ? 'Perfect for everyday saving' : 'Lock your money for higher returns'}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="font-mono text-[16px] text-loam font-semibold">{fmtRate(product.interest_rate)}%</p>
-          <p className="text-[11px] text-ink-soft">per annum</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 text-[13px] mb-4">
-        {isFlexible ? (
-          <>
-            <Detail label="Withdraw" value="Anytime" />
-            <Detail label="Interest" value={`${fmtRate(product.interest_rate)}% compound daily`} />
-            <Detail label="Minimum" value={fmtNGN(product.minimum_deposit || 0)} />
-            <Detail label="Good for" value="Emergency fund" />
-          </>
-        ) : (
-          <>
-            <Detail label="Lock period" value={`${product.lock_period_days} days`} />
-            <Detail label="Interest" value={`${fmtRate(product.interest_rate)}% ${product.interest_method}`} />
-            <Detail label="Minimum" value={fmtNGN(product.minimum_deposit || 5000)} />
-            <Detail label="Early exit" value={`${product.early_withdrawal_penalty_rate}% penalty`} />
-          </>
-        )}
-      </div>
-
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {isFlexible ? (
-          <>
-            <Tag>Emergency fund</Tag>
-            <Tag>Farm inputs</Tag>
-            <Tag>Business cash reserve</Tag>
-          </>
-        ) : (
-          <>
-            <Tag>High yield</Tag>
-            <Tag>Harvest cycle</Tag>
-            <Tag>Locked returns</Tag>
-          </>
-        )}
-      </div>
-
-      {hasActiveFlexible && isFlexible ? (
-        <div className="w-full py-3 bg-parchment text-ink-soft rounded-xl font-medium text-[14px] text-center">
-          ✓ You already have a Flexible Savings account
-        </div>
-      ) : (
-        <button
-          onClick={onOpen}
-          className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition"
-        >
-          Open {product.product_name}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-ink-soft">{label}</p>
-      <p className="text-ink font-medium mt-0.5">{value}</p>
-    </div>
-  );
-}
-
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[11px] px-2.5 py-1 rounded-full bg-parchment text-ink-soft border border-line">
-      {children}
-    </span>
-  );
-}
-
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 text-xs font-medium px-3.5 py-2 rounded-lg transition ${
-        active ? "bg-indigo text-white" : "text-ink-soft hover:text-ink"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-
-// ─── A5: Esusu waitlist card (replaces dead-end "Coming Soon") ───
-function EsusuWaitlistCard({ product }: { product: SavingsProduct }) {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = () => {
-    if (!email) return;
-    // Store waitlist interest locally for now (no backend table yet)
-    const waitlist = JSON.parse(localStorage.getItem("agriqcap_esusu_waitlist") || "[]");
-    waitlist.push({ email, product: product.product_code, date: new Date().toISOString() });
-    localStorage.setItem("agriqcap_esusu_waitlist", JSON.stringify(waitlist));
-    setSubmitted(true);
-  };
-
-  return (
-    <div className="border border-ochre/40 rounded-2xl p-5 bg-gradient-to-br from-ochre-light/50 to-paper relative overflow-hidden">
-      <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-ochre/10 pointer-events-none" />
-      <div className="relative">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="h-11 w-11 rounded-xl bg-ochre flex items-center justify-center flex-shrink-0">
-            <PiggyBank className="h-5 w-5 text-indigo-deep" strokeWidth={2} />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[15px] font-semibold text-ink">{product.product_name}</p>
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ochre text-indigo-deep">
-                Featured
-              </span>
-            </div>
-            <p className="text-[13px] text-ink-soft mt-1">{product.description || 'Rotating group savings with your trusted circle — the traditional esusu, modernized.'}</p>
-          </div>
-        </div>
-
-        {submitted ? (
-          <div className="bg-paper rounded-xl p-3 flex items-center gap-2">
-            <Check className="w-4 h-4 text-loam flex-shrink-0" />
-            <p className="text-[13px] text-ink">You\'re on the waitlist! We\'ll notify you when Esusu goes live.</p>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="flex-1 rounded-xl border border-line bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-indigo placeholder:text-ink-soft"
-            />
-            <button
-              onClick={handleSubmit}
-              className="px-4 py-2.5 bg-indigo text-white rounded-xl font-medium text-[13px] hover:bg-indigo-deep transition flex-shrink-0"
-            >
-              Join waitlist
-            </button>
-          </div>
-        )}
-        <p className="text-[11px] text-ink-soft mt-2">
-          Esusu is our flagship group savings product — we\'re building it next.
-        </p>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

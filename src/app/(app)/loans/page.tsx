@@ -1,17 +1,43 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import {
-  LoadingState, Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  Button,
+  StatusBadge,
+  MoneyText,
+  ProgressRing,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  ScreenHeader,
 } from "@/components/yield";
 import {
-  Landmark, AlertCircle, Check, X, TrendingUp, Shield,
+  Landmark,
+  ShieldCheck,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  Sparkles,
+  Calendar,
+  AlertTriangle,
+  ChevronRight,
+  Clock,
+  PiggyBank,
+  UserCheck,
+  Coins,
 } from "lucide-react";
 
 // ════════════════════════════════════════════════════════════
-// Loans Page — Eligibility with credit score breakdown + loan products
+// Types & Interfaces
 // ════════════════════════════════════════════════════════════
 
 interface LoanProduct {
@@ -32,7 +58,7 @@ interface Loan {
   principal_amount: number;
   outstanding_balance: number;
   next_due_date: string;
-  product: { product_name: string; interest_rate: number };
+  product?: { product_name: string; interest_rate: number };
 }
 
 interface EligibilityFactor {
@@ -45,7 +71,7 @@ interface EligibilityFactor {
 }
 
 interface EligibilityResult {
-  decision: 'approved' | 'denied' | 'amount_adjusted';
+  decision: "approved" | "denied" | "amount_adjusted";
   approved_amount: number;
   factors: EligibilityFactor[];
   credit_score: number;
@@ -55,466 +81,600 @@ interface EligibilityResult {
   rationale: string;
 }
 
-const fmtNGN = (v: number) => `₦${(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
-
-// Credit score rating
-function scoreRating(score: number): { label: string; color: string } {
-  if (score >= 700) return { label: 'Excellent', color: 'text-loam' };
-  if (score >= 600) return { label: 'Good', color: 'text-loam' };
-  if (score >= 500) return { label: 'Fair', color: 'text-ochre-dim' };
-  return { label: 'Needs improvement', color: 'text-clay' };
+interface CreditScoreData {
+  credit_score?: number;
+  score?: number;
+  has_score?: boolean;
+  breakdown?: Record<string, number>;
 }
 
-// Human-readable factor names
+// ════════════════════════════════════════════════════════════
+// Human-readable Factor Mapping
+// ════════════════════════════════════════════════════════════
+
 const factorLabels: Record<string, string> = {
-  savings_balance: 'Savings Balance',
-  kyc_level: 'Identity Verification',
-  credit_score: 'Credit Score',
-  cooperative_membership: 'Cooperative Membership',
-  savings_tenure: 'Savings History',
-  wallet_activity: 'Wallet Activity',
-  repayment_history: 'Repayment History',
-  account_age: 'Account Age',
-  consistency: 'Consistency',
+  savings_balance: "Savings Balance",
+  kyc_level: "Identity Verification",
+  credit_score: "Credit Score",
+  cooperative_membership: "Cooperative Membership",
+  savings_tenure: "Savings Tenure",
+  wallet_activity: "Wallet Activity",
+  repayment_history: "Repayment History",
+  account_age: "Account Age",
+  consistency: "Savings Consistency",
 };
 
-export default function LoansPage() {
-  const [activeTab, setActiveTab] = useState<"loans" | "products">("products");
+function getFactorImprovement(factor: EligibilityFactor, savingsBalance: number) {
+  switch (factor.factor) {
+    case "savings_balance": {
+      const thresholdNum = typeof factor.threshold === "number" ? factor.threshold : Number(factor.threshold) || 0;
+      const needed = Math.max(0, thresholdNum - savingsBalance);
+      return {
+        text: needed > 0
+          ? `Deposit at least ₦${needed.toLocaleString("en-NG")} more into your savings account.`
+          : "Build your savings balance to meet the required threshold.",
+        href: "/savings",
+        linkText: "Deposit Savings",
+      };
+    }
+    case "kyc_level":
+      return {
+        text: "Complete BVN/NIN identity verification to unlock higher borrowing limits.",
+        href: "/profile",
+        linkText: "Verify Profile",
+      };
+    case "credit_score":
+      return {
+        text: `Increase your credit score to ${factor.threshold} through regular savings and timely repayments.`,
+        href: "/savings",
+        linkText: "Boost Score",
+      };
+    case "savings_tenure":
+      return {
+        text: "Maintain active savings for a longer period to build account tenure.",
+        href: "/savings",
+        linkText: "View Savings",
+      };
+    case "cooperative_membership":
+      return {
+        text: "Cooperative membership is required to unlock this loan product.",
+        href: "/profile",
+        linkText: "Check Profile",
+      };
+    case "repayment_history":
+      return {
+        text: "Ensure previous loans are repaid on time to maintain a strong repayment history.",
+        href: "/loans",
+        linkText: "Manage Loans",
+      };
+    case "wallet_activity":
+      return {
+        text: "Fund and use your Agriqcap wallet regularly for active transactions.",
+        href: "/savings",
+        linkText: "Fund Wallet",
+      };
+    default:
+      return {
+        text: `Improve your ${factorLabels[factor.factor] || factor.factor} to qualify for higher limits.`,
+        href: "/savings",
+        linkText: "Take Action",
+      };
+  }
+}
 
-  const { data: loansData, isLoading: loansLoading } = useQuery<{ loans: Loan[] }>({
+function formatDate(dateStr: string) {
+  if (!dateStr) return "N/A";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// Main Page Component
+// ════════════════════════════════════════════════════════════
+
+export default function LoansPage() {
+  const [activeTab, setActiveTab] = useState<"products" | "loans">("products");
+
+  // Data Query: Active / Past Loans
+  const loansQuery = useQuery<{ loans: Loan[] }>({
     queryKey: ["loans"],
     queryFn: async () => {
       const res = await fetch("/api/loans");
-      if (!res.ok) return { loans: [] };
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Could not fetch loans");
+      }
       return res.json();
     },
   });
 
-  const { data: productsData, isLoading: prodsLoading } = useQuery<{ products: LoanProduct[] }>({
+  // Data Query: Loan Products
+  const productsQuery = useQuery<{ products: LoanProduct[] }>({
     queryKey: ["loan-products"],
     queryFn: async () => {
       const res = await fetch("/api/loans/products");
-      if (!res.ok) return { products: [] };
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Could not fetch loan products");
+      }
       return res.json();
     },
   });
 
-  const loans = loansData?.loans || [];
-  const products = productsData?.products || [];
-
-  return (
-    <div className="space-y-4">
-      <h1 className="font-display text-[22px] font-medium text-ink">Loans</h1>
-
-      <div className="flex gap-1 bg-parchment rounded-xl p-1">
-        <TabButton active={activeTab === "loans"} onClick={() => setActiveTab("loans")}>
-          My Loans {loans.length > 0 && `(${loans.length})`}
-        </TabButton>
-        <TabButton active={activeTab === "products"} onClick={() => setActiveTab("products")}>
-          Check Eligibility
-        </TabButton>
-      </div>
-
-      {activeTab === "loans" && (
-        <>
-          {loansLoading ? (
-            <LoadingState message="Loading your loans…" />
-          ) : loans.length === 0 ? (
-            <div className="border border-line rounded-2xl p-8 text-center bg-paper">
-              <div className="w-12 h-12 rounded-full bg-parchment flex items-center justify-center mx-auto mb-3">
-                <Landmark className="w-6 h-6 text-ink-soft" strokeWidth={1.5} />
-              </div>
-              <p className="font-medium text-[14px] text-ink mb-1">No active loans</p>
-              <p className="text-[12px] text-ink-soft mb-4">Check your eligibility to see what you can borrow</p>
-              <Button size="sm" onClick={() => setActiveTab("products")}>
-                Check your eligibility
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {loans.map((loan) => (
-                <LoanCard key={loan.id} loan={loan} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === "products" && (
-        <>
-          {prodsLoading ? (
-            <LoadingState message="Loading loan products…" />
-          ) : products.length === 0 ? (
-            <div className="border border-line rounded-2xl p-8 text-center bg-paper">
-              <p className="text-sm text-ink-soft">No loan products available</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {products.map((product) => (
-                <EligibilityCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-// ─── Eligibility Card with credit score breakdown ───
-function EligibilityCard({ product }: { product: LoanProduct }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<EligibilityResult | null>(null);
-  const [amount, setAmount] = useState(product.min_amount || 20000);
-
-  const checkEligibility = async () => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
-    try {
-      const res = await fetch(`/api/loans/eligibility?product_id=${product.id}`);
+  // Data Query: Credit Score
+  const creditScoreQuery = useQuery<CreditScoreData>({
+    queryKey: ["credit-score"],
+    queryFn: async () => {
+      const res = await fetch("/api/credit-score");
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Could not check eligibility");
+        return { credit_score: 0, has_score: false };
       }
-      const data: EligibilityResult = await res.json();
-      setResult(data);
-      if (data.max_eligible_amount > 0) {
-        setAmount(Math.min(data.max_eligible_amount, product.max_amount || data.max_eligible_amount));
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not check eligibility");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.json();
+    },
+  });
 
-  const isApproved = result?.decision === 'approved' || result?.decision === 'amount_adjusted';
-  const maxBorrow = result?.max_eligible_amount || result?.approved_amount || product.max_amount || 375000;
-  const rating = result ? scoreRating(result.credit_score) : null;
+  const products = productsQuery.data?.products || [];
+  const loans = loansQuery.data?.loans || [];
 
-  const monthlyPayment = product.interest_method === "flat"
-    ? Math.round((amount + (amount * product.interest_rate / 100 * product.default_term_months / 12)) / product.default_term_months)
-    : Math.round(amount / product.default_term_months * (1 + product.interest_rate / 100 / 12));
+  // Parallel Queries: Eligibility for each product
+  const eligibilityQueries = useQueries({
+    queries: products.map((prod) => ({
+      queryKey: ["loan-eligibility", prod.id],
+      queryFn: async () => {
+        const res = await fetch(`/api/loans/eligibility?product_id=${prod.id}`);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Could not check eligibility");
+        }
+        return res.json() as Promise<EligibilityResult>;
+      },
+      enabled: !!prod.id,
+    })),
+  });
+
+  // Global API Error handling
+  if (loansQuery.isError) {
+    return (
+      <ErrorState
+        message={loansQuery.error instanceof Error ? loansQuery.error.message : "Failed to load active loans"}
+        onRetry={() => loansQuery.refetch()}
+      />
+    );
+  }
+
+  if (productsQuery.isError) {
+    return (
+      <ErrorState
+        message={productsQuery.error instanceof Error ? productsQuery.error.message : "Failed to load loan products"}
+        onRetry={() => productsQuery.refetch()}
+      />
+    );
+  }
+
+  const isLoadingInitial = loansQuery.isLoading || productsQuery.isLoading;
+
+  if (isLoadingInitial) {
+    return <LoadingState message="Loading your loans and credit status…" />;
+  }
+
+  // Derive eligibility insights across products
+  const eligibilityDataMap: Record<string, EligibilityResult | undefined> = {};
+  products.forEach((prod, index) => {
+    eligibilityDataMap[prod.id] = eligibilityQueries[index]?.data;
+  });
+
+  const allResults = Object.values(eligibilityDataMap).filter((r): r is EligibilityResult => Boolean(r));
+
+  // Highest credit score found across endpoints or results
+  const creditScoreFromApi = creditScoreQuery.data?.credit_score || creditScoreQuery.data?.score || 0;
+  const creditScoreFromResults = allResults.find((r) => r.credit_score > 0)?.credit_score || 0;
+  const effectiveCreditScore = Math.max(creditScoreFromApi, creditScoreFromResults);
+
+  // Maximum eligible amount across all products
+  const maxEligibleAmount = Math.max(
+    ...allResults.map((r) => r.max_eligible_amount || r.approved_amount || 0),
+    0
+  );
+
+  // Determine overall status
+  const hasApprovedProduct = allResults.some(
+    (r) => r.decision === "approved" || r.decision === "amount_adjusted"
+  );
+  const overallStatus = hasApprovedProduct ? "approved" : allResults.length > 0 ? "denied" : "pending";
+
+  // Primary result to extract factors (prefer approved, else first result)
+  const primaryResult = allResults.find((r) => r.decision === "approved" || r.decision === "amount_adjusted") || allResults[0];
 
   return (
-    <div className="border border-line rounded-2xl p-4 bg-paper">
-      {/* Product header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-10 w-10 rounded-xl bg-loam-light flex items-center justify-center flex-shrink-0">
-          <Landmark className="h-5 w-5 text-indigo" strokeWidth={1.8} />
-        </div>
-        <div className="flex-1">
-          <p className="font-medium text-[15px] text-ink">{product.product_name}</p>
-          <p className="text-[12px] text-ink-soft">
-            {product.interest_rate}% {product.interest_method === "flat" ? "flat" : "reducing"} · {product.default_term_months} months
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[11px] text-ink-soft">Up to</p>
-          <p className="font-mono text-[14px] text-ink font-medium">{fmtNGN(product.max_amount)}</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      {/* Screen Header */}
+      <ScreenHeader
+        title="Loans & Credit Eligibility"
+        subtitle="Check your borrowing capacity, monitor your credit factors, and access instant business financing."
+        action={
+          <Link href="/loans/credit-score">
+            <Button variant="outline" size="sm" leftIcon={<TrendingUp className="w-4 h-4 text-indigo" />}>
+              Credit Details
+            </Button>
+          </Link>
+        }
+      />
 
-      {/* Initial state — check button */}
-      {!result && !loading && !error && (
-        <div className="space-y-2.5">
-          <button
-            onClick={checkEligibility}
-            className="w-full py-2.5 bg-indigo text-white rounded-xl font-medium text-[14px] hover:bg-indigo-deep transition flex items-center justify-center gap-2"
-          >
-            <Shield className="w-4 h-4" />
-            Check eligibility
-          </button>
-          <p className="text-[11px] text-ink-soft text-center leading-relaxed">
-            Eligibility is based on your savings history and wallet activity within Agriqcap — not a credit bureau check.
-          </p>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center gap-2 py-3">
-          <div className="w-4 h-4 border-2 border-indigo border-t-transparent rounded-full animate-spin" />
-          <span className="text-[14px] text-ink-soft">Checking eligibility…</span>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && !loading && (
-        <div className="space-y-3">
-          <div className="bg-clay-light rounded-xl p-3 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-clay mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-[13px] text-clay font-medium">Could not check eligibility</p>
-              <p className="text-[13px] text-ink-soft mt-0.5">{error}</p>
-            </div>
-          </div>
-          <button
-            onClick={checkEligibility}
-            className="w-full py-2.5 border border-line rounded-xl font-medium text-[14px] text-ink hover:bg-parchment transition"
-          >
-            Try again
-          </button>
-        </div>
-      )}
-
-      {/* Result — Approved or Amount Adjusted */}
-      {result && isApproved && !loading && (
-        <div className="space-y-4 mt-2">
-          {/* Credit score badge */}
-          {rating && (
-            <div className="flex items-center justify-between bg-parchment rounded-xl p-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-ink-soft" />
-                <span className="text-[13px] text-ink-soft">Internal credit score</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[18px] font-semibold text-ink">{result.credit_score}</span>
-                <span className={`text-[12px] font-medium ${rating.color}`}>{rating.label}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Approval card */}
-          <div className="bg-gradient-to-br from-indigo to-indigo-deep rounded-2xl p-4 text-white">
-            <p className="text-[12px] text-white/70 mb-1">You can borrow up to</p>
-            <p className="font-mono text-[26px] font-medium mb-3">{fmtNGN(maxBorrow)}</p>
-            <div className="space-y-0">
-              <FactorRow label="Interest rate" value={`${product.interest_rate}% ${product.interest_method === "flat" ? "flat" : "reducing"}`} />
-              <FactorRow label="Term" value={`${product.default_term_months} months`} />
-              {result.savings_balance > 0 && (
-                <FactorRow label="Savings balance" value={fmtNGN(result.savings_balance)} />
-              )}
-              {result.decision === 'amount_adjusted' && (
-                <FactorRow label="Approved amount" value={fmtNGN(result.approved_amount)} />
-              )}
-            </div>
-          </div>
-
-          {/* Amount selector */}
-          <div className="border border-line rounded-2xl p-4 bg-paper">
-            <p className="text-xs text-ink-soft mb-1.5">How much do you need?</p>
-            <p className="font-mono text-2xl text-center text-ink my-2">{fmtNGN(amount)}</p>
-            <input
-              type="range"
-              min={product.min_amount || 20000}
-              max={maxBorrow}
-              step={5000}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full accent-indigo"
+      {/* ── SECTION 1: Overall Eligibility & Credit Score ── */}
+      <Card variant="dark" padding="lg">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* Credit Score Progress Ring */}
+          <div className="flex items-center gap-5">
+            <ProgressRing
+              progress={Math.min(100, Math.max(0, Math.round((effectiveCreditScore / 850) * 100)))}
+              size={100}
+              strokeWidth={8}
+              variant={effectiveCreditScore >= 600 ? "loam" : effectiveCreditScore >= 500 ? "ochre" : "indigo"}
+              label={effectiveCreditScore > 0 ? String(effectiveCreditScore) : "—"}
+              sublabel="Score / 850"
             />
-            <p className="text-[11px] text-ink-soft text-center mt-1.5">
-              Monthly repayment: <span className="font-mono text-ink">{fmtNGN(monthlyPayment)}</span>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <StatusBadge status={overallStatus} size="sm" />
+                <span className="text-xs text-white/70">Internal Score</span>
+              </div>
+              <h2 className="font-display text-xl sm:text-2xl font-bold text-white leading-tight">
+                {hasApprovedProduct ? "Eligible for Credit" : "Improve Eligibility"}
+              </h2>
+              <p className="text-xs sm:text-sm text-white/80 mt-1 max-w-md">
+                Based on your Agriqcap savings history, wallet activity, and identity status.
+              </p>
+            </div>
+          </div>
+
+          {/* Max Eligible Amount Box */}
+          <div className="bg-paper/10 border border-white/15 rounded-2xl p-4 sm:p-5 text-right w-full md:w-auto">
+            <p className="text-xs text-white/70 uppercase tracking-wider font-medium mb-1">
+              Max Eligible Amount
+            </p>
+            <MoneyText amount={maxEligibleAmount} size="2xl" className="text-ochre" />
+            <p className="text-[11px] text-white/60 mt-1">
+              {hasApprovedProduct ? "Instant disbursement available" : "Boost savings to unlock"}
             </p>
           </div>
-
-          {/* Apply button */}
-          <Link
-            href={`/loans/apply?product=${product.id}&amount=${amount}`}
-            className="block w-full bg-ochre text-indigo-deep text-center font-semibold text-[15px] py-3 rounded-[14px] hover:opacity-90 transition"
-          >
-            Apply for {fmtNGN(amount)}
-          </Link>
         </div>
-      )}
 
-      {/* Result — Denied with actionable feedback */}
-      {result && !isApproved && !loading && (
-        <div className="space-y-4 mt-2">
-          {/* Credit score badge (even when denied) */}
-          {rating && result.credit_score > 0 && (
-            <div className="flex items-center justify-between bg-parchment rounded-xl p-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-ink-soft" />
-                <span className="text-[13px] text-ink-soft">Internal credit score</span>
+        {/* Factors Breakdown & How to Improve inside Primary Eligibility */}
+        {primaryResult && (
+          <div className="mt-6 pt-6 border-t border-white/15 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* WHY Eligible / Not Eligible */}
+            <div className="bg-paper/10 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs uppercase tracking-wider font-semibold text-white/90 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-ochre" /> Requirement Factors
+                </h3>
+                <span className="text-[11px] text-white/70">
+                  {primaryResult.factors.filter((f) => f.passed).length} of {primaryResult.factors.length} Passed
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[18px] font-semibold text-ink">{result.credit_score}</span>
-                <span className={`text-[12px] font-medium ${rating.color}`}>{rating.label}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Denied message */}
-          <div className="bg-clay-light rounded-2xl p-4">
-            <div className="flex items-start gap-2 mb-2">
-              <AlertCircle className="w-5 h-5 text-clay mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-[14px] text-clay">Not eligible yet</p>
-                <p className="text-[13px] text-ink-soft mt-1">{result.rationale || "You don't meet the requirements for this loan product yet."}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Factor breakdown — what passed and what didn't */}
-          {result.factors && result.factors.length > 0 && (
-            <div className="border border-line rounded-2xl p-4 bg-paper">
-              <p className="text-[13px] font-medium text-ink mb-3">Requirements breakdown</p>
               <div className="space-y-2">
-                {result.factors.map((f, i) => (
-                  <FactorCheck key={i} factor={f} />
-                ))}
+                {primaryResult.factors.map((f, i) => {
+                  const label = factorLabels[f.factor] || f.factor;
+                  return (
+                    <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-white/10 last:border-b-0">
+                      <div className="flex items-center gap-2 text-white/90">
+                        {f.passed ? (
+                          <CheckCircle2 className="w-4 h-4 text-ochre shrink-0" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-clay-light shrink-0" />
+                        )}
+                        <span>{label}</span>
+                      </div>
+                      <span className={`font-mono ${f.passed ? "text-white" : "text-clay-light"}`}>
+                        {String(f.value)} {f.threshold ? `/ ${f.threshold}` : ""}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          )}
 
-          {/* Actionable next steps */}
-          <div className="bg-parchment rounded-xl p-3.5">
-            <p className="text-[13px] text-ink-soft mb-2">Here's what you can do:</p>
-            <NextSteps factors={result.factors} savingsBalance={result.savings_balance} />
+            {/* HOW to Improve */}
+            <div className="bg-paper/10 rounded-xl p-4">
+              <h3 className="text-xs uppercase tracking-wider font-semibold text-white/90 mb-3 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-ochre" /> Actionable Next Steps
+              </h3>
+              <div className="space-y-2.5">
+                {primaryResult.factors.filter((f) => !f.passed).length > 0 ? (
+                  primaryResult.factors
+                    .filter((f) => !f.passed)
+                    .map((f, i) => {
+                      const imp = getFactorImprovement(f, primaryResult.savings_balance);
+                      return (
+                        <div key={i} className="flex items-start justify-between gap-3 text-xs text-white/80 bg-paper/5 p-2.5 rounded-lg border border-white/10">
+                          <p className="flex-1 leading-relaxed">{imp.text}</p>
+                          <Link href={imp.href} className="text-ochre hover:underline shrink-0 font-semibold flex items-center gap-1">
+                            {imp.linkText} <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="text-xs text-white/80 space-y-2">
+                    <p className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-ochre shrink-0" /> You meet all standard eligibility criteria!
+                    </p>
+                    <p className="text-[11px] text-white/60">
+                      Keep your savings consistent to maintain and grow your maximum borrowing capacity.
+                    </p>
+                    <div className="pt-2 flex gap-3">
+                      <Link href="/savings" className="text-ochre hover:underline font-semibold flex items-center gap-1">
+                        Go to Savings <ArrowRight className="w-3 h-3" />
+                      </Link>
+                      <Link href="/profile" className="text-ochre hover:underline font-semibold flex items-center gap-1">
+                        View Profile <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+        )}
+      </Card>
 
-          <button
-            onClick={checkEligibility}
-            className="w-full py-2.5 border border-line rounded-xl font-medium text-[14px] text-ink hover:bg-parchment transition"
-          >
-            Check again
-          </button>
+      {/* ── Navigation Tabs ── */}
+      <div className="flex border-b border-line gap-4">
+        <button
+          onClick={() => setActiveTab("products")}
+          className={`pb-3 text-sm font-semibold transition-colors relative ${
+            activeTab === "products" ? "text-indigo border-b-2 border-indigo" : "text-ink-soft hover:text-ink"
+          }`}
+        >
+          Available Loan Products ({products.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("loans")}
+          className={`pb-3 text-sm font-semibold transition-colors relative ${
+            activeTab === "loans" ? "text-indigo border-b-2 border-indigo" : "text-ink-soft hover:text-ink"
+          }`}
+        >
+          My Active Loans ({loans.length})
+        </button>
+      </div>
+
+      {/* ── SECTION 2: Available Loan Products ── */}
+      {activeTab === "products" && (
+        <div className="space-y-4">
+          {products.length === 0 ? (
+            <EmptyState
+              title="No Loan Products Available"
+              message="Check back soon for new agricultural credit and savings-backed loan offers."
+              icon={<Landmark className="w-6 h-6 text-ink-soft" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+              {products.map((product, idx) => {
+                const eligibility = eligibilityQueries[idx]?.data;
+                const isQueryLoading = eligibilityQueries[idx]?.isLoading;
+                const isEligible = eligibility?.decision === "approved" || eligibility?.decision === "amount_adjusted";
+
+                return (
+                  <Card
+                    key={product.id}
+                    variant={isEligible ? "light" : "flat"}
+                    className={!isEligible ? "bg-parchment/40 border-line/80" : ""}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isEligible ? "bg-loam-light text-indigo" : "bg-track text-ink-soft"}`}>
+                            <Landmark className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <CardTitle>{product.product_name}</CardTitle>
+                            <CardDescription>
+                              {product.interest_rate}% {product.interest_method === "flat" ? "Flat Rate" : "Reducing"} · {product.default_term_months} Months Term
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <StatusBadge
+                          status={isQueryLoading ? "pending" : isEligible ? "approved" : "denied"}
+                          size="sm"
+                        />
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      {/* Product Limits */}
+                      <div className="grid grid-cols-2 gap-3 bg-parchment/60 p-3 rounded-xl border border-line/60">
+                        <div>
+                          <p className="text-[11px] text-ink-soft font-medium">Borrow Limit</p>
+                          <div className="flex items-baseline gap-1 mt-0.5">
+                            <MoneyText amount={product.min_amount || 0} size="sm" className="text-ink-soft" />
+                            <span className="text-xs text-ink-soft">-</span>
+                            <MoneyText amount={product.max_amount || 0} size="sm" className="text-ink" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-ink-soft font-medium">Approved Maximum</p>
+                          {eligibility ? (
+                            <MoneyText
+                              amount={eligibility.approved_amount || eligibility.max_eligible_amount || 0}
+                              size="sm"
+                              className={isEligible ? "text-loam font-bold" : "text-clay font-bold"}
+                            />
+                          ) : (
+                            <span className="text-xs text-ink-soft font-mono">Checking…</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Eligibility Explanation */}
+                      {isQueryLoading ? (
+                        <div className="py-2 text-xs text-ink-soft flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 animate-spin text-indigo" /> Evaluating qualification requirements…
+                        </div>
+                      ) : isEligible ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-loam font-medium flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4 text-loam shrink-0" />
+                            You qualify for up to <MoneyText amount={eligibility?.max_eligible_amount || product.max_amount} size="sm" className="text-loam" />
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-clay-light/50 border border-clay/20 p-3.5 rounded-xl space-y-2.5">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-clay shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-semibold text-clay">Not Eligible Yet</p>
+                              <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">
+                                {eligibility?.rationale || "You do not meet the minimum requirements for this product."}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Detailed factors failure */}
+                          {eligibility?.factors && eligibility.factors.some((f) => !f.passed) && (
+                            <div className="pt-2 border-t border-clay/15 space-y-1.5">
+                              <p className="text-[11px] font-semibold text-ink uppercase tracking-wider">
+                                Required Fixes:
+                              </p>
+                              {eligibility.factors
+                                .filter((f) => !f.passed)
+                                .map((f, i) => {
+                                  const imp = getFactorImprovement(f, eligibility.savings_balance);
+                                  return (
+                                    <div key={i} className="flex items-center justify-between text-xs text-ink bg-paper p-2 rounded-lg border border-line">
+                                      <span>{imp.text}</span>
+                                      <Link href={imp.href} className="text-indigo hover:underline font-semibold shrink-0 ml-2">
+                                        {imp.linkText}
+                                      </Link>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+
+                    <CardFooter>
+                      {isEligible ? (
+                        <Link href={`/loans/apply?product=${product.id}`} className="w-full">
+                          <Button variant="primary" fullWidth rightIcon={<ArrowRight className="w-4 h-4" />}>
+                            Apply for {product.product_name}
+                          </Button>
+                        </Link>
+                      ) : (
+                        <div className="flex gap-2 w-full">
+                          <Link href="/savings" className="flex-1">
+                            <Button variant="outline" size="sm" fullWidth leftIcon={<PiggyBank className="w-4 h-4 text-indigo" />}>
+                              Boost Savings
+                            </Button>
+                          </Link>
+                          <Link href="/profile" className="flex-1">
+                            <Button variant="outline" size="sm" fullWidth leftIcon={<UserCheck className="w-4 h-4 text-indigo" />}>
+                              Verify KYC
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── SECTION 3: Active Loans ── */}
+      {activeTab === "loans" && (
+        <div className="space-y-4">
+          {loans.length === 0 ? (
+            <EmptyState
+              title="No Active Loans"
+              message="You currently have no active or pending loan disbursements."
+              icon={<Coins className="w-6 h-6 text-ink-soft" />}
+              action={
+                <Button variant="primary" onClick={() => setActiveTab("products")} leftIcon={<ShieldCheck className="w-4 h-4" />}>
+                  Check Available Products
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+              {loans.map((loan) => {
+                const principal = loan.principal_amount || 0;
+                const outstanding = loan.outstanding_balance || 0;
+                const paid = Math.max(0, principal - outstanding);
+                const progress = principal > 0 ? Math.min(100, Math.max(0, Math.round((paid / principal) * 100))) : 0;
+
+                return (
+                  <Card key={loan.id} variant="light">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>{loan.product?.product_name || "Loan Facility"}</CardTitle>
+                          <CardDescription className="flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3.5 h-3.5 text-ink-soft" /> Next Due: {formatDate(loan.next_due_date)}
+                          </CardDescription>
+                        </div>
+                        <StatusBadge status={loan.status} />
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      {/* Numbers Grid */}
+                      <div className="grid grid-cols-2 gap-3 bg-parchment/60 p-3.5 rounded-xl border border-line/60">
+                        <div>
+                          <p className="text-[11px] text-ink-soft font-medium">Principal Amount</p>
+                          <MoneyText amount={principal} size="md" className="text-ink" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-ink-soft font-medium">Outstanding Balance</p>
+                          <MoneyText amount={outstanding} size="md" className={outstanding > 0 ? "text-clay font-bold" : "text-loam font-bold"} />
+                        </div>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold mb-1.5">
+                          <span className="text-ink-soft">Repayment Progress</span>
+                          <span className="text-indigo font-mono">{progress}% Paid</span>
+                        </div>
+                        <div className="w-full h-2.5 bg-track rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-loam rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[11px] text-ink-soft mt-1">
+                          <span>Paid: <MoneyText amount={paid} size="sm" className="text-loam font-medium" /></span>
+                          <span>Total: <MoneyText amount={principal} size="sm" className="text-ink font-medium" /></span>
+                        </div>
+                      </div>
+                    </CardContent>
+
+                    <CardFooter>
+                      <Link href={`/loans/${loan.id}`} className="w-full">
+                        <Button variant="outline" fullWidth rightIcon={<ChevronRight className="w-4 h-4" />}>
+                          View Details & Repay
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
-  );
-}
-
-// ─── Factor check row ───
-function FactorCheck({ factor }: { factor: EligibilityFactor }) {
-  const label = factorLabels[factor.factor] || factor.factor;
-  const valueStr = typeof factor.value === 'number'
-    ? factor.factor === 'savings_balance'
-      ? fmtNGN(factor.value)
-      : String(factor.value)
-    : String(factor.value);
-  const thresholdStr = typeof factor.threshold === 'number'
-    ? factor.factor === 'savings_balance'
-      ? fmtNGN(factor.threshold)
-      : String(factor.threshold)
-    : String(factor.threshold);
-
-  return (
-    <div className="flex items-center justify-between text-[13px]">
-      <div className="flex items-center gap-2">
-        {factor.passed ? (
-          <Check className="w-3.5 h-3.5 text-loam flex-shrink-0" />
-        ) : (
-          <X className="w-3.5 h-3.5 text-clay flex-shrink-0" />
-        )}
-        <span className={factor.passed ? 'text-ink' : 'text-ink-soft'}>{label}</span>
-      </div>
-      <div className="text-right">
-        <span className={`font-mono ${factor.passed ? 'text-loam' : 'text-clay'}`}>{valueStr}</span>
-        {!factor.passed && (
-          <span className="text-ink-soft ml-1">/ {thresholdStr}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Next steps — actionable feedback ───
-function NextSteps({ factors, savingsBalance }: { factors: EligibilityFactor[]; savingsBalance: number }) {
-  const failed = factors.filter(f => !f.passed);
-  const steps: string[] = [];
-
-  for (const f of failed) {
-    switch (f.factor) {
-      case 'savings_balance':
-        const needed = typeof f.threshold === 'number' ? f.threshold - savingsBalance : 0;
-        if (needed > 0) {
-          steps.push(`Deposit at least ${fmtNGN(needed)} more into your savings account.`);
-        } else {
-          steps.push('Build your savings balance to qualify.');
-        }
-        break;
-      case 'kyc_level':
-        steps.push('Complete identity verification (BVN/NIN) to unlock eligibility.');
-        break;
-      case 'credit_score':
-        steps.push(`Improve your credit score to ${f.threshold} by saving consistently.`);
-        break;
-      case 'savings_tenure':
-        steps.push('Maintain savings for longer to build your savings history.');
-        break;
-      case 'cooperative_membership':
-        steps.push('Cooperative membership is required for this product.');
-        break;
-      case 'repayment_history':
-        steps.push('Maintain good repayment history on existing loans.');
-        break;
-      case 'wallet_activity':
-        steps.push('Use your wallet more actively — fund and transact regularly.');
-        break;
-      default:
-        steps.push(`Improve your ${factorLabels[f.factor] || f.factor} to meet the requirement.`);
-    }
-  }
-
-  if (steps.length === 0) {
-    steps.push('Keep saving consistently to improve your eligibility.');
-  }
-
-  return (
-    <ul className="space-y-1.5">
-      {steps.map((step, i) => (
-        <li key={i} className="flex items-start gap-2 text-[13px] text-ink">
-          <span className="text-ochre-dim mt-0.5">→</span>
-          <span>{step}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-// ─── Factor row inside the approved card ───
-function FactorRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between text-[13px] py-1.5 border-t border-white/15 first:border-t-0">
-      <span className="text-white/60">{label}</span>
-      <span className="font-mono text-white/80">{value}</span>
-    </div>
-  );
-}
-
-// ─── Loan card ───
-function LoanCard({ loan }: { loan: Loan }) {
-  const statusColor: Record<string, string> = {
-    active: "bg-loam-light text-loam",
-    disbursed: "bg-loam-light text-loam",
-    overdue: "bg-clay-light text-clay",
-    pending: "bg-parchment text-ink-soft",
-  };
-
-  return (
-    <div className="border border-line rounded-2xl p-4 bg-paper">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <p className="text-sm font-medium text-ink">{loan.product?.product_name || "Loan"}</p>
-          <p className="text-xs text-ink-soft mt-0.5">
-            {loan.status === "pending" ? "Awaiting review" : `Next due: ${loan.next_due_date ? new Date(loan.next_due_date).toLocaleDateString("en-NG", { day: 'numeric', month: 'short' }) : "—"}`}
-          </p>
-        </div>
-        <span className={`text-[12px] px-2 py-0.5 rounded-full ${statusColor[loan.status] || "bg-parchment text-ink-soft"}`}>
-          {loan.status}
-        </span>
-      </div>
-      <p className="font-mono text-lg text-ink">{fmtNGN(loan.outstanding_balance)}</p>
-      <p className="text-xs text-ink-soft">outstanding</p>
-    </div>
-  );
-}
-
-// ─── Tab button ───
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 text-xs font-medium px-3.5 py-2 rounded-lg transition ${
-        active ? "bg-indigo text-white" : "text-ink-soft hover:text-ink"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
