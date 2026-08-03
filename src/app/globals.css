@@ -226,13 +226,41 @@
 @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 .animate-shake { animation: shake 0.3s ease-in-out; }
 
-/* A9: Fix Naira symbol rendering — ensure proper glyph spacing */
+/* ── A9: Naira symbol (₦ U+20A6) rendering fix ── */
+/* IBM Plex Mono (Google Fonts) does NOT include the ₦ glyph in latin/latin-ext subsets.
+   The browser falls back to a system font for just that character, causing width/baseline
+   mismatch and visual overlap ("NO with strikethrough").
+   
+   Fix: Define a fallback @font-face scoped to U+20A6 only, so the ₦ glyph always
+   renders from a font that has it, while everything else stays in IBM Plex Mono.
+   This does NOT change the brand typeface — it adds a targeted glyph fallback. */
+
+/* Naira glyph fallback — uses system fonts known to have proper ₦ support */
+@font-face {
+  font-family: "NairaFallback";
+  src: local("Segoe UI"), local("SF Pro Text"), local("Arial"), local("DejaVu Sans"), local("Liberation Sans");
+  unicode-range: U+20A6;
+}
+
 .font-mono {
   font-feature-settings: "tnum" 1;
+  font-family: "IBM Plex Mono", "NairaFallback", monospace;
 }
-.font-mono::before {
-  content: "";
-  letter-spacing: 0.01em;
+
+/* MoneyText component: ₦ symbol uses the fallback, number stays in brand mono */
+.naira-symbol {
+  font-family: "NairaFallback", "Segoe UI", "SF Pro Text", "Arial", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-right: 0.1em;
+  display: inline-block;
+}
+
+/* Ensure currency figures don't use negative letter-spacing (was causing overlap) */
+.ys-money,
+.ys-money-pos,
+.ys-money-neg {
+  letter-spacing: 0;
 }
 
 /* A7: Color hierarchy — ensure accent colors are used semantically */

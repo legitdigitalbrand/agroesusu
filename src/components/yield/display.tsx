@@ -166,16 +166,16 @@ export function MoneyText({
   size = "md",
   className,
 }: MoneyTextProps) {
+  // Format number separately — NOT using Intl currency style (which produces
+  // ₦ inline and triggers font fallback issues with IBM Plex Mono)
   const formatted = new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(Math.abs(amount));
 
   const prefix = direction === "debit" ? "−" : direction === "credit" ? "+" : "";
   const colorClass =
-    direction === "credit" ? "text-loam" : direction === "debit" ? "text-clay" : "text-ink";
+    direction === "credit" ? "text-loam" : direction === "debit" ? "text-clay" : "";  // neutral inherits parent color
 
   const sizeClass = {
     sm: "text-sm",
@@ -188,11 +188,11 @@ export function MoneyText({
 
   return (
     <span
-      className={cn("font-mono tabular-nums tracking-tight font-semibold", colorClass, sizeClass, className)}
-      style={{ fontFeatureSettings: '"tnum" 1' }}
+      className={cn("inline-flex items-baseline gap-0.5 font-mono tabular-nums tracking-normal font-semibold", colorClass, sizeClass, className)}
     >
-      {prefix}
-      {formatted}
+      {prefix && <span>{prefix}</span>}
+      <span className="naira-symbol" aria-hidden="true">₦</span>
+      <span>{formatted}</span>
     </span>
   );
 }

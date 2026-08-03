@@ -69,12 +69,10 @@ interface NotificationItem {
   created_at: string;
 }
 
-const fmtNGN = (v: number) =>
-  new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    minimumFractionDigits: 0,
-  }).format(v || 0);
+const fmtNGN = (v: number) => {
+  const formatted = new Intl.NumberFormat("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(v || 0));
+  return `${(v || 0) < 0 ? "-" : ""}₦${formatted}`;
+};
 
 function buildChartData(transactions: WalletTransaction[], currentBalance: number) {
   if (!transactions || transactions.length === 0) {
@@ -314,7 +312,7 @@ export default function DashboardPage() {
                 )}
               </button>
             </div>
-            <div className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-white tabular-nums">
+            <div className="font-mono text-3xl sm:text-4xl font-bold tracking-normal text-white tabular-nums">
               {balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "••••••••"}
             </div>
 
@@ -383,7 +381,7 @@ export default function DashboardPage() {
             padding="sm"
             className="flex flex-col items-center text-center gap-2 group p-4"
           >
-            <div className="w-10 h-10 rounded-2xl bg-indigo text-white flex items-center justify-center transition-transform group-hover:scale-105">
+            <div className="w-10 h-10 rounded-2xl bg-loam-light text-loam border border-loam/20 flex items-center justify-center transition-transform group-hover:scale-105">
               <Plus className="w-5 h-5" />
             </div>
             <span className="text-xs font-semibold text-ink">Fund Wallet</span>
@@ -396,7 +394,7 @@ export default function DashboardPage() {
             padding="sm"
             className="flex flex-col items-center text-center gap-2 group p-4"
           >
-            <div className="w-10 h-10 rounded-2xl bg-loam text-white flex items-center justify-center transition-transform group-hover:scale-105">
+            <div className="w-10 h-10 rounded-2xl bg-loam-light text-loam border border-loam/20 flex items-center justify-center transition-transform group-hover:scale-105">
               <PiggyBank className="w-5 h-5" />
             </div>
             <span className="text-xs font-semibold text-ink">Open Savings</span>
@@ -409,7 +407,7 @@ export default function DashboardPage() {
             padding="sm"
             className="flex flex-col items-center text-center gap-2 group p-4"
           >
-            <div className="w-10 h-10 rounded-2xl bg-indigo-deep text-white flex items-center justify-center transition-transform group-hover:scale-105">
+            <div className="w-10 h-10 rounded-2xl bg-indigo/10 text-indigo border border-indigo/20 flex items-center justify-center transition-transform group-hover:scale-105">
               <Landmark className="w-5 h-5" />
             </div>
             <span className="text-xs font-semibold text-ink">Check Loans</span>
@@ -422,7 +420,7 @@ export default function DashboardPage() {
             padding="sm"
             className="flex flex-col items-center text-center gap-2 group p-4"
           >
-            <div className="w-10 h-10 rounded-2xl bg-loam-dim text-white flex items-center justify-center transition-transform group-hover:scale-105">
+            <div className="w-10 h-10 rounded-2xl bg-indigo/10 text-indigo border border-indigo/20 flex items-center justify-center transition-transform group-hover:scale-105">
               <FileText className="w-5 h-5" />
             </div>
             <span className="text-xs font-semibold text-ink">Statements</span>

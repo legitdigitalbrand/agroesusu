@@ -1,11 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useMe } from "@/hooks/use-me";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check, User, ShieldCheck, Wallet, PiggyBank, TrendingUp, Landmark,
-  ChevronRight, Circle,
+  ChevronRight, Circle, X,
 } from "lucide-react";
 
 // ════════════════════════════════════════════════════════════
@@ -37,6 +38,44 @@ interface OnboardingStep {
 
 export function OnboardingChecklist() {
   const { data: me } = useMe();
+  const queryClient = useQueryClient();
+  const [dismissed, setDismissed] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
+
+  // Check if user has dismissed the checklist (stored in profile preferences)
+  const { data: dismissState } = useQuery<{ dismissed: boolean }>({
+    queryKey: ["onboarding-dismissed"],
+    queryFn: async () => {
+      const res = await fetch("/api/me/preferences");
+      if (!res.ok) return { dismissed: false };
+      const data = await res.json();
+      return { dismissed: !!data.dismiss_onboarding };
+    },
+  });
+
+  useEffect(() => {
+    if (dismissState) {
+      setDismissed(dismissState.dismissed);
+    }
+  }, [dismissState]);
+
+  // Handle dismiss — persists to user preferences
+  const handleDismiss = async () => {
+    setDismissing(true);
+    try {
+      await fetch("/api/me/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dismiss_onboarding: true }),
+      });
+      setDismissed(true);
+      queryClient.invalidateQueries({ queryKey: ["onboarding-dismissed"] });
+    } catch {
+      setDismissed(true);
+    } finally {
+      setDismissing(false);
+    }
+  };
 
   // Check savings accounts
   const { data: savingsData } = useQuery<{ accounts: unknown[] }>({
@@ -58,7 +97,7 @@ export function OnboardingChecklist() {
     },
   });
 
-  if (!me) return null;
+  if (!me || dismissed) return null;
 
   const hasProfile = !!me.profile?.full_name && !!me.profile?.phone;
   const hasKyc = (me.profile?.kyc_level || 0) >= 1;
@@ -147,16 +186,25 @@ export function OnboardingChecklist() {
   return (
     <div className="bg-paper border border-line rounded-2xl overflow-hidden">
       {/* Header with progress */}
-      <div className="px-5 py-4 bg-gradient-to-br from-indigo to-indigo-deep text-white">
-        <div className="flex items-center justify-between mb-2">
+      <div className="px-5 py-4 bg-gradient-to-br from-indigo to-indigo-deep text-white relative">
+        <button
+          onClick={handleDismiss}
+          disabled={dismissing}
+          className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition text-white/80 hover:text-white"
+          title="Skip for now"
+          aria-label="Dismiss getting started guide"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        <div className="flex items-center justify-between mb-2 pr-8">
           <div>
-            <h3 className="font-display font-semibold text-[16px]">Getting Started</h3>
-            <p className="text-[12px] text-white/70 mt-0.5">
+            <h3 className="font-display font-semibold text-[16px] text-white">Getting Started</h3>
+            <p className="text-[12px] text-white/90 mt-0.5">
               {completedCount} of {steps.length} steps complete
             </p>
           </div>
           <div className="w-12 h-12 rounded-full bg-paper/15 flex items-center justify-center">
-            <span className="font-mono font-semibold text-[16px]">{progressPct}%</span>
+            <span className="font-mono font-semibold text-[16px] text-white">{progressPct}%</span>
           </div>
         </div>
         {/* Progress bar */}

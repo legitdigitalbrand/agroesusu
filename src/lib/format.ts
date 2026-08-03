@@ -1,10 +1,27 @@
+/**
+ * formatNaira — formats a number as a Naira currency string.
+ *
+ * NOTE: We deliberately do NOT use Intl.NumberFormat with style: "currency"
+ * because that produces the ₦ symbol inline with the digits. IBM Plex Mono
+ * (our brand mono font, loaded via Google Fonts) does not include the ₦ glyph
+ * (U+20A6) in its latin/latin-ext subsets, causing the browser to fall back
+ * to a system font for just that character and creating visual overlap.
+ *
+ * Instead, we format the number separately and prepend "₦" as a string.
+ * The CSS `.naira-symbol` class (applied via MoneyText component) ensures the
+ * ₦ glyph uses a fallback font with proper metrics.
+ *
+ * For JSX/React usage, prefer the <MoneyText> component which handles this
+ * with proper spans. Use formatNaira for non-JSX contexts (API responses,
+ * chart formatters, tooltips, etc.).
+ */
 export function formatNaira(amount: number): string {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
+  const formatted = new Intl.NumberFormat("en-NG", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(Math.abs(amount));
+
+  return `${amount < 0 ? "-₦" : "₦"}${formatted}`;
 }
 
 export function formatNumber(amount: number, decimals = 2): string {

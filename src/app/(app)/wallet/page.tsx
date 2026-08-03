@@ -73,13 +73,10 @@ interface FundingDetails {
   instructions?: string;
 }
 
-const fmtNGN = (v: number) =>
-  new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(v || 0);
+const fmtNGN = (v: number) => {
+  const formatted = new Intl.NumberFormat("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(v || 0));
+  return `${(v || 0) < 0 ? "-" : ""}₦${formatted}`;
+};
 
 export default function WalletPage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
@@ -219,7 +216,7 @@ export default function WalletPage() {
                 <p className="text-xs font-medium text-white/70 uppercase tracking-widest mb-1">
                   Available Balance
                 </p>
-                <div className="text-3xl sm:text-4xl font-bold font-mono text-white tracking-tight leading-none">
+                <div className="text-3xl sm:text-4xl font-bold font-mono text-white tracking-normal leading-none">
                   {balanceVisible ? (
                     fmtNGN(wallet.available_balance)
                   ) : (

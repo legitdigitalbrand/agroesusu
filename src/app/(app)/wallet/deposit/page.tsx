@@ -26,8 +26,10 @@ interface FundingDetails {
 type FundingStatus = 'idle' | 'loading' | 'ready' | 'not_provisioned' | 'error';
 type FundStage = 'details' | 'processing' | 'success' | 'failed';
 
-const fmtNGN = (v: number) =>
-  new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(v || 0);
+const fmtNGN = (v: number) => {
+  const formatted = new Intl.NumberFormat("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(v || 0));
+  return `${(v || 0) < 0 ? "-" : ""}₦${formatted}`;
+};
 
 export default function WalletDepositPage() {
   const [details, setDetails] = useState<FundingDetails | null>(null);

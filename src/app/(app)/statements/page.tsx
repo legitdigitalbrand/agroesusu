@@ -58,8 +58,10 @@ interface MonthSummary {
   net: number;
 }
 
-const fmtNGN = (v: number) =>
-  new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(v || 0);
+const fmtNGN = (v: number) => {
+  const formatted = new Intl.NumberFormat("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(v || 0));
+  return `${(v || 0) < 0 ? "-" : ""}₦${formatted}`;
+};
 
 export default function StatementsPage() {
   const { data: me, isLoading: meLoading, error: meError } = useMe();

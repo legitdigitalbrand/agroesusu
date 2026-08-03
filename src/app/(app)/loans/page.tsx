@@ -137,9 +137,9 @@ function getFactorImprovement(factor: EligibilityFactor, savingsBalance: number)
       };
     case "cooperative_membership":
       return {
-        text: "Cooperative membership is required to unlock this loan product.",
-        href: "/profile",
-        linkText: "Check Profile",
+        text: "Join an esusu group or cooperative to unlock this loan product. Cooperative membership demonstrates community trust and shared savings discipline.",
+        href: "/cooperatives",
+        linkText: "Explore Groups",
       };
     case "repayment_history":
       return {
@@ -375,7 +375,9 @@ export default function LoansPage() {
                         <span>{label}</span>
                       </div>
                       <span className={`font-mono ${f.passed ? "text-white" : "text-clay-light"}`}>
-                        {String(f.value)} {f.threshold ? `/ ${f.threshold}` : ""}
+                        {f.factor === "cooperative_membership"
+                          ? (f.passed ? "Member" : "Not a member")
+                          : `${String(f.value || "—")} ${f.threshold ? `/ ${f.threshold}` : ""}`}
                       </span>
                     </div>
                   );

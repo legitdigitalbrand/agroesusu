@@ -40,7 +40,7 @@ export function StatCard({
       variant={isDark ? "dark" : variant === "flat" ? "flat" : "elevated"}
       padding="md"
       className={cn(
-        "relative flex flex-col justify-between transition-all duration-200",
+        "relative flex flex-col justify-between transition-all duration-200 min-w-0",
         variant === "ochre" && "bg-ochre-light/50 border border-ochre/30 text-indigo-deep",
         className
       )}
@@ -48,7 +48,7 @@ export function StatCard({
     >
       {/* Header Row */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {icon && (
             <div
               className={cn(
@@ -63,7 +63,7 @@ export function StatCard({
           )}
           <span
             className={cn(
-              "text-xs font-semibold uppercase tracking-wider",
+              "text-xs font-semibold uppercase tracking-wider truncate",
               isDark ? "text-white/80" : "text-ink-soft"
             )}
           >
@@ -71,7 +71,7 @@ export function StatCard({
           </span>
         </div>
         {(badge || action) && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {badge}
             {action}
           </div>
@@ -79,10 +79,10 @@ export function StatCard({
       </div>
 
       {/* Main Value Display */}
-      <div className="mt-1">
+      <div className="mt-1 min-w-0">
         <div
           className={cn(
-            "font-mono text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums",
+            "font-mono text-xl sm:text-2xl lg:text-2xl font-semibold tracking-normal tabular-nums",
             isDark ? "text-white" : "text-ink"
           )}
         >
@@ -95,7 +95,7 @@ export function StatCard({
             {trend && (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-xs border select-none",
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-xs border select-none shrink-0",
                   trend.isPositive === undefined || trend.isPositive === true
                     ? isDark
                       ? "bg-white/20 text-white border-white/30"
@@ -112,7 +112,7 @@ export function StatCard({
             {subtitle && (
               <span
                 className={cn(
-                  "text-xs",
+                  "text-xs truncate",
                   isDark ? "text-white/70" : "text-ink-soft"
                 )}
               >
@@ -146,14 +146,14 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-line bg-paper p-4 sm:p-5 shadow-2xs transition-all duration-150 flex items-center justify-between gap-4",
+        "rounded-2xl border border-line bg-paper p-4 sm:p-5 shadow-2xs transition-all duration-150 flex items-center justify-between gap-4 min-w-0",
         className
       )}
       {...props}
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-ink-soft truncate">{label}</p>
-        <p className="mt-1 font-mono text-xl font-semibold text-ink tracking-tight tabular-nums truncate">
+        <p className="mt-1 font-mono text-lg sm:text-xl font-semibold text-ink tracking-normal tabular-nums truncate">
           {value}
         </p>
         {subtext && <p className="mt-0.5 text-xs text-ink-soft truncate">{subtext}</p>}

@@ -7,8 +7,10 @@ import { useMutation } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-me";
 import { Button, LoadingState, ErrorState } from "@/components/yield";
 
-const fmtNGN = (v: number) =>
-  new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(v || 0);
+const fmtNGN = (v: number) => {
+  const formatted = new Intl.NumberFormat("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(v || 0));
+  return `${(v || 0) < 0 ? "-" : ""}₦${formatted}`;
+};
 
 type Step = "bank" | "account" | "verify" | "amount" | "review" | "processing" | "result";
 
