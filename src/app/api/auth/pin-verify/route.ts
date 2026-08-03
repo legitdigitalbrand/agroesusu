@@ -78,12 +78,32 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    // Check if PIN is locked
+    // Check if PIN is locked — auto-unlock after 15 minutes
     if (pinRecord.locked_at) {
-      return NextResponse.json({
-        error: 'PIN locked due to too many failed attempts. Please sign in with email and password.',
-        code: 'pin_locked'
-      }, { status: 403 });
+      const lockoutMs = 15 * 60 * 1000; // 15 minutes
+      const lockedAt = new Date(pinRecord.locked_at).getTime();
+      const now = Date.now();
+      
+      if (now - lockedAt < lockoutMs) {
+        const remainingMs = lockoutMs - (now - lockedAt);
+        const remainingMin = Math.ceil(remainingMs / 60000);
+        return NextResponse.json({
+          error: `PIN locked. Try again in ${remainingMin} minute${remainingMin === 1 ? '' : 's'} or sign in with email and password.`,
+          code: 'pin_locked',
+          remaining_minutes: remainingMin,
+        }, { status: 403 });
+      }
+      
+      // Auto-unlock: reset failed attempts and locked_at
+      console.log('[pin-verify] Auto-unlocking PIN after 15-min lockout period');
+      await supabase
+        .from('device_pins')
+        .update({ failed_attempts: 0, locked_at: null })
+        .eq('id', pinRecord.id);
+      
+      // Re-fetch the record to continue verification with fresh state
+      pinRecord.failed_attempts = 0;
+      pinRecord.locked_at = null;
     }
 
     // ── Fix: Handle null/missing pin_salt ──
@@ -97,9 +117,20 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // Verify PIN using timing-safe comparison from src/lib/auth/pin.ts
-    // verifyPin handles: null salt fallback (extracts from hash:salt format), timing attacks
+    // Verify PIN using canonical verifyPin from src/lib/auth/pin.ts
+    // verifyPin handles: whitespace trimming, null salt fallback, timing-safe comparison
     const isPinValid = verifyPin(pin, pinRecord.pin_hash, pinRecord.pin_salt);
+    
+    // Debug logging for "correct PIN denied" investigation
+    if (!isPinValid) {
+      console.warn('[pin-verify] PIN verification failed', {
+        pinRecordId: pinRecord.id,
+        hashLength: pinRecord.pin_hash?.length || 0,
+        saltLength: pinRecord.pin_salt?.length || 0,
+        hasSalt: !!pinRecord.pin_salt,
+        hashHasColon: pinRecord.pin_hash?.includes(':') || false,
+      });
+    }
 
     if (!isPinValid) {
       // Increment failed attempts on existing record

@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { DEVICE_COOKIE_NAME } from '@/lib/auth/device';
 import { hashPin, verifyPin, isValidPinFormat } from '@/lib/auth/pin';
 
+const MAX_PIN_ATTEMPTS = 5;
+
 // POST /api/auth/pin-change
 // Changes the PIN for the current device. Requires the current PIN for verification.
 
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
 
     const { data: pinRecord, error: dbError } = await supabase
       .from('device_pins')
-      .select('id, pin_hash, pin_salt, locked_at')
+      .select('id, pin_hash, pin_salt, failed_attempts, locked_at')
       .eq('user_id', user.id)
       .eq('device_id', deviceId)
       .maybeSingle();
@@ -66,9 +68,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'PIN is locked. Please sign in with email and password first.', code: 'pin_locked' }, { status: 403 });
     }
 
-    // Verify current PIN using timing-safe comparison
+    // Verify current PIN using canonical verifyPin
     if (!verifyPin(currentPin, pinRecord.pin_hash, pinRecord.pin_salt)) {
-      return NextResponse.json({ error: 'Current PIN is incorrect', code: 'wrong_pin' }, { status: 401 });
+      // Increment failed attempts on wrong current PIN
+      const newFailedAttempts = (pinRecord.failed_attempts || 0) + 1;
+      const shouldLock = newFailedAttempts >= MAX_PIN_ATTEMPTS;
+
+      await supabase
+        .from('device_pins')
+        .update({
+          failed_attempts: newFailedAttempts,
+          locked_at: shouldLock ? new Date().toISOString() : null,
+        })
+        .eq('id', pinRecord.id);
+
+      return NextResponse.json({
+        error: shouldLock
+          ? 'PIN locked due to too many failed attempts. Please sign in with email and password.'
+          : `Current PIN is incorrect. ${MAX_PIN_ATTEMPTS - newFailedAttempts} attempts remaining.`,
+        code: shouldLock ? 'pin_locked' : 'wrong_pin',
+        attempts_remaining: Math.max(0, MAX_PIN_ATTEMPTS - newFailedAttempts),
+      }, { status: 401 });
     }
 
     // Set new PIN using canonical PBKDF2 function

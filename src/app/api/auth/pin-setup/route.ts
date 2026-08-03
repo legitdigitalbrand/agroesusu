@@ -8,7 +8,7 @@ import {
   PIN_VERIFIED_COOKIE_OPTIONS,
 } from '@/lib/auth/device';
 import { hashPin, isValidPinFormat } from '@/lib/auth/pin';
-import crypto from 'crypto';
+import { randomUUID } from 'crypto';
 
 // POST /api/auth/pin-setup
 // Sets up a mandatory 4-digit PIN for the authenticated user's device.
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       .find((c) => c.startsWith(`${DEVICE_COOKIE_NAME}=`));
     const existingDeviceId = deviceMatch ? deviceMatch.split('=')[1] : null;
 
-    const deviceId = existingDeviceId || crypto.randomUUID();
+    const deviceId = existingDeviceId || randomUUID();
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Hash the PIN using canonical PBKDF2 function from src/lib/auth/pin.ts
@@ -76,18 +76,22 @@ export async function POST(request: Request) {
       );
 
     if (error) {
-      console.error('[pin-setup] DB error:', error.message, error.code, error.details);
+      console.error('[pin-setup] DB error:', error.message, error.code, error.details, error.hint);
 
       // Handle specific DB errors with helpful messages
       if (error.code === '23505') {
-        // Unique constraint violation — shouldn't happen with upsert, but handle gracefully
         return NextResponse.json({ error: 'PIN already exists for this device. Try changing it instead.' }, { status: 409 });
       }
       if (error.code === '42501') {
-        // RLS policy violation
         return NextResponse.json({ error: 'Permission denied. Please sign in again.' }, { status: 403 });
       }
+      if (error.code === '42P01') {
+        // Table doesn't exist — migration not run
+        console.error('[pin-setup] device_pins table does not exist. Run migration 00034.');
+        return NextResponse.json({ error: 'PIN setup is not available. Please contact support.' }, { status: 503 });
+      }
 
+      console.error('[pin-setup] Full error:', JSON.stringify(error));
       return NextResponse.json({ error: 'Failed to save PIN. Please try again.' }, { status: 500 });
     }
 

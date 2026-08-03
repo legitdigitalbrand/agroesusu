@@ -76,6 +76,9 @@ export function PinInput({ value, onChange, autoFocus = true, disabled, error, l
           ref={(el) => { inputs.current[i] = el; }}
           type="password"
           inputMode="numeric"
+          autoComplete="off"
+          data-lpignore="1"
+          data-1p-ignore
           pattern="[0-9]*"
           maxLength={1}
           value={localValues[i]}

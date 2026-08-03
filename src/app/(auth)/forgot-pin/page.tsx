@@ -95,6 +95,9 @@ export default function ForgotPinPage() {
             </p>
 
             <form onSubmit={handleAuth} autoComplete="off" spellCheck={false}>
+              {/* Hidden inputs to prevent browser password autofill/caching */}
+              <input type="password" name="password" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} tabIndex={-1} autoComplete="off" />
+              <input type="text" name="email" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} tabIndex={-1} autoComplete="off" />
               <AuthInput
                 label="Email address"
                 type="email"
@@ -110,7 +113,7 @@ export default function ForgotPinPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                autoComplete="current-password"
+                autoComplete="off"
               />
 
               {error && (

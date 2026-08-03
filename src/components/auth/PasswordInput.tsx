@@ -38,6 +38,9 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             id={inputId}
             type={show ? "text" : "password"}
             className="auth-input pr-11 focus:ring-2 focus:ring-loam focus:border-loam focus:outline-none transition"
+            data-lpignore="1"
+            data-1p-ignore
+            data-form-type="other"
             {...props}
           />
           <button

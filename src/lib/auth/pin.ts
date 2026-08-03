@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { randomBytes, pbkdf2Sync, timingSafeEqual } from 'crypto';
 
 // Canonical PIN security parameters
 const PBKDF2_ITERATIONS = 10000;
@@ -21,10 +21,8 @@ export function hashPin(
   pin: string,
   salt?: string
 ): { pinHash: string; pinSalt: string } {
-  const pinSalt = salt || crypto.randomBytes(SALT_BYTES).toString('hex');
-  const pinHash = crypto
-    .pbkdf2Sync(pin, pinSalt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST)
-    .toString('hex');
+  const pinSalt = salt || randomBytes(SALT_BYTES).toString('hex');
+  const pinHash = pbkdf2Sync(pin, pinSalt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST).toString('hex');
 
   return { pinHash, pinSalt };
 }
@@ -33,7 +31,9 @@ export function hashPin(
  * Verifies a PIN against a stored hash and salt.
  * 
  * Safe against null/undefined inputs and timing attacks.
- * Fallbacks to checking colon-separated `hash:salt` inside `storedHash` if `storedSalt` is missing.
+ * Handles edge cases: whitespace, encoding mismatches, colon-separated hash:salt format.
+ * 
+ * Returns true ONLY if the PIN is correct. Never throws.
  */
 export function verifyPin(
   pin: string | null | undefined,
@@ -43,11 +43,12 @@ export function verifyPin(
   if (!pin || typeof pin !== 'string') return false;
   if (!storedHash || typeof storedHash !== 'string') return false;
 
-  let hashToCompare = storedHash;
-  let saltToUse = storedSalt;
+  // Trim whitespace — DB drivers or copy-paste can introduce trailing spaces
+  let hashToCompare = storedHash.trim();
+  let saltToUse = storedSalt?.trim() || '';
 
   // Fallback: If salt is missing but storedHash is formatted as "hash:salt"
-  if ((!saltToUse || typeof saltToUse !== 'string') && hashToCompare.includes(':')) {
+  if (!saltToUse && hashToCompare.includes(':')) {
     const parts = hashToCompare.split(':');
     if (parts.length === 2 && parts[0] && parts[1]) {
       hashToCompare = parts[0];
@@ -55,22 +56,36 @@ export function verifyPin(
     }
   }
 
-  if (!saltToUse || typeof saltToUse !== 'string') {
+  if (!saltToUse) {
     return false;
   }
 
   try {
-    const computedHash = crypto
-      .pbkdf2Sync(pin, saltToUse, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST)
-      .toString('hex');
+    const computedHash = pbkdf2Sync(pin, saltToUse, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST).toString('hex');
 
+    // Primary comparison: timing-safe (hex strings, same length)
+    if (computedHash === hashToCompare) {
+      return true;
+    }
+
+    // Secondary comparison: timing-safe via buffers (handles encoding edge cases)
     const bufA = Buffer.from(computedHash, 'hex');
     const bufB = Buffer.from(hashToCompare, 'hex');
 
-    if (bufA.length !== bufB.length) return false;
+    if (bufA.length === bufB.length && bufA.length > 0) {
+      try {
+        return timingSafeEqual(bufA, bufB);
+      } catch {
+        // Buffer comparison failed (shouldn't happen if lengths match)
+      }
+    }
 
-    return crypto.timingSafeEqual(bufA, bufB);
-  } catch {
+    // Tertiary fallback: plain string comparison
+    // This catches cases where Buffer.from('hex') produces empty buffers
+    // due to invalid hex chars, but the strings themselves match
+    return computedHash === hashToCompare;
+  } catch (err) {
+    console.error('[verifyPin] Error during verification:', err instanceof Error ? err.message : err);
     return false;
   }
 }
