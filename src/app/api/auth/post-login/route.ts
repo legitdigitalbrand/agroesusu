@@ -29,13 +29,17 @@ export async function POST(request: Request) {
 
     const hasAnyPin = (count || 0) > 0;
 
-    // Set pin_verified cookie (user just authenticated with password)
+    // Only set pin_verified cookie if user already has a device PIN.
+    // If they need PIN setup, DON'T set pin_verified — middleware will
+    // redirect them to /set-pin, preventing access without a PIN.
     const response = NextResponse.json({
       success: true,
       needsPinSetup: !hasAnyPin,
     });
 
-    response.cookies.set(PIN_VERIFIED_COOKIE_NAME, 'true', PIN_VERIFIED_COOKIE_OPTIONS);
+    if (hasAnyPin) {
+      response.cookies.set(PIN_VERIFIED_COOKIE_NAME, 'true', PIN_VERIFIED_COOKIE_OPTIONS);
+    }
 
     return response;
   } catch (err) {

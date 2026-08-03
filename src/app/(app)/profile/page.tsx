@@ -58,7 +58,9 @@ export default function ProfilePage() {
         </div>
         {profile.kyc_level < 2 && (
           <div className="mt-4">
-            <Button size="sm" variant="loam" className="w-full">Verify your identity</Button>
+            <Button size="sm" variant="loam" className="w-full" onClick={() => router.push("/onboarding")}>
+              Verify your identity
+            </Button>
           </div>
         )}
       </Card>

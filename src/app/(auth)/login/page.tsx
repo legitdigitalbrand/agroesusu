@@ -161,7 +161,7 @@ function LoginContent() {
         return;
       }
 
-      if (body.code === "locked") {
+      if (body.code === "pin_locked") {
         setError(body.error);
         setPin("");
         setPinRemaining(0);
@@ -185,7 +185,7 @@ function LoginContent() {
       }
 
       // Wrong PIN
-      setPinRemaining(body.remaining || 0);
+      setPinRemaining(body.attempts_remaining || 0);
       setError(body.error);
       setPin("");
       setLoading(false);
