@@ -247,6 +247,13 @@
   font-family: "IBM Plex Mono", "NairaFallback", monospace;
 }
 
+/* Ensure the body/sans font also has ₦ glyph fallback for inline fmtNGN() calls
+   that render outside .font-mono contexts (labels, buttons, paragraphs). */
+.font-sans,
+body {
+  font-family: "IBM Plex Sans", "NairaFallback", system-ui, sans-serif;
+}
+
 /* MoneyText component: ₦ symbol uses the fallback, number stays in brand mono */
 .naira-symbol {
   font-family: "NairaFallback", "Segoe UI", "SF Pro Text", "Arial", sans-serif;
