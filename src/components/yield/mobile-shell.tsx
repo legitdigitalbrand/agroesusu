@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, FileText, Wallet, Landmark, Plus,
-  ChevronDown, User, Shield, LogOut, HelpCircle, Settings,
+  ChevronDown, User, Shield, LogOut, HelpCircle, Settings, Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMe } from "@/hooks/use-me";
@@ -92,6 +92,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
                   <MobileMenuItem href="/settings/security" icon={Shield} label="Security" onClick={() => setMenuOpen(false)} />
                   <MobileMenuItem href="/settings" icon={Settings} label="Settings" onClick={() => setMenuOpen(false)} />
                   <MobileMenuItem href="/help" icon={HelpCircle} label="Help & Support" onClick={() => setMenuOpen(false)} />
+                  <MobileMenuItem href="/cooperatives" icon={Building2} label="Cooperatives" onClick={() => setMenuOpen(false)} />
                   <MobileMenuItem href="/statements" icon={FileText} label="Statements" onClick={() => setMenuOpen(false)} />
                   <div className="my-1 h-px bg-line" />
                   <button
@@ -155,7 +156,7 @@ function MobileNavItem({ item, active }: { item: typeof navItems[0]; active: boo
       href={item.href}
       className={cn(
         "flex flex-col items-center gap-0.5 px-3 py-1 transition min-w-[44px] min-h-[44px] justify-center",
-        active ? "text-ochre" : "text-white/50 hover:text-white"
+        active ? "text-ochre" : "text-white/70 hover:text-white"
       )}
     >
       <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 1.8} />

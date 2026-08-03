@@ -80,7 +80,7 @@ export default function WelcomePage() {
       </div>
 
       {/* Fineprint */}
-      <p className="text-[12px] text-white/40 text-center mt-6 max-w-[240px] leading-relaxed">
+      <p className="text-[12px] text-white/70 text-center mt-6 max-w-[240px] leading-relaxed">
         By continuing, you agree to our{" "}
         <Link href="/terms" className="text-white/60 underline">Terms</Link>
         {" "}&{" "}

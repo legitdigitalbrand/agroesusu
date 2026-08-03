@@ -141,7 +141,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <LogoMark size={32} variant="admin" />
           <div>
             <span className="font-display text-xl text-white block leading-tight">Agriqcap</span>
-            <span className="text-[12px] text-white/40 uppercase tracking-wider">Admin Console</span>
+            <span className="text-[12px] text-white/70 uppercase tracking-wider">Admin Console</span>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition",
                   active
                     ? "bg-paper/10 text-ochre"
-                    : "text-white/50 hover:text-white hover:bg-paper/5"
+                    : "text-white/70 hover:text-white hover:bg-paper/5"
                 )}
               >
                 <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
@@ -172,7 +172,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-3 py-4 border-t border-white/10">
           <Link
             href="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-paper/5 w-full transition"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-paper/5 w-full transition"
           >
             <LogOut className="h-5 w-5" />
             Exit console
@@ -201,7 +201,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <LogoMark size={32} variant="admin" />
             <div>
               <span className="font-display text-xl text-white block leading-tight">Agriqcap</span>
-              <span className="text-[12px] text-white/40 uppercase tracking-wider">Admin Console</span>
+              <span className="text-[12px] text-white/70 uppercase tracking-wider">Admin Console</span>
             </div>
           </div>
           <button
@@ -226,7 +226,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition min-h-[44px]",
                   active
                     ? "bg-paper/10 text-ochre"
-                    : "text-white/50 hover:text-white hover:bg-paper/5"
+                    : "text-white/70 hover:text-white hover:bg-paper/5"
                 )}
               >
                 <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
@@ -240,7 +240,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-3 py-4 border-t border-white/10">
           <Link
             href="/"
-            className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-paper/5 w-full transition min-h-[44px]"
+            className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-paper/5 w-full transition min-h-[44px]"
           >
             <LogOut className="h-5 w-5" />
             Exit console

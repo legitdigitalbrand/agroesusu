@@ -234,7 +234,7 @@ export default function LandingPage() {
           </nav>
         </div>
         <div className="max-w-[1180px] mx-auto mt-4">
-          <p className="text-[12px] text-white/50 text-center">© 2026 Agriqcap. All rights reserved.</p>
+          <p className="text-[12px] text-white/70 text-center">© 2026 Agriqcap. All rights reserved.</p>
         </div>
       </footer>
     </div>

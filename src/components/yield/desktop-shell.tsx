@@ -26,6 +26,7 @@ const topNavItems = [
   { name: "Wallet", href: "/wallet" },
   { name: "Savings", href: "/savings" },
   { name: "Loans", href: "/loans" },
+  { name: "Groups", href: "/cooperatives" },
   { name: "Statements", href: "/statements" },
 ];
 

@@ -113,22 +113,22 @@ export default function WalletPage() {
                 </button>
               </div>
               <div className="mb-2">
-                <p className="text-[11px] text-white/50 uppercase tracking-widest mb-1.5">Available Balance</p>
+                <p className="text-[11px] text-white/70 uppercase tracking-widest mb-1.5">Available Balance</p>
                 <p className="font-mono font-semibold text-[38px] leading-tight tracking-tight">
                   {balanceVisible ? fmtNGN(wallet.available_balance) : "\u20a6 \u2022\u2022\u2022\u2022\u2022\u2022"}
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3 bg-paper/8 rounded-xl p-4 mb-5">
                 <div>
-                  <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Ledger</p>
+                  <p className="text-[12px] text-white/70 uppercase tracking-wider mb-1">Ledger</p>
                   <p className="font-mono font-medium text-[14px] text-white">{balanceVisible ? fmtNGN(wallet.ledger_balance) : "\u2022\u2022\u2022\u2022"}</p>
                 </div>
                 <div>
-                  <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Pending</p>
+                  <p className="text-[12px] text-white/70 uppercase tracking-wider mb-1">Pending</p>
                   <p className="font-mono font-medium text-[14px] text-white">{balanceVisible ? fmtNGN(wallet.pending_balance) : "\u2022\u2022\u2022\u2022"}</p>
                 </div>
                 <div>
-                  <p className="text-[12px] text-white/50 uppercase tracking-wider mb-1">Reserved</p>
+                  <p className="text-[12px] text-white/70 uppercase tracking-wider mb-1">Reserved</p>
                   <p className="font-mono font-medium text-[14px] text-white">{balanceVisible ? fmtNGN(wallet.reserved_balance) : "\u2022\u2022\u2022\u2022"}</p>
                 </div>
               </div>

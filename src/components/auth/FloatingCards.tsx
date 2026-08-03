@@ -180,7 +180,7 @@ export function TestimonialCard({
       <p className="text-[11px] text-white/80 leading-relaxed italic mb-2">
         {text}
       </p>
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-white/50">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-white/70">
         {author}
       </p>
     </motion.div>
@@ -211,7 +211,7 @@ export function FeaturePill({
       </div>
       <div>
         <div className="font-display text-[12px] font-bold text-white">{title}</div>
-        <div className="text-[10px] text-white/50">{subtitle}</div>
+        <div className="text-[10px] text-white/70">{subtitle}</div>
       </div>
     </motion.div>
   );
@@ -235,7 +235,7 @@ export function MemberCount({
       className="text-center relative z-10"
     >
       <div className="font-mono text-[20px] font-bold text-ochre">{count}</div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-white/50 mt-0.5">
+      <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-white/70 mt-0.5">
         {label}
       </div>
     </motion.div>

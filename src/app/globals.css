@@ -17,7 +17,7 @@
     --secondary: 120 30% 92%;       /* parchment */
     --secondary-foreground: 130 16% 12%;
     --muted: 120 20% 94%;
-    --muted-foreground: 120 8% 40%; /* ink-soft #5C6B57 */
+    --muted-foreground: 120 8% 35%; /* ink-soft #4A5A44 — darker for AA contrast on small text */
     --accent: 71 80% 46%;           /* ochre #BBDC12 */
     --accent-foreground: 13 55% 10%; /* indigo-deep */
     --destructive: 5 57% 44%;       /* clay #B23A2E */

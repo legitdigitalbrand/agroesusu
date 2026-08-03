@@ -38,7 +38,7 @@ const config: Config = {
         paper: '#FBFDF9',     // near-white surface
         ink: {
           DEFAULT: '#1A2417', // very dark green-black — high contrast
-          soft: '#5C6B57',    // mid-tone muted text
+          soft: '#4A5A44',    // mid-tone muted text — darkened for WCAG AA on small text
         },
         track: '#D9E9D2',     // progress ring track, subtle dividers
         line: '#D6E8D2',      // border/separator
