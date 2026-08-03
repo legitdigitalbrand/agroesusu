@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { Pool, Client } from 'pg';
 
-// Temporary route — DELETE after migration is complete
 export async function POST(request: NextRequest) {
   const errors: string[] = [];
   try {
@@ -52,54 +51,51 @@ CREATE POLICY ep_read_self_or_staff ON public.cooperative_executive_positions
   FOR SELECT TO authenticated USING (public.is_coop_member(cooperative_id) OR public.is_admin());
 `;
 
-    const encodedPass = encodeURIComponent(dbPassword);
-    const connectionConfigs = [
+    // EU-West-1 pooler found the tenant — try different user/password combos
+    const configs = [
       {
-        name: 'direct-5432',
-        connectionString: `postgresql://postgres:${encodedPass}@db.${ref}.supabase.co:5432/postgres`,
+        name: 'eu-west-1-with-ref',
+        host: 'aws-0-eu-west-1.pooler.supabase.com',
+        port: 6543,
+        user: `postgres.${ref}`,
+        password: dbPassword,
         ssl: { rejectUnauthorized: false },
       },
       {
-        name: 'pooler-6543-us-east-1',
-        connectionString: `postgresql://postgres.${ref}:${encodedPass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`,
+        name: 'eu-west-1-without-ref',
+        host: 'aws-0-eu-west-1.pooler.supabase.com',
+        port: 6543,
+        user: 'postgres',
+        password: dbPassword,
         ssl: { rejectUnauthorized: false },
       },
       {
-        name: 'pooler-5432-us-east-1',
-        connectionString: `postgresql://postgres.${ref}:${encodedPass}@aws-0-us-east-1.pooler.supabase.com:5432/postgres`,
-        ssl: { rejectUnauthorized: false },
-      },
-      {
-        name: 'pooler-6543-us-west-1',
-        connectionString: `postgresql://postgres.${ref}:${encodedPass}@aws-0-us-west-1.pooler.supabase.com:6543/postgres`,
-        ssl: { rejectUnauthorized: false },
-      },
-      {
-        name: 'pooler-6543-eu-west-1',
-        connectionString: `postgresql://postgres.${ref}:${encodedPass}@aws-0-eu-west-1.pooler.supabase.com:6543/postgres`,
-        ssl: { rejectUnauthorized: false },
-      },
-      {
-        name: 'pooler-6543-ap-southeast-1',
-        connectionString: `postgresql://postgres.${ref}:${encodedPass}@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres`,
+        name: 'eu-west-1-session-5432',
+        host: 'aws-0-eu-west-1.pooler.supabase.com',
+        port: 5432,
+        user: `postgres.${ref}`,
+        password: dbPassword,
         ssl: { rejectUnauthorized: false },
       },
     ];
 
-    for (const config of connectionConfigs) {
+    for (const config of configs) {
       try {
-        const pool = new Pool({
-          connectionString: config.connectionString,
+        const client = new Client({
+          host: config.host,
+          port: config.port,
+          database: 'postgres',
+          user: config.user,
+          password: config.password,
           ssl: config.ssl,
           connectionTimeoutMillis: 15000,
         });
 
-        const client = await pool.connect();
+        await client.connect();
         try {
           await client.query('SELECT 1');
           await client.query(migrationSql);
           const verify = await client.query(`SELECT proname FROM pg_proc WHERE proname = 'is_coop_member'`);
-          await pool.end();
           return NextResponse.json({
             success: true,
             connection: config.name,
@@ -107,11 +103,11 @@ CREATE POLICY ep_read_self_or_staff ON public.cooperative_executive_positions
             verified: verify.rows.length > 0,
           });
         } finally {
-          client.release();
+          await client.end();
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        errors.push(`${config.name}: ${msg.substring(0, 150)}`);
+        errors.push(`${config.name}: ${msg.substring(0, 200)}`);
         continue;
       }
     }
