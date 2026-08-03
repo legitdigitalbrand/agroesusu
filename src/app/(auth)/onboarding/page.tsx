@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -46,6 +46,10 @@ export default function OnboardingPage() {
   const [otp, setOtp] = useState("");
   const [verifyType, setVerifyType] = useState<"BVN" | "NIN">("BVN");
   const [otpMessage, setOtpMessage] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpRequestError, setOtpRequestError] = useState<string | null>(null);
+  const [otpRequestTimedOut, setOtpRequestTimedOut] = useState(false);
+  const otpTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [state, setState] = useState("");
   const [lga, setLga] = useState("");
   const [occupation, setOccupation] = useState("");
@@ -54,6 +58,22 @@ export default function OnboardingPage() {
   const [nokName, setNokName] = useState("");
   const [nokPhone, setNokPhone] = useState("");
   const [nokRelationship, setNokRelationship] = useState("");
+
+  // Resend OTP cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [resendCooldown]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
+    };
+  }, []);
 
   const currentTier = me?.profile?.kyc_level || 0;
 
@@ -205,18 +225,27 @@ export default function OnboardingPage() {
                   onClick={async () => {
                     setSaving(true);
                     setError(null);
+                    setOtpRequestError(null);
+                    setOtpRequestTimedOut(false);
                     const type = bvn.length === 11 ? "BVN" : nin.length === 11 ? "NIN" : null;
                     if (!type) {
                       setError("Enter a valid 11-digit BVN or NIN");
                       setSaving(false);
                       return;
                     }
+                    // Set a 30s timeout for the request
+                    otpTimeoutRef.current = setTimeout(() => {
+                      setOtpRequestTimedOut(true);
+                      setSaving(false);
+                      setOtpRequestError("Request timed out. Check your connection and try again.");
+                    }, 30000);
                     try {
                       const res = await fetch("/api/provisioning/identity", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ type, number: type === "BVN" ? bvn : nin }),
                       });
+                      if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
                       const data = await res.json();
                       if (!res.ok) {
                         setError(data.error || "Verification failed");
@@ -227,8 +256,10 @@ export default function OnboardingPage() {
                       setVerifyType(type);
                       setOtpMessage(data.message || `OTP sent to the phone number registered with your ${type}`);
                       setOtpStep("otp");
+                      setResendCooldown(60);
                     } catch (err) {
-                      setError(err instanceof Error ? err.message : "Network error");
+                      if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
+                      setError(err instanceof Error ? err.message : "Network error. Please try again.");
                     }
                     setSaving(false);
                   }}
@@ -236,6 +267,11 @@ export default function OnboardingPage() {
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify with Safe Haven"}
                 </Button>
+                {otpRequestTimedOut && (
+                  <p className="text-xs text-clay bg-clay/5 rounded-lg px-3 py-2">
+                    {otpRequestError}
+                  </p>
+                )}
                 <p className="text-[11px] text-ink-soft leading-relaxed">
                   Safe Haven will send a one-time password (OTP) to the phone number registered with your BVN/NIN. This verifies your identity with a CBN-licensed institution.
                 </p>
@@ -265,11 +301,22 @@ export default function OnboardingPage() {
                   />
                 </div>
                 {error && <p className="text-xs text-clay">{error}</p>}
+                {otpRequestTimedOut && (
+                  <p className="text-xs text-clay bg-clay/5 rounded-lg px-3 py-2">
+                    OTP request timed out. Please resend or try again.
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <Button
                     onClick={async () => {
                       setSaving(true);
                       setError(null);
+                      setOtpRequestTimedOut(false);
+                      otpTimeoutRef.current = setTimeout(() => {
+                        setOtpRequestTimedOut(true);
+                        setSaving(false);
+                        setError("OTP verification timed out. Please try again.");
+                      }, 30000);
                       try {
                         const res = await fetch("/api/provisioning/identity/validate", {
                           method: "POST",
@@ -281,6 +328,7 @@ export default function OnboardingPage() {
                             number: verifyType === "BVN" ? bvn : nin,
                           }),
                         });
+                        if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
                         const data = await res.json();
                         if (!res.ok) {
                           setError(data.error || "OTP validation failed");
@@ -300,6 +348,7 @@ export default function OnboardingPage() {
                           router.refresh();
                         }, 2000);
                       } catch (err) {
+                        if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
                         setError(err instanceof Error ? err.message : "Network error");
                       }
                       setSaving(false);
@@ -309,11 +358,60 @@ export default function OnboardingPage() {
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify OTP"}
                   </Button>
                   <button
-                    onClick={() => { setOtpStep("enter"); setOtp(""); setError(null); }}
+                    onClick={() => { setOtpStep("enter"); setOtp(""); setError(null); setOtpRequestTimedOut(false); }}
                     className="px-4 py-2 text-sm text-ink-soft hover:text-ink transition"
                   >
                     Back
                   </button>
+                </div>
+                {/* Resend OTP button with 60-second cooldown */}
+                <div className="pt-2">
+                  {resendCooldown > 0 ? (
+                    <p className="text-xs text-ink-soft text-center">
+                      Resend OTP available in {resendCooldown}s
+                    </p>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        setResendCooldown(60);
+                        setError(null);
+                        setOtpRequestTimedOut(false);
+                        setSaving(true);
+                        const type = verifyType;
+                        const number = type === "BVN" ? bvn : nin;
+                        otpTimeoutRef.current = setTimeout(() => {
+                          setOtpRequestTimedOut(true);
+                          setSaving(false);
+                          setError("Resend timed out. Please try again.");
+                        }, 30000);
+                        try {
+                          const res = await fetch("/api/provisioning/identity", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ type, number }),
+                          });
+                          if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
+                          const data = await res.json();
+                          if (!res.ok) {
+                            setError(data.error || "Failed to resend OTP");
+                            setSaving(false);
+                            return;
+                          }
+                          setIdentityId(data.identityId);
+                          setOtpMessage(data.message || "OTP resent successfully");
+                          setOtp("");
+                        } catch (err) {
+                          if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
+                          setError(err instanceof Error ? err.message : "Network error");
+                        }
+                        setSaving(false);
+                      }}
+                      disabled={saving}
+                      className="text-xs text-loam font-medium hover:text-indigo transition disabled:opacity-50"
+                    >
+                      {saving ? "Resending…" : "Resend OTP →"}
+                    </button>
+                  )}
                 </div>
               </div>
             )}

@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // We need a debit account number for Safe Haven identity verification
     // Use the Safe Haven settlement account or a sandbox account
-    const debitAccountNumber = process.env.SAFEHAVEN_DEBIT_ACCOUNT || '';
+    const debitAccountNumber = process.env.SAFE_HAVEN_DEBIT_ACCOUNT || '';
 
     // Initiate identity verification
     const result = await provider.initiateIdentityVerification({
