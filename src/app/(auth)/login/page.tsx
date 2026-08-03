@@ -231,6 +231,14 @@ function LoginContent() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
+            {isResetSuccess && (
+              <div className="mb-4 rounded-lg bg-loam/5 border border-loam/20 px-4 py-3">
+                <p className="text-[13px] text-loam font-medium">
+                  ✓ Password updated successfully. Please sign in with your new password.
+                </p>
+              </div>
+            )}
+
             <h1 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
               Welcome back.
             </h1>
