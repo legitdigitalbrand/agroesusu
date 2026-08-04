@@ -17,6 +17,8 @@ import {
   User,
   Shield,
   ChevronDown,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 import { LogoMark } from "@/components/yield";
 import { useMe } from "@/hooks/use-me";
@@ -256,6 +258,18 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
                       href="/notifications"
                       icon={Bell}
                       label="Notifications"
+                      onClick={() => setProfileMenuOpen(false)}
+                    />
+                    <DropdownMenuItem
+                      href="/cooperatives"
+                      icon={Users}
+                      label="Cooperatives"
+                      onClick={() => setProfileMenuOpen(false)}
+                    />
+                    <DropdownMenuItem
+                      href="/investments"
+                      icon={TrendingUp}
+                      label="Investments"
                       onClick={() => setProfileMenuOpen(false)}
                     />
                     <DropdownMenuItem

@@ -85,10 +85,14 @@ export async function POST(request: NextRequest) {
       initiated_at: new Date().toISOString(),
     });
 
+    // In mock mode, include the test OTP in the response so the frontend can display it
+    const isMock = !process.env.SAFE_HAVEN_ENV || process.env.SAFE_HAVEN_ENV === 'mock';
     return NextResponse.json({
       identityId: result.identityId,
       status: result.status,
-      message: `OTP sent to the phone number registered with your ${type}`,
+      message: isMock
+        ? `Mock OTP sent. Use 123456 to verify your ${type}.`
+        : `OTP sent to the phone number registered with your ${type}`,
     });
 
   } catch (error) {

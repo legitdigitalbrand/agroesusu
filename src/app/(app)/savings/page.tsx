@@ -78,7 +78,10 @@ export interface SavingsAccount {
   };
 }
 
-const fmtNGN = (v: number) => `₦${(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
+const fmtNGN = (v: number) => {
+  const n = v || 0;
+  return `${n < 0 ? "-" : ""}₦${Math.abs(n).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
+};
 const fmtRate = (rate: number) => (rate || 0).toFixed(1).replace(/\.0$/, "");
 
 function getProductIcon(productType: string) {

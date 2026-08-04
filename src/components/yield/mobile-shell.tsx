@@ -17,6 +17,8 @@ import {
   Shield,
   Settings,
   LogOut,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 import { LogoMark } from "@/components/yield";
 import { useMe } from "@/hooks/use-me";
@@ -157,6 +159,18 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
                       href="/statements"
                       icon={FileText}
                       label="Statements"
+                      onClick={() => setProfileMenuOpen(false)}
+                    />
+                    <MobileMenuItem
+                      href="/cooperatives"
+                      icon={Users}
+                      label="Cooperatives"
+                      onClick={() => setProfileMenuOpen(false)}
+                    />
+                    <MobileMenuItem
+                      href="/investments"
+                      icon={TrendingUp}
+                      label="Investments"
                       onClick={() => setProfileMenuOpen(false)}
                     />
                     <MobileMenuItem

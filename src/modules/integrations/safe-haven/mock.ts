@@ -45,13 +45,14 @@ export class MockBankingProvider implements IBankingProvider {
 
   async validateIdentityVerification(params: ValidateVerificationParams): Promise<ValidateVerificationResult> {
     await this.delay(500);
-    const stored = this.identities.get(params.identityId);
-    if (!stored) {
-      return { verified: false };
-    }
-    // Mock accepts the OTP "123456" or any 6-digit code
-    const verified = params.otp === stored.otp || /^\d{6}$/.test(params.otp);
-    if (!verified) {
+    // ── MOCK MODE: stateless validation ──
+    // The in-memory `identities` Map does NOT survive Vercel serverless cold starts,
+    // so we cannot rely on it to validate the OTP. Instead, mock mode accepts:
+    //   1. The documented test code "123456", OR
+    //   2. Any 6-digit numeric code
+    // This makes mock mode fully testable regardless of server instance.
+    // In production (SAFE_HAVEN_ENV=sandbox), the real Safe Haven API validates the OTP.
+    if (!params.otp || !/^\d{6}$/.test(params.otp)) {
       return { verified: false };
     }
     return {

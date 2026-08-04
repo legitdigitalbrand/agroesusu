@@ -312,6 +312,11 @@ export default function OnboardingPage() {
                   />
                 </div>
                 {error && <p className="text-xs text-clay">{error}</p>}
+                {process.env.NODE_ENV === "development" && (
+                  <p className="text-xs text-loam bg-loam-light/40 rounded-lg px-3 py-2 border border-loam/20">
+                    Mock mode: use <strong>123456</strong> as the OTP to continue.
+                  </p>
+                )}
                 {otpRequestTimedOut && (
                   <p className="text-xs text-clay bg-clay/5 rounded-lg px-3 py-2">
                     OTP request timed out. Please resend or try again.

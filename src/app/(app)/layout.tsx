@@ -5,7 +5,7 @@ import { DesktopShell } from "@/components/yield/desktop-shell";
 import { MobileShell } from "@/components/yield/mobile-shell";
 import { useMe } from "@/hooks/use-me";
 import { LoadingState } from "@/components/yield";
-import { PiggyBank, Landmark } from "lucide-react";
+import { PiggyBank, Landmark, Users, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 // ════════════════════════════════════════════════════════════
@@ -47,6 +47,36 @@ function DefaultRightRail() {
         </p>
         <Link href="/loans" className="block w-full text-center bg-ochre text-indigo-deep font-semibold text-[13px] py-2.5 rounded-xl hover:opacity-90 transition">
           Check eligibility
+        </Link>
+      </div>
+
+      <div className="bg-paper border border-line rounded-2xl p-4">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-loam/10 flex items-center justify-center">
+            <Users className="w-4 h-4 text-loam" strokeWidth={1.8} />
+          </div>
+          <h3 className="font-display font-semibold text-[14px] text-ink">Cooperatives</h3>
+        </div>
+        <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
+          Join a farming cooperative to pool resources and save together.
+        </p>
+        <Link href="/cooperatives" className="block w-full text-center bg-parchment text-ink font-semibold text-[13px] py-2.5 rounded-xl border border-line hover:bg-parchment/60 transition">
+          Learn more
+        </Link>
+      </div>
+
+      <div className="bg-paper border border-line rounded-2xl p-4">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-indigo/10 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-indigo" strokeWidth={1.8} />
+          </div>
+          <h3 className="font-display font-semibold text-[14px] text-ink">Investments</h3>
+        </div>
+        <p className="text-[14px] text-ink-soft leading-relaxed mb-3">
+          Curated agricultural investment opportunities coming soon.
+        </p>
+        <Link href="/investments" className="block w-full text-center bg-parchment text-ink-soft font-medium text-[13px] py-2.5 rounded-xl border border-line hover:bg-parchment/60 transition">
+          Coming soon
         </Link>
       </div>
     </>
