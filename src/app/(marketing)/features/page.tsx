@@ -31,7 +31,7 @@ const mainFeatures = [
     title: 'Bank-Grade Security',
     icon: ShieldCheck,
     color: 'bg-loam-light text-indigo border-line',
-    description: 'PIN-protected access, device verification, and deposits safeguarded by our CBN-licensed banking partner. Every transaction is encrypted.',
+    description: 'Password-protected access, device verification, and deposits safeguarded by our CBN-licensed banking partner. Every transaction is encrypted.',
   },
   {
     id: 'interest',
@@ -125,7 +125,7 @@ export default function FeaturesPage() {
                   <ShieldCheck className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
                   <div>
                     <h5 className="font-bold text-ink">MFA & Encryption</h5>
-                    <p className="text-xs text-ink-soft mt-1">All transactions are encrypted. Access is secured with password and PIN authentication.</p>
+                    <p className="text-xs text-ink-soft mt-1">All transactions are encrypted. Access is secured with password authentication.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">

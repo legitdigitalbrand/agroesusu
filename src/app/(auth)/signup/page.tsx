@@ -112,7 +112,7 @@ export default function SignupPage() {
     // After signup, always go to verify-email (which redirects to onboarding after confirmation)
     // Even in sandbox (auto-confirm), go through onboarding for OTP verification
     if (data.session) {
-      // Auto-confirmed — go to mandatory PIN setup
+      // Auto-confirmed — go to dashboard
       router.push("/onboarding");
       router.refresh();
     } else {

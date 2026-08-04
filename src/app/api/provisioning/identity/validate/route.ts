@@ -89,6 +89,12 @@ export async function POST(request: NextRequest) {
         .eq('customer_id', customer.id)
         .eq('wallet_type', 'primary');
 
+      // Update customer status to active
+      await serviceClient
+        .from('customers')
+        .update({ status: 'active' })
+        .eq('id', customer.id);
+
       return NextResponse.json({
         verified: true,
         message: 'Identity verified. Existing Safe Haven account linked.',

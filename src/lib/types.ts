@@ -57,7 +57,6 @@ export interface Profile {
   nok_name: string | null;
   nok_phone: string | null;
   nok_relationship: string | null;
-  transaction_pin: string | null;
   kyc_tier: KYCTier;
   kyc_verified_at: string | null;
   role: UserRole;

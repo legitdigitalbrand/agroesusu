@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getDeviceId } from "@/lib/auth/device";
 import {
   ShieldCheck, Check, Loader2, ArrowRight, ChevronRight,
 } from "lucide-react";
 import { Card, Button } from "@/components/yield";
 import { useMe } from "@/hooks/use-me";
+import { useQueryClient } from "@tanstack/react-query";
 
 // ════════════════════════════════════════════════════════════
 // Progressive Verification Page
@@ -32,6 +32,7 @@ const NIGERIAN_STATES = [
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: me, isLoading } = useMe();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -142,9 +143,7 @@ export default function OnboardingPage() {
     setSaving(false);
     setSuccess(true);
     setTimeout(() => {
-      // After saving verification, redirect to set-pin if no device PIN, else dashboard
-      const hasDevice = getDeviceId();
-      router.push(hasDevice ? "/dashboard" : "/set-pin");
+      router.push("/dashboard");
       router.refresh();
     }, 1500);
   };
@@ -353,16 +352,14 @@ export default function OnboardingPage() {
                         }
                         setOtpStep("verified");
                         setSuccess(true);
-                        // Update KYC level in profile
-                        const supabase = createClient();
-                        const { data: { user } } = await supabase.auth.getUser();
-                        if (user) {
-                          await supabase.from("profiles").update({ kyc_level: 1, kyc_tier: "tier_1" }).eq("id", user.id);
-                        }
+                        // Invalidate all queries that depend on verification status
+                        // so every consumer across the app refetches immediately
+                        queryClient.invalidateQueries({ queryKey: ["me"] });
+                        queryClient.invalidateQueries({ queryKey: ["wallet-funding-details"] });
+                        queryClient.invalidateQueries({ queryKey: ["verification-tier"] });
+                        queryClient.invalidateQueries({ queryKey: ["loan-eligibility"] });
                         setTimeout(() => {
-                          // After OTP verification, redirect to set-pin if no device PIN, else dashboard
-                          const hasDevice = getDeviceId();
-                          router.push(hasDevice ? "/dashboard" : "/set-pin");
+                          router.push("/dashboard");
                           router.refresh();
                         }, 2000);
                       } catch (err) {
@@ -542,7 +539,7 @@ export default function OnboardingPage() {
             <ShieldCheck className="h-12 w-12 text-loam mx-auto mb-3" />
             <h2 className="font-display text-xl text-ink">Fully verified</h2>
             <p className="text-sm text-ink-soft mt-1">You have access to all Agriqcap features.</p>
-            <Button className="mt-6" onClick={() => { const hasDevice = getDeviceId(); router.push(hasDevice ? "/dashboard" : "/set-pin"); }}>
+            <Button className="mt-6" onClick={() => router.push("/dashboard")}>
               Go to dashboard <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </Card>
@@ -555,7 +552,7 @@ export default function OnboardingPage() {
         {/* Skip link — always allow going to dashboard */}
         <div className="text-center mt-6">
           <button
-            onClick={() => { const hasDevice = getDeviceId(); router.push(hasDevice ? "/dashboard" : "/set-pin"); }}
+            onClick={() => router.push("/dashboard")}
             className="text-sm text-ink-soft hover:text-indigo inline-flex items-center gap-1"
           >
             Skip for now <ChevronRight className="h-4 w-4" />

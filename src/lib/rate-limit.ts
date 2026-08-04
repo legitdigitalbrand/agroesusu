@@ -101,9 +101,8 @@ export function getRateLimitIdentifier(request: Request, routePrefix: string): s
  */
 export const RATE_LIMITS = {
   // Authentication — strict to prevent brute force
-  AUTH: { limit: 10, windowMs: 60_000 },      // 10/min for login, PIN
+  AUTH: { limit: 10, windowMs: 60_000 },    // 10/min for auth endpoints
   SIGNUP: { limit: 5, windowMs: 60_000 },     // 5/min for signup
-  RECOVERY: { limit: 3, windowMs: 60_000 },   // 3/min for password/PIN recovery
   OTP: { limit: 5, windowMs: 60_000 },        // 5/min for OTP requests
   
   // Financial operations — moderate

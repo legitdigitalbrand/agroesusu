@@ -119,7 +119,7 @@ export default function LandingPage() {
           <FeatureCard
             icon={Shield}
             title="Bank-grade security"
-            desc="PIN-protected access, device verification, and deposits safeguarded by our banking partner."
+            desc="Password-protected access, device verification, and deposits safeguarded by our banking partner."
           />
           <FeatureCard
             icon={Landmark}

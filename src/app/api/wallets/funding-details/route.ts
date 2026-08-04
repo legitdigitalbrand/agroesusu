@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { data: customer } = await supabase
       .from('customers')
-      .select('id, status, kyc_level')
+      .select('id, status')
       .eq('auth_id', user.id)
       .maybeSingle();
 
@@ -30,6 +30,14 @@ export async function GET(request: NextRequest) {
 
     const serviceClient = createServiceClient();
 
+    // Read KYC tier from profiles table (single source of truth, same as /api/me)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('kyc_tier')
+      .eq('id', user.id)
+      .maybeSingle();
+    const kycTier = (profile as { kyc_tier?: string } | null)?.kyc_tier || 'tier_0';
+
     // Check for Safe Haven DVA account
     const { data: safeHavenAccount } = await serviceClient
       .from('safe_haven_accounts')
@@ -39,16 +47,15 @@ export async function GET(request: NextRequest) {
 
     if (!safeHavenAccount) {
       // No DVA provisioned — check KYC status to give specific guidance
-      const kycLevel = customer.kyc_level || 'tier_0';
       let message = 'You need to complete identity verification to get a funding account.';
-      if (kycLevel === 'tier_1' || kycLevel === 'tier_2') {
+      if (kycTier === 'tier_1' || kycTier === 'tier_2' || kycTier === 'tier_3') {
         message = 'Your identity is verified but your funding account is being created. This usually takes a few moments. Please retry or contact support if it persists.';
       }
 
       return NextResponse.json({
         provisioned: false,
         message,
-        kyc_level: kycLevel,
+        kyc_level: kycTier,
       }, { status: 200 });
     }
 

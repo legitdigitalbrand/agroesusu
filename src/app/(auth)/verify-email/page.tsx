@@ -22,7 +22,7 @@ function VerifyEmailContent() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         // Email confirmed — redirect to onboarding for OTP verification
-        // (OTP verification must happen BEFORE PIN setup per security policy)
+        // (OTP verification must happen before onboarding per security policy)
         router.push("/onboarding");
         router.refresh();
       }

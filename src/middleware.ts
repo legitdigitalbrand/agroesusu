@@ -4,7 +4,6 @@ import {
   LAST_ACTIVITY_COOKIE_NAME,
   INACTIVITY_TIMEOUT_MS,
   LAST_ACTIVITY_COOKIE_OPTIONS,
-  PIN_VERIFIED_COOKIE_NAME,
 } from '@/lib/auth/device';
 
 // ════════════════════════════════════════════════════════════
@@ -13,12 +12,10 @@ import {
 //  1. Session refresh on every request
 //  2. Inactivity expiry: 2-hour inactivity forces re-login (server-side)
 //  3. Email verification guard: email must be confirmed before proceeding
-//  4. OTP verification gate: BVN/NIN OTP must be done before PIN setup
-//  5. Redirect unauthenticated → /login (for protected routes)
-//  6. Redirect authenticated from /login & /signup → /dashboard
-//  7. PIN gate: authenticated users without pin_verified cookie
-//     → /set-pin (if no device cookie) or /pin-login (if device cookie)
-//  8. Admin-only access for /admin/* or /dev/* (staff check)
+//  4. Redirect unauthenticated → /login (for protected routes)
+//  5. Redirect authenticated from /login & /signup → /dashboard
+//  6. Admin-only access for /dev/* (staff check)
+//  7. Onboarding guard: force /onboarding if KYC not completed
 // ════════════════════════════════════════════════════════════
 
 const PUBLIC_ROUTES = [
@@ -29,8 +26,6 @@ const PUBLIC_ROUTES = [
   '/reset-password',
   '/verify-email',
   '/verify-phone',
-  '/set-pin',
-  '/forgot-pin',
   '/onboarding',
   '/about',
   '/blog',
@@ -48,28 +43,12 @@ const PUBLIC_ROUTES = [
 
 const ADMIN_ROUTES = ['/dev'];
 
-// Routes that bypass the PIN gate (user is authenticated but may not have PIN yet)
-const PIN_BYPASS_ROUTES = [
-  '/set-pin',
-  '/forgot-pin',
-  '/forgot-password',
-  '/reset-password',
-  '/pin-login',
-  '/verify-email',
-  '/verify-phone',
-  '/onboarding',
-];
-
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
 function isDevRoute(pathname: string): boolean {
   return ADMIN_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
-}
-
-function isPinBypassRoute(pathname: string): boolean {
-  return PIN_BYPASS_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
 }
 
 export async function middleware(request: NextRequest) {
@@ -140,14 +119,12 @@ export async function middleware(request: NextRequest) {
     if (lastActivityCookie) {
       const lastActivity = parseInt(lastActivityCookie, 10);
       if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
-        // Best-effort remote signOut — don't let a failed network call block local cleanup
         try { await supabase.auth.signOut(); } catch {}
         const apiResponse = NextResponse.json(
           { error: 'Session expired due to inactivity. Please sign in again.', code: 'session_expired' },
           { status: 401 }
         );
         apiResponse.cookies.delete(LAST_ACTIVITY_COOKIE_NAME);
-        apiResponse.cookies.delete(PIN_VERIFIED_COOKIE_NAME);
         return apiResponse;
       }
     }
@@ -175,14 +152,12 @@ export async function middleware(request: NextRequest) {
   if (lastActivityCookie) {
     const lastActivity = parseInt(lastActivityCookie, 10);
     if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
-      // Best-effort remote signOut — clear local state regardless of network outcome
       try { await supabase.auth.signOut(); } catch {}
       const redirectUrl = new URL('/login', request.url);
       redirectUrl.searchParams.set('redirect', pathname);
       redirectUrl.searchParams.set('reason', 'inactivity');
       const expiredResponse = NextResponse.redirect(redirectUrl);
       expiredResponse.cookies.delete(LAST_ACTIVITY_COOKIE_NAME);
-      expiredResponse.cookies.delete(PIN_VERIFIED_COOKIE_NAME);
       return expiredResponse;
     }
   }
@@ -199,12 +174,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(verifyUrl);
   }
 
-  // Redirect from login/signup → dashboard (or set-pin if no device cookie)
+  // Redirect authenticated users away from auth pages
   if (pathname === '/login' || pathname === '/signup') {
-    const hasDeviceCookie = request.cookies.has('agriqcap_device');
-    if (!hasDeviceCookie) {
-      return NextResponse.redirect(new URL('/set-pin', request.url));
-    }
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -220,11 +191,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── OTP Before PIN Gate ──
-  // If user is on /set-pin but hasn't completed onboarding (kyc_level < 1),
-  // redirect to /onboarding to force OTP verification first.
-  // Skip this check for /onboarding itself and other bypass routes.
-  if (pathname === '/set-pin') {
+  // Onboarding guard: if user is on /dashboard but hasn't completed onboarding
+  // (kyc_level < 1), redirect to /onboarding to force BVN verification first.
+  if (pathname === '/dashboard') {
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -232,29 +201,11 @@ export async function middleware(request: NextRequest) {
         .eq('id', session.user.id)
         .maybeSingle();
 
-      // If profile exists and kyc_level is 0 (no OTP verification done), force onboarding
       if (profile && (profile.kyc_level === 0 || profile.kyc_level === null)) {
         return NextResponse.redirect(new URL('/onboarding', request.url));
       }
     } catch {
       // If we can't check, allow proceeding (don't block on DB error)
-    }
-  }
-
-  // ── PIN Gate ──
-  // For protected routes, check if PIN has been verified this session
-  if (!isPublicRoute(pathname) && !isPinBypassRoute(pathname) && !isDevRoute(pathname)) {
-    const hasPinVerified = request.cookies.has(PIN_VERIFIED_COOKIE_NAME);
-    const hasDeviceCookie = request.cookies.has('agriqcap_device');
-
-    if (!hasPinVerified) {
-      if (!hasDeviceCookie) {
-        // No device PIN → mandatory setup
-        return NextResponse.redirect(new URL('/set-pin', request.url));
-      } else {
-        // Has device PIN but hasn't verified this session → PIN login
-        return NextResponse.redirect(new URL('/pin-login', request.url));
-      }
     }
   }
 

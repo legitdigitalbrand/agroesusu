@@ -226,7 +226,7 @@ export default function SettingsPage() {
         <div className="px-5 pt-5 pb-3 border-b border-line/60">
           <CardTitle className="text-base">Security &amp; Access</CardTitle>
           <CardDescription>
-            Change PIN, manage trusted devices, and secure active sessions
+            Manage password, account security, and active sessions
           </CardDescription>
         </div>
         <div className="divide-y divide-line/60">
@@ -234,8 +234,8 @@ export default function SettingsPage() {
             icon={Shield}
             iconBgClass="bg-indigo/10"
             iconColorClass="text-indigo"
-            title="Security &amp; PIN"
-            description="Change PIN, manage trusted devices, and update password settings"
+            title="Security"
+            description="Manage password, account security, and session settings"
             href="/settings/security"
           />
           <SettingsRow

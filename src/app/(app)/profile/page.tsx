@@ -18,11 +18,10 @@ import {
   User,
   LogOut,
   MapPin,
-  Lock,
   Smartphone,
   ChevronRight,
   ShieldCheck,
-  KeyRound,
+  Lock,
   CheckCircle2,
   Users,
 } from "lucide-react";
@@ -246,9 +245,9 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="pt-4 space-y-3">
           <SecurityShortcutItem
-            icon={KeyRound}
-            title="Change PIN"
-            subtitle="Update your 4-digit security PIN for transfers and authorizations"
+            icon={Lock}
+            title="Change Password"
+            subtitle="Update your account password"
             onClick={() => router.push("/settings/security")}
           />
           <SecurityShortcutItem
