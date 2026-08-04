@@ -12,6 +12,7 @@
 // Domain-facing types (DTOs)
 export type {
   IdentityType,
+  Bank,
   VerificationStatus,
   InitiateVerificationParams,
   InitiateVerificationResult,

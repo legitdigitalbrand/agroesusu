@@ -16,8 +16,9 @@
 export { listActiveProducts, getProduct, getProductByCode, createProduct, updateProduct } from './products';
 
 // Account lifecycle
-export { openAccount, activateAccount, getAccount, listCustomerAccounts, getSavingsBalance, markAsMatured, closeAccount } from './accounts';
+export { openAccount, openCustomPot, activateAccount, getAccount, listCustomerAccounts, getSavingsBalance, markAsMatured, closeAccount } from './accounts';
 export type { AccountWithProduct } from './accounts';
+export type { OpenPotRequest } from './types';
 
 // Deposit flow
 export { deposit } from './deposit';

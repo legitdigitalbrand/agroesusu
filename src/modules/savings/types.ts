@@ -2,7 +2,7 @@
 // Savings Engine — Type Definitions
 // ============================================================================
 
-export type SavingsProductType = 'flexible' | 'fixed_deposit' | 'target' | 'business' | 'cooperative' | 'group' | 'esusu';
+export type SavingsProductType = 'flexible' | 'fixed_deposit' | 'target' | 'business' | 'cooperative' | 'group' | 'esusu' | 'custom_pot';
 export type InterestMethod = 'flat' | 'compound' | 'tiered';
 export type InterestCadence = 'daily' | 'monthly' | 'maturity';
 export type SavingsAccountStatus = 'pending' | 'active' | 'matured' | 'withdrawn' | 'closed' | 'dormant';
@@ -44,6 +44,9 @@ export interface SavingsAccount {
   last_interest_accrued_at: string | null;
   next_accrual_at: string | null;
   target_amount: number | null;
+  pot_name?: string | null;
+  pot_icon?: string | null;
+  pot_color?: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
 }
@@ -93,4 +96,20 @@ export interface SavingsHistorySignal {
   consistency_score: number;
   stability_score: number;
   tenure_score: number;
+}
+
+
+// Custom Pot creation request
+export interface OpenPotRequest {
+  customer_id: string;
+  wallet_id: string;
+  product_id: string;
+  pot_name: string;
+  pot_icon?: string;
+  pot_color?: string;
+  lock_type: 'flexible' | 'locked';
+  lock_until_date?: string | null;  // ISO date for locked pots
+  target_amount?: number;
+  initial_deposit?: number;
+  interest_rate?: number;  // Calculated based on lock duration
 }

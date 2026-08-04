@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ScreenHeader,
   StatCard,
@@ -33,6 +34,15 @@ import {
   Wallet,
   ChevronRight,
   ShieldCheck,
+  Plus,
+  Sprout,
+  Tractor,
+  Home,
+  Wrench,
+  GraduationCap,
+  Heart,
+  ShoppingBag,
+  Info,
 } from "lucide-react";
 
 // ════════════════════════════════════════════════════════════
@@ -68,6 +78,9 @@ export interface SavingsAccount {
   maturity_date?: string | null;
   opened_at?: string | null;
   created_at: string;
+  pot_name?: string | null;
+  pot_icon?: string | null;
+  pot_color?: string | null;
   product?: {
     product_name: string;
     product_code: string;
@@ -105,6 +118,7 @@ function getProductIcon(productType: string) {
 export default function SavingsPage() {
   const [openProduct, setOpenProduct] = useState<SavingsProduct | null>(null);
   const [successAccountId, setSuccessAccountId] = useState<string | null>(null);
+  const [showCreatePot, setShowCreatePot] = useState(false);
   const queryClient = useQueryClient();
 
   const {
@@ -178,6 +192,37 @@ export default function SavingsPage() {
     },
   });
 
+
+  // Create pot mutation
+  const createPotMutation = useMutation({
+    mutationFn: async (data: {
+      pot_name: string;
+      pot_icon?: string;
+      pot_color?: string;
+      lock_type: "flexible" | "locked";
+      lock_until_date?: string | null;
+      target_amount?: number;
+      initial_deposit?: number;
+    }) => {
+      const res = await fetch("/api/savings/pots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to create pot");
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      setShowCreatePot(false);
+      setPotSuccess(true);
+      setTimeout(() => setPotSuccess(false), 3000);
+    },
+  });
+
+  const [potSuccess, setPotSuccess] = useState(false);
+
   const hasActiveFlexible = accounts.some(
     (a) => a.product?.product_type === "flexible" && a.status === "active"
   );
@@ -216,6 +261,16 @@ export default function SavingsPage() {
         subtitle="Grow your wealth with competitive interest rates tailored for agricultural cycles."
       />
 
+
+      {/* Savings Explainer */}
+      <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-loam-light/20 border border-loam/20">
+        <Info className="w-4 h-4 text-loam shrink-0 mt-0.5" />
+        <p className="text-xs text-ink-soft leading-relaxed">
+          <span className="font-semibold text-ink">Money you've set aside from your Wallet.</span>{" "}
+          Locked pots can't be touched until your chosen date. Create unlimited pots for different goals.
+        </p>
+      </div>
+
       {/* Summary Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
@@ -238,6 +293,18 @@ export default function SavingsPage() {
           icon={<TrendingUp className="w-5 h-5" />}
           subtitle="Highest available yield"
         />
+      </div>
+
+
+      {/* Create New Pot */}
+      <div className="flex justify-end">
+        <Button
+          variant="primary"
+          leftIcon={<Plus className="w-4 h-4" />}
+          onClick={() => setShowCreatePot(true)}
+        >
+          Create New Pot
+        </Button>
       </div>
 
       {/* Active Accounts Section */}
@@ -320,6 +387,38 @@ export default function SavingsPage() {
           }}
         />
       )}
+
+      {/* Create Pot Dialog */}
+      {showCreatePot && (
+        <CreatePotDialog
+          isOpen={showCreatePot}
+          onClose={() => setShowCreatePot(false)}
+          onCreate={(data) => createPotMutation.mutate(data)}
+          isLoading={createPotMutation.isPending}
+          error={createPotMutation.error?.message}
+        />
+      )}
+
+      {/* Pot Success Animation */}
+      <AnimatePresence>
+        {potSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-loam text-white px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, type: "spring" }}
+            >
+              <Check className="w-5 h-5" strokeWidth={2.5} />
+            </motion.div>
+            <span className="text-sm font-semibold">Pot created successfully!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -327,12 +426,13 @@ export default function SavingsPage() {
 // ─── Active Account Card ───────────────────────────────────
 function ActiveAccountCard({ account }: { account: SavingsAccount }) {
   const productType = account.product?.product_type || "flexible";
-  const productName = account.product?.product_name || "Savings Account";
+  const displayName = account.pot_name || account.product?.product_name || "Savings Account";
   const rate = account.product?.interest_rate || 0;
   const balance = account.current_balance || 0;
   const target = account.target_amount || 0;
 
-  const isLocked = productType === "fixed_deposit" && account.status === "active";
+  const isCustomPot = productType === "custom_pot";
+  const isLocked = (productType === "fixed_deposit" || (isCustomPot && account.maturity_date)) && account.status === "active";
   const isMatured = account.status === "matured";
 
   const daysRemaining = account.maturity_date
@@ -347,12 +447,12 @@ function ActiveAccountCard({ account }: { account: SavingsAccount }) {
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-parchment border border-line text-indigo shrink-0">
-              {getProductIcon(productType)}
+            <div className="p-2 rounded-xl bg-parchment border border-line shrink-0" style={account.pot_color ? { color: account.pot_color } : { color: "#6366F1" }}>
+              {isCustomPot ? getPotIcon(account.pot_icon) : getProductIcon(productType)}
             </div>
             <div>
               <h3 className="font-display font-semibold text-base text-ink leading-tight">
-                {productName}
+                {displayName}
               </h3>
               <p className="text-xs text-ink-soft mt-0.5">
                 {fmtRate(rate)}% p.a. • {account.product?.interest_method || "standard"}
@@ -839,6 +939,267 @@ function CreateAccountDialog({
             </DialogFooter>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Pot Icon Definitions ───────────────────────────────────
+const POT_ICONS = [
+  { key: "piggybank", label: "Piggy Bank", Icon: PiggyBank },
+  { key: "sprout", label: "Seeds", Icon: Sprout },
+  { key: "tractor", label: "Tractor", Icon: Tractor },
+  { key: "home", label: "Home", Icon: Home },
+  { key: "wrench", label: "Equipment", Icon: Wrench },
+  { key: "graduation", label: "Education", Icon: GraduationCap },
+  { key: "heart", label: "Family", Icon: Heart },
+  { key: "shopping", label: "Shopping", Icon: ShoppingBag },
+];
+
+const POT_COLORS = [
+  { key: "indigo", hex: "#6366F1", label: "Indigo" },
+  { key: "loam", hex: "#10B981", label: "Green" },
+  { key: "ochre", hex: "#F59E0B", label: "Amber" },
+  { key: "rose", hex: "#EC4899", label: "Rose" },
+  { key: "sky", hex: "#0EA5E9", label: "Sky" },
+  { key: "violet", hex: "#8B5CF6", label: "Violet" },
+];
+
+function getPotIcon(iconKey?: string | null) {
+  const found = POT_ICONS.find((i) => i.key === iconKey);
+  if (found) return <found.Icon className="w-5 h-5" strokeWidth={1.8} />;
+  return <PiggyBank className="w-5 h-5" strokeWidth={1.8} />;
+}
+
+// ─── Create Pot Dialog ───────────────────────────────────
+function CreatePotDialog({
+  isOpen,
+  onClose,
+  onCreate,
+  isLoading,
+  error,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (data: {
+    pot_name: string;
+    pot_icon?: string;
+    pot_color?: string;
+    lock_type: "flexible" | "locked";
+    lock_until_date?: string | null;
+    target_amount?: number;
+    initial_deposit?: number;
+  }) => void;
+  isLoading: boolean;
+  error?: string;
+}) {
+  const [potName, setPotName] = useState("");
+  const [potIcon, setPotIcon] = useState("piggybank");
+  const [potColor, setPotColor] = useState("indigo");
+  const [lockType, setLockType] = useState<"flexible" | "locked">("flexible");
+  const [lockDate, setLockDate] = useState("");
+  const [targetAmount, setTargetAmount] = useState("");
+  const [initialDeposit, setInitialDeposit] = useState("");
+
+  const handleSubmit = () => {
+    onCreate({
+      pot_name: potName,
+      pot_icon: potIcon,
+      pot_color: potColor,
+      lock_type: lockType,
+      lock_until_date: lockType === "locked" ? lockDate : null,
+      target_amount: targetAmount ? parseFloat(targetAmount) : undefined,
+      initial_deposit: initialDeposit ? parseFloat(initialDeposit) : undefined,
+    });
+  };
+
+  const canSubmit = potName.trim().length >= 2 && (lockType === "flexible" || (lockDate && new Date(lockDate) > new Date()));
+
+  // Estimated rate based on lock duration
+  const estimatedRate = (() => {
+    if (lockType !== "locked" || !lockDate) return 4;
+    const days = Math.max(1, Math.ceil((new Date(lockDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    if (days >= 365) return 16;
+    if (days >= 180) return 14;
+    if (days >= 90) return 12;
+    if (days >= 30) return 8;
+    return 6;
+  })();
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create New Savings Pot</DialogTitle>
+          <DialogDescription>
+            Set aside money for a specific goal. Create as many as you need.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          {/* Pot Name */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-ink block">Pot Name</label>
+            <input
+              type="text"
+              value={potName}
+              onChange={(e) => setPotName(e.target.value.slice(0, 40))}
+              placeholder="e.g. Fertilizer Fund"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo"
+              maxLength={40}
+            />
+          </div>
+
+          {/* Icon Picker */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-ink block">Choose an Icon</label>
+            <div className="flex flex-wrap gap-2">
+              {POT_ICONS.map(({ key, label, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setPotIcon(key)}
+                  className={`p-2.5 rounded-xl border-2 transition ${
+                    potIcon === key
+                      ? "border-indigo bg-indigo/5"
+                      : "border-line bg-parchment hover:bg-track"
+                  }`}
+                  title={label}
+                >
+                  <Icon className="w-5 h-5 text-ink" strokeWidth={1.8} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Color Picker */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-ink block">Color</label>
+            <div className="flex flex-wrap gap-2">
+              {POT_COLORS.map(({ key, hex, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setPotColor(key)}
+                  className={`w-8 h-8 rounded-full border-2 transition ${
+                    potColor === key ? "border-ink scale-110" : "border-transparent"
+                  }`}
+                  style={{ backgroundColor: hex }}
+                  title={label}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Lock Type Toggle */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-ink block">Savings Type</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLockType("flexible")}
+                className={`p-3 rounded-xl border-2 text-left transition ${
+                  lockType === "flexible"
+                    ? "border-loam bg-loam-light/30"
+                    : "border-line bg-parchment"
+                }`}
+              >
+                <PiggyBank className="w-4 h-4 text-loam mb-1" />
+                <p className="text-sm font-semibold text-ink">Flexible</p>
+                <p className="text-[11px] text-ink-soft">Withdraw anytime • 4% p.a.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLockType("locked")}
+                className={`p-3 rounded-xl border-2 text-left transition ${
+                  lockType === "locked"
+                    ? "border-indigo bg-indigo/5"
+                    : "border-line bg-parchment"
+                }`}
+              >
+                <Lock className="w-4 h-4 text-indigo mb-1" />
+                <p className="text-sm font-semibold text-ink">Locked</p>
+                <p className="text-[11px] text-ink-soft">Higher rate • Pick unlock date</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Lock Date (if locked) */}
+          {lockType === "locked" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              className="space-y-1.5 overflow-hidden"
+            >
+              <label className="text-xs font-semibold text-ink block">Unlock Date</label>
+              <input
+                type="date"
+                value={lockDate}
+                onChange={(e) => setLockDate(e.target.value)}
+                min={new Date(Date.now() + 86400000).toISOString().split("T")[0]}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo"
+              />
+              {lockDate && (
+                <div className="flex items-center gap-2 text-xs text-loam">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Estimated rate: {estimatedRate}% p.a. — longer lock = higher rate</span>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Target Amount (Optional) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-ink block">Target Amount (Optional)</label>
+            <input
+              type="number"
+              value={targetAmount}
+              onChange={(e) => setTargetAmount(e.target.value)}
+              placeholder="e.g. 100000"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo"
+            />
+            <p className="text-[11px] text-ink-soft">Set a goal to track your progress.</p>
+          </div>
+
+          {/* Initial Deposit */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-ink block">
+              Initial Deposit (Min ₦100)
+            </label>
+            <input
+              type="number"
+              value={initialDeposit}
+              onChange={(e) => setInitialDeposit(e.target.value)}
+              placeholder="0"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo"
+            />
+            <p className="text-[11px] text-ink-soft">
+              Funds will be moved from your Wallet to this pot.
+            </p>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <DialogFooter className="pt-2">
+            <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              isLoading={isLoading}
+              disabled={!canSubmit}
+            >
+              Create Pot
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

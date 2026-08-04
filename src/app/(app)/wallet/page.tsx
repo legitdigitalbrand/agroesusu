@@ -291,6 +291,16 @@ export default function WalletPage() {
             </div>
           </Card>
 
+
+        {/* Wallet Explainer */}
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-ochre-light/20 border border-ochre/20">
+          <Info className="w-4 h-4 text-ochre shrink-0 mt-0.5" />
+          <p className="text-xs text-ink-soft leading-relaxed">
+            <span className="font-semibold text-ink">Your available balance.</span>{" "}
+            Money here doesn't earn interest. Move money into a Savings pot to start earning.
+          </p>
+        </div>
+
           {/* Funding Section */}
           <Card variant="light" padding="md">
             <CardHeader>

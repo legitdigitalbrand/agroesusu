@@ -250,7 +250,7 @@ export default function DashboardPage() {
         <StatCard
           title="Wallet Balance"
           value={balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "••••••••"}
-          subtitle={wallet?.status ? `Wallet: ${wallet.status}` : "Available funds"}
+          subtitle="Spendable • doesn't earn interest"
           icon={<Wallet className="w-5 h-5 text-indigo" />}
           action={
             <button
@@ -453,6 +453,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-parchment border border-line">
                     <div>
                       <p className="text-xs text-ink-soft font-medium">Total Savings</p>
+                      <p className="text-[10px] text-ink-soft/70">Across all pots • earning interest</p>
                       <p className="font-mono text-2xl font-semibold text-ink mt-0.5">
                         {fmtNGN(savingsTotal)}
                       </p>

@@ -12,6 +12,7 @@ import {
   TransferParams,
   TransferResult,
   IntegrationError,
+  Bank,
 } from '../types';
 import { SafeHavenClient } from './client';
 import { SafeHavenConfig } from './factory';
@@ -178,6 +179,17 @@ export class SafeHavenAdapter implements IBankingProvider {
   // ===========================================================================
   // Transfers
   // ===========================================================================
+
+
+  async listBanks(): Promise<Bank[]> {
+    const response = await this.client.get('/transfers/banks');
+    const data = response.data as Array<Record<string, unknown>>;
+    return (data || []).map((bank) => ({
+      bankCode: bank.bankCode as string,
+      bankName: bank.bankName as string,
+      logoUrl: bank.logoUrl as string | undefined,
+    }));
+  }
 
   async nameEnquiry(params: NameEnquiryParams): Promise<NameEnquiryResult> {
     const response = await this.client.post('/transfers/name-enquiry', {

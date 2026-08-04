@@ -10,7 +10,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { getProduct } from './products';
 import { getAccountBalance } from '@/modules/ledger';
-import type { SavingsAccount, OpenAccountRequest } from './types';
+import type { SavingsAccount, OpenAccountRequest, OpenPotRequest } from './types';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -221,4 +221,88 @@ export async function closeAccount(accountId: string, reason?: string): Promise<
     .in('status', ['active', 'matured', 'withdrawn']);
 
   if (error) throw new Error(`Failed to close account: ${error.message}`);
+}
+
+
+/**
+ * Open a custom savings pot.
+ * Unlike openAccount, this allows:
+ *   - Custom pot name and icon
+ *   - User-chosen lock date (not product-defined term)
+ *   - Interest rate calculated from lock duration
+ *   - No duplicate restriction (users can have unlimited pots)
+ */
+export async function openCustomPot(request: OpenPotRequest): Promise<SavingsAccount> {
+  const supabase = getServiceClient();
+
+  // 1. Get the custom pot product config
+  const product = await getProduct(request.product_id);
+  if (!product) throw new Error('Product not found');
+  if (!product.is_active) throw new Error('Product is not active');
+
+  // 2. Calculate interest rate based on lock duration
+  let interestRate = product.interest_rate; // Default (flexible = 4%)
+  let lockPeriodDays = 0;
+
+  if (request.lock_type === 'locked' && request.lock_until_date) {
+    const now = new Date();
+    const lockDate = new Date(request.lock_until_date);
+    lockPeriodDays = Math.max(1, Math.ceil((lockDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Rate schedule: longer lock = higher rate
+    // Engineering defaults within existing bands (4% flexible → 12% for 90 days)
+    if (lockPeriodDays >= 365) interestRate = 16;
+    else if (lockPeriodDays >= 180) interestRate = 14;
+    else if (lockPeriodDays >= 90) interestRate = 12;
+    else if (lockPeriodDays >= 30) interestRate = 8;
+    else interestRate = 6; // Short lock (1-29 days)
+  }
+
+  // 3. Capture terms snapshot
+  const termsSnapshot = {
+    interest_rate: interestRate,
+    interest_method: product.interest_method,
+    interest_cadence: product.interest_cadence,
+    lock_period_days: lockPeriodDays,
+    early_withdrawal_penalty_rate: product.early_withdrawal_penalty_rate,
+    early_withdrawal_allowed: product.early_withdrawal_allowed,
+    minimum_balance: product.minimum_balance,
+    term_days: null, // Custom pots use lock_until_date, not fixed term
+    lock_type: request.lock_type,
+    lock_until_date: request.lock_until_date,
+  };
+
+  // 4. Create the account
+  const { data, error } = await supabase
+    .from('savings_accounts')
+    .insert({
+      customer_id: request.customer_id,
+      wallet_id: request.wallet_id,
+      product_id: request.product_id,
+      status: 'pending',
+      product_terms_snapshot: termsSnapshot,
+      maturity_date: request.lock_type === 'locked' ? request.lock_until_date : null,
+      target_amount: request.target_amount || null,
+      pot_name: request.pot_name,
+      pot_icon: request.pot_icon || 'piggybank',
+      pot_color: request.pot_color || 'indigo',
+      metadata: {
+        lock_type: request.lock_type,
+        lock_until_date: request.lock_until_date,
+        is_custom_pot: true,
+      },
+    })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(`Failed to create savings pot: ${error.message}`);
+
+  const account = data as SavingsAccount;
+
+  // 5. If initial deposit provided, activate the account
+  if (request.initial_deposit && request.initial_deposit > 0) {
+    await activateAccount(account.id);
+  }
+
+  return account;
 }

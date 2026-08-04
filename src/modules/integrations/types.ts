@@ -92,6 +92,14 @@ export interface TransferResult {
   message?: string;
 }
 
+
+// Banks
+export interface Bank {
+  bankCode: string;
+  bankName: string;
+  logoUrl?: string;
+}
+
 // Webhook
 export interface WebhookEvent {
   eventType: string;
@@ -108,6 +116,7 @@ export interface IBankingProvider {
   validateIdentityVerification(params: ValidateVerificationParams): Promise<ValidateVerificationResult>;
   createSubAccount(params: CreateSubAccountParams): Promise<CreateSubAccountResult>;
   getAccountBalance(accountId: string): Promise<AccountBalanceResult>;
+  listBanks(): Promise<Bank[]>;
   nameEnquiry(params: NameEnquiryParams): Promise<NameEnquiryResult>;
   transfer(params: TransferParams): Promise<TransferResult>;
   getTransferStatus(reference: string): Promise<TransferResult>;

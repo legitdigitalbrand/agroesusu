@@ -11,6 +11,7 @@ import {
   NameEnquiryResult,
   TransferParams,
   TransferResult,
+  Bank,
 } from '../types';
 
 /**
@@ -89,6 +90,33 @@ export class MockBankingProvider implements IBankingProvider {
       ledgerBalance: 0,
       lastUpdated: new Date().toISOString(),
     };
+  }
+
+
+  async listBanks(): Promise<Bank[]> {
+    await this.delay(200);
+    return [
+      { bankCode: '999240', bankName: 'Safe Haven MFB', logoUrl: undefined },
+      { bankCode: '058', bankName: 'GTBank', logoUrl: undefined },
+      { bankCode: '057', bankName: 'Zenith Bank', logoUrl: undefined },
+      { bankCode: '033', bankName: 'United Bank for Africa (UBA)', logoUrl: undefined },
+      { bankCode: '011', bankName: 'First Bank of Nigeria', logoUrl: undefined },
+      { bankCode: '070', bankName: 'Fidelity Bank', logoUrl: undefined },
+      { bankCode: '035', bankName: 'Wema Bank', logoUrl: undefined },
+      { bankCode: '082', bankName: 'Keystone Bank', logoUrl: undefined },
+      { bankCode: '076', bankName: 'Polaris Bank', logoUrl: undefined },
+      { bankCode: '030', bankName: 'Heritage Bank', logoUrl: undefined },
+      { bankCode: '221', bankName: 'Stanbic IBTC Bank', logoUrl: undefined },
+      { bankCode: '032', bankName: 'Union Bank', logoUrl: undefined },
+      { bankCode: '215', bankName: 'Unity Bank', logoUrl: undefined },
+      { bankCode: '044', bankName: 'Access Bank', logoUrl: undefined },
+      { bankCode: '502', bankName: 'Kuda Microfinance Bank', logoUrl: undefined },
+      { bankCode: '560', bankName: 'Opay', logoUrl: undefined },
+      { bankCode: '512', bankName: 'PalmPay', logoUrl: undefined },
+      { bankCode: '322', bankName: 'Titan Trust Bank', logoUrl: undefined },
+      { bankCode: '401', bankName: ' Providus Bank', logoUrl: undefined },
+      { bankCode: '090', bankName: 'Moniepoint MFB', logoUrl: undefined },
+    ];
   }
 
   async nameEnquiry(params: NameEnquiryParams): Promise<NameEnquiryResult> {

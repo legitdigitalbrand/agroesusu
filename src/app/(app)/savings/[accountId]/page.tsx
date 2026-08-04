@@ -34,6 +34,9 @@ interface AccountDetail {
   maturity_date: string | null;
   opened_at: string | null;
   created_at: string;
+  pot_name?: string | null;
+  pot_icon?: string | null;
+  pot_color?: string | null;
   product: {
     product_name: string;
     product_code: string;
@@ -346,10 +349,10 @@ function FundsModal({
             </div>
             <div>
               <p className="font-display font-semibold text-[16px] text-ink">
-                {isDeposit ? "Deposit to Savings" : "Withdraw from Savings"}
+                {isDeposit ? "Move to " + (account.pot_name || "Savings") : "Withdraw from " + (account.pot_name || "Savings")}
               </p>
               <p className="text-[12px] text-ink-soft">
-                {isDeposit ? "From your wallet" : "To your wallet"}
+                {isDeposit ? `From your Wallet → ${account.pot_name || "Savings pot"}` : `From ${account.pot_name || "Savings"} → your Wallet`}
               </p>
             </div>
           </div>
