@@ -25,10 +25,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    // TEMPORARY: log raw body for 400 diagnosis (remove after fix confirmed)
+    console.log('[API:provisioning-validate] Raw body:', JSON.stringify(body));
     const { identityId, otp, type, number } = body;
 
-    if (!identityId || !otp || !type || !number) {
-      return NextResponse.json({ error: 'identityId, otp, type, and number are required' }, { status: 400 });
+    const missing: string[] = [];
+    if (!identityId) missing.push('identityId');
+    if (!otp) missing.push('otp');
+    if (!type) missing.push('type');
+    if (!number) missing.push('number');
+    if (missing.length > 0) {
+      console.log('[API:provisioning-validate] Missing fields:', missing.join(', '));
+      return NextResponse.json({ 
+        error: `Missing required fields: ${missing.join(', ')}`,
+        missing 
+      }, { status: 400 });
     }
 
     // Get customer

@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     });
 
     // In mock mode, include the test OTP in the response so the frontend can display it
-    const isMock = !process.env.SAFE_HAVEN_ENV || process.env.SAFE_HAVEN_ENV === 'mock';
+    const isMock = !process.env.SAFE_HAVEN_ENV || process.env.SAFE_HAVEN_ENV === 'mock' || !process.env.SAFE_HAVEN_API_KEY || !process.env.SAFE_HAVEN_SECRET_KEY;
     return NextResponse.json({
       identityId: result.identityId,
       status: result.status,

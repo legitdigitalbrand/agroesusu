@@ -311,7 +311,7 @@ export default function OnboardingPage() {
                   />
                 </div>
                 {error && <p className="text-xs text-clay">{error}</p>}
-                {process.env.NODE_ENV === "development" && (
+                {otpMessage && otpMessage.includes("123456") && (
                   <p className="text-xs text-loam bg-loam-light/40 rounded-lg px-3 py-2 border border-loam/20">
                     Mock mode: use <strong>123456</strong> as the OTP to continue.
                   </p>
@@ -373,7 +373,7 @@ export default function OnboardingPage() {
                       }
                       setSaving(false);
                     }}
-                    disabled={saving || otp.length < 4}
+                    disabled={saving || otp.length < 6}
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify OTP"}
                   </Button>
