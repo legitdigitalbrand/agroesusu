@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMe } from "@/hooks/use-me";
-import { createClient } from "@/lib/supabase/client";
 import {
   Card,
   CardTitle,
@@ -124,8 +123,7 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await fetch("/api/auth/sign-out", { method: "POST" });
       window.location.href = "/login";
     } catch {
       // Fallback redirect

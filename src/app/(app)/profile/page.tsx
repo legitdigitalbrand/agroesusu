@@ -25,7 +25,6 @@ import {
   CheckCircle2,
   Users,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { formatDate, initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -56,8 +55,7 @@ export default function ProfilePage() {
   const kycProgress = Math.min(100, Math.round((kycLevel / 3) * 100));
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    try { await supabase.auth.signOut(); } catch (err) { console.warn('[logout] Remote signOut failed:', err); }
+    try { await fetch("/api/auth/sign-out", { method: "POST" }); } catch (err) { console.warn("[logout] Sign-out failed:", err); }
     router.push("/login");
     router.refresh();
   };

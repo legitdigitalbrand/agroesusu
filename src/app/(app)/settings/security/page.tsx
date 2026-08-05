@@ -94,9 +94,7 @@ export default function SecurityPage() {
           variant="outline"
           className="w-full text-clay border-clay/20"
           onClick={async () => {
-            const { createClient } = await import("@/lib/supabase/client");
-            const supabase = createClient();
-            await supabase.auth.signOut();
+            await fetch("/api/auth/sign-out", { method: "POST" });
             router.push("/login");
           }}
         >

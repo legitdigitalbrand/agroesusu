@@ -24,7 +24,6 @@ import { LogoMark } from "@/components/yield";
 import { useMe } from "@/hooks/use-me";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 
 // Re-export MobileShell for backward compatibility
 export { MobileShell } from "./mobile-shell";
@@ -87,11 +86,10 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
   const email = me?.profile?.email || me?.profile?.phone || "";
 
   const handleLogout = async () => {
-    const supabase = createClient();
     // Best-effort remote signOut — always clear local state and redirect,
     // even if the network call fails (DNS error, paused project, etc.)
     try {
-      await supabase.auth.signOut();
+      await fetch("/api/auth/sign-out", { method: "POST" });
     } catch (err) {
       console.warn('[logout] Remote signOut failed, clearing local session:', err);
     }
