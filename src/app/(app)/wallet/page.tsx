@@ -256,13 +256,13 @@ export default function WalletPage() {
               )}
 
               {/* Action Buttons: Fund / Transfer / Withdraw */}
-              <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-3 pt-2">
                 <Link href="/wallet/deposit" className="w-full">
                   <Button
                     variant="secondary"
                     fullWidth
                     leftIcon={<Plus className="w-4 h-4 text-indigo-deep" />}
-                    className="shadow-sm"
+                    className="shadow-sm px-2 text-xs sm:px-4 sm:text-sm"
                   >
                     Fund
                   </Button>
@@ -272,7 +272,7 @@ export default function WalletPage() {
                     variant="outline"
                     fullWidth
                     leftIcon={<PiggyBank className="w-4 h-4 text-white" />}
-                    className="bg-paper/15 hover:bg-paper/25 text-white border-white/20 hover:border-white/40 shadow-none"
+                    className="bg-paper/15 hover:bg-paper/25 text-white border-white/20 hover:border-white/40 shadow-none px-2 text-xs sm:px-4 sm:text-sm"
                   >
                     Save
                   </Button>
@@ -282,7 +282,7 @@ export default function WalletPage() {
                     variant="outline"
                     fullWidth
                     leftIcon={<ArrowUpRight className="w-4 h-4 text-white" />}
-                    className="bg-paper/15 hover:bg-paper/25 text-white border-white/20 hover:border-white/40 shadow-none"
+                    className="bg-paper/15 hover:bg-paper/25 text-white border-white/20 hover:border-white/40 shadow-none px-2 text-xs sm:px-4 sm:text-sm"
                   >
                     Withdraw
                   </Button>

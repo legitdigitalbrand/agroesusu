@@ -179,7 +179,7 @@ export default function MoveToSavingsPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/wallet"
-            className="w-8 h-8 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition"
+            className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0"
           >
             <ArrowLeft className="w-4 h-4 text-ink" />
           </Link>
@@ -233,7 +233,7 @@ export default function MoveToSavingsPage() {
       <div className="flex items-center gap-2">
         <Link
           href="/wallet"
-          className="w-8 h-8 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition"
+          className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0"
         >
           <ArrowLeft className="w-4 h-4 text-ink" />
         </Link>

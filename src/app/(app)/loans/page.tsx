@@ -493,7 +493,7 @@ export default function LoansPage() {
 
                     <CardContent className="space-y-4">
                       {/* Product Limits */}
-                      <div className="grid grid-cols-2 gap-3 bg-parchment/60 p-3 rounded-xl border border-line/60">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-parchment/60 p-3 rounded-xl border border-line/60">
                         <div>
                           <p className="text-[11px] text-ink-soft font-medium">Borrow Limit</p>
                           <div className="flex items-baseline gap-1 mt-0.5">
@@ -633,7 +633,7 @@ export default function LoansPage() {
 
                     <CardContent className="space-y-4">
                       {/* Numbers Grid */}
-                      <div className="grid grid-cols-2 gap-3 bg-parchment/60 p-3.5 rounded-xl border border-line/60">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-parchment/60 p-3.5 rounded-xl border border-line/60">
                         <div>
                           <p className="text-[11px] text-ink-soft font-medium">Principal Amount</p>
                           <MoneyText amount={principal} size="md" className="text-ink" />

@@ -220,7 +220,7 @@ export default function WalletDepositPage() {
           <h1 className="font-display font-bold text-[26px] text-ink">Fund Wallet</h1>
           <p className="text-[15px] text-ink-soft mt-1">Transfer money to your dedicated account</p>
         </div>
-        <button onClick={loadFundingDetails} className="p-2 rounded-lg hover:bg-parchment transition">
+        <button onClick={loadFundingDetails} className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg hover:bg-parchment transition flex items-center justify-center">
           <RefreshCw className="w-5 h-5 text-ink-soft" />
         </button>
       </div>
@@ -268,7 +268,7 @@ export default function WalletDepositPage() {
               </div>
               <button
                 onClick={() => copyToClipboard(account.bank_name, 'bank_name')}
-                className="p-2 rounded-lg hover:bg-parchment transition"
+                className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg hover:bg-parchment transition flex items-center justify-center"
               >
                 {copied === 'bank_name' ? (
                   <Check className="w-5 h-5 text-loam" />
@@ -293,7 +293,7 @@ export default function WalletDepositPage() {
       {account && (
         <button
           onClick={shareDetails}
-          className="w-full py-3 border border-line rounded-xl font-medium text-[15px] text-ink hover:bg-parchment transition flex items-center justify-center gap-2"
+          className="w-full py-3 min-h-[44px] border border-line rounded-xl font-medium text-[15px] text-ink hover:bg-parchment transition flex items-center justify-center gap-2"
         >
           <Share2 className="w-5 h-5 text-ink-soft" />
           Share account details

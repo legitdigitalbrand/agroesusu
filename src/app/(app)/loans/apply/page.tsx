@@ -65,7 +65,7 @@ function LoanApplyContent() {
       <div className="max-w-md mx-auto px-6 py-12 text-center">
         <AlertCircle className="w-12 h-12 text-clay mx-auto mb-4" />
         <p className="text-[15px] text-ink-soft mb-4">No loan product selected.</p>
-        <Link href="/loans" className="inline-block text-[14px] text-indigo hover:underline">
+        <Link href="/loans" className="inline-block text-[14px] text-indigo hover:underline py-2.5">
           ← Back to loans
         </Link>
       </div>
@@ -104,7 +104,7 @@ function LoanApplyContent() {
 
   return (
     <div className="max-w-md mx-auto">
-      <Link href="/loans" className="flex items-center gap-1 text-[14px] text-ink-soft hover:text-ink mb-4 transition">
+      <Link href="/loans" className="inline-flex items-center gap-1 text-[14px] text-ink-soft hover:text-ink mb-4 transition py-2.5 px-1 -mx-1">
         <ArrowLeft className="w-4 h-4" /> Back to loans
       </Link>
 

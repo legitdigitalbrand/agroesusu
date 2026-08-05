@@ -133,7 +133,7 @@ export default function TransferPage() {
     return (
       <div className="max-w-md mx-auto space-y-6">
         <div className="flex items-center gap-2">
-          <Link href="/wallet" className="w-8 h-8 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition">
+          <Link href="/wallet" className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0">
             <ArrowLeft className="w-4 h-4 text-ink" />
           </Link>
           <h1 className="font-display font-bold text-[20px] text-ink">Transfer</h1>
@@ -216,7 +216,7 @@ export default function TransferPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setStep("details")}
-            className="w-8 h-8 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition"
+            className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0"
           >
             <ArrowLeft className="w-4 h-4 text-ink" />
           </button>
@@ -291,7 +291,7 @@ export default function TransferPage() {
   return (
     <div className="max-w-md mx-auto space-y-6">
       <div className="flex items-center gap-2">
-        <Link href="/wallet" className="w-8 h-8 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition">
+        <Link href="/wallet" className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0">
           <ArrowLeft className="w-4 h-4 text-ink" />
         </Link>
         <h1 className="font-display font-bold text-[20px] text-ink">Transfer</h1>
@@ -349,7 +349,7 @@ export default function TransferPage() {
                         value={bankSearch}
                         onChange={(e) => setBankSearch(e.target.value)}
                         placeholder="Search banks…"
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-parchment rounded-lg outline-none"
+                        className="w-full pl-9 pr-3 py-2 text-base bg-parchment rounded-lg outline-none"
                         autoFocus
                       />
                     </div>
@@ -392,7 +392,7 @@ export default function TransferPage() {
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
             placeholder="10-digit account number"
-            className="w-full px-4 py-3 rounded-xl border border-line bg-parchment text-sm font-mono outline-none focus:border-indigo transition"
+            className="w-full px-4 py-3 rounded-xl border border-line bg-parchment text-base font-mono outline-none focus:border-indigo transition"
             inputMode="numeric"
             maxLength={10}
           />
@@ -406,7 +406,7 @@ export default function TransferPage() {
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
             placeholder="0.00"
-            className="w-full px-4 py-3 rounded-xl border border-line bg-parchment text-sm font-mono outline-none focus:border-indigo transition"
+            className="w-full px-4 py-3 rounded-xl border border-line bg-parchment text-base font-mono outline-none focus:border-indigo transition"
             inputMode="decimal"
           />
         </div>
@@ -419,7 +419,7 @@ export default function TransferPage() {
             value={narration}
             onChange={(e) => setNarration(e.target.value.slice(0, 100))}
             placeholder="What's this for?"
-            className="w-full px-4 py-3 rounded-xl border border-line bg-parchment text-sm outline-none focus:border-indigo transition"
+            className="w-full px-4 py-3 rounded-xl border border-line bg-parchment text-base outline-none focus:border-indigo transition"
             maxLength={100}
           />
         </div>

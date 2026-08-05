@@ -162,14 +162,14 @@ export default function WithdrawPage() {
     <div className="max-w-md mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Link href="/wallet" className="w-8 h-8 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition">
+        <Link href="/wallet" className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0">
           <ArrowLeft className="w-4 h-4 text-ink" />
         </Link>
         <h1 className="font-display font-bold text-[20px] text-ink">Withdraw</h1>
       </div>
 
       {/* Progress indicator */}
-      <div className="flex items-center gap-2 text-[11px] text-ink-soft">
+      <div className="flex items-center gap-2 text-[11px] text-ink-soft overflow-x-auto no-scrollbar -mx-1 px-1 pb-1 sm:mx-0 sm:px-0 sm:pb-0">
         {["Bank", "Account", "Verify", "Amount", "Review"].map((label, i) => {
           const stepOrder: Record<Step, number> = { bank: 0, account: 1, verify: 2, amount: 3, review: 4, processing: 4, result: 4 };
           const current = stepOrder[step];
@@ -207,7 +207,7 @@ export default function WithdrawPage() {
                     setError("");
                   }
                 }}
-                className="w-full bg-paper border border-line rounded-xl px-4 py-3 text-[15px] text-ink focus:outline-none focus:border-indigo"
+                className="w-full bg-paper border border-line rounded-xl px-4 py-3 text-base text-ink focus:outline-none focus:border-indigo"
               >
                 <option value="">Choose a bank…</option>
                 {banks.map(b => (
@@ -232,7 +232,7 @@ export default function WithdrawPage() {
         <div className="space-y-4">
           <div>
             <label className="text-[13px] font-medium text-ink mb-2 block">Destination Bank</label>
-            <div className="bg-paper border border-line rounded-xl px-4 py-3 text-[15px] text-ink flex items-center justify-between">
+            <div className="bg-paper border border-line rounded-xl px-4 py-3 text-base text-ink flex items-center justify-between">
               <span>{bankName || banks.find(b => b.code === bankCode)?.name}</span>
               <button onClick={() => setStep("bank")} className="text-[11px] text-indigo hover:underline">Change</button>
             </div>
@@ -251,7 +251,7 @@ export default function WithdrawPage() {
                 setError("");
               }}
               placeholder="10-digit account number"
-              className="w-full bg-paper border border-line rounded-xl px-4 py-3 text-[15px] text-ink font-mono focus:outline-none focus:border-indigo"
+              className="w-full bg-paper border border-line rounded-xl px-4 py-3 text-base text-ink font-mono focus:outline-none focus:border-indigo"
             />
             {accountNumber.length > 0 && accountNumber.length < 10 && (
               <p className="text-[11px] text-ink-soft mt-1">{10 - accountNumber.length} digits remaining</p>
@@ -348,7 +348,7 @@ export default function WithdrawPage() {
               value={narration}
               onChange={(e) => setNarration(e.target.value.slice(0, 50))}
               placeholder="What's this for?"
-              className="w-full bg-paper border border-line rounded-xl px-4 py-3 text-[15px] text-ink focus:outline-none focus:border-indigo"
+              className="w-full bg-paper border border-line rounded-xl px-4 py-3 text-base text-ink focus:outline-none focus:border-indigo"
             />
           </div>
 

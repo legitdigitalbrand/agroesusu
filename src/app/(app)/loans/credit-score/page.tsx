@@ -39,7 +39,7 @@ export default function CreditScorePage() {
   return (
     <div className="space-y-5 max-w-2xl">
       {/* Back link */}
-      <Link href="/loans" className="flex items-center gap-1 text-[14px] text-ink-soft hover:text-ink transition">
+      <Link href="/loans" className="inline-flex items-center gap-1 text-[14px] text-ink-soft hover:text-ink transition py-2.5 px-1 -mx-1">
         <ArrowLeft className="w-4 h-4" /> Back to loans
       </Link>
 
