@@ -9,6 +9,8 @@
 
 import { TEMPLATES } from './templates';
 import { createNotification } from './repository';
+import { sendBrandedEmail } from '@/lib/email/resend';
+import { createServiceClient } from '@/lib/supabase/service';
 import type { NotificationEvent } from './types';
 
 const MAX_RETRIES = 3;
@@ -32,12 +34,44 @@ export interface DispatchInput {
 }
 
 /**
+ * Look up the user's email address for email delivery.
+ * Checks customers table (keyed by auth_id) first, then staff_users.
+ */
+async function lookupUserEmail(userId: string): Promise<string | null> {
+  try {
+    const db = createServiceClient();
+
+    // Try customers table first
+    const { data: customer } = await db
+      .from('customers')
+      .select('email')
+      .eq('auth_id', userId)
+      .maybeSingle();
+
+    if (customer?.email) return customer.email;
+
+    // Try staff_users table
+    const { data: staff } = await db
+      .from('staff_users')
+      .select('email')
+      .eq('auth_id', userId)
+      .maybeSingle();
+
+    if (staff?.email) return staff.email;
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Dispatch a notification event.
  *
  * 1. Look up the template for the event type
  * 2. Interpolate variables into title and message
  * 3. Create an in-app notification record
- * 4. For email/SMS: no provider configured — log and mark as 'sent' for audit
+ * 4. If email channel is active: send branded email via Resend (if configured)
  * 5. Retry up to MAX_RETRIES on failure
  * 6. NEVER throw — failures are swallowed and logged
  */
@@ -73,9 +107,32 @@ export async function dispatchNotification(input: DispatchInput): Promise<void> 
         related_entity_id: input.related_entity_id,
       });
 
-      // Email/SMS: no provider configured — log for audit
-      if (template.defaultChannels.includes('email') || template.defaultChannels.includes('sms')) {
-        console.log(`[Communications] Notification ${input.event} queued for email/SMS (no provider — logged for audit)`);
+      // Email channel: send branded email via Resend
+      if (template.defaultChannels.includes('email')) {
+        const email = await lookupUserEmail(input.user_id);
+        if (email) {
+          const result = await sendBrandedEmail({
+            to: email,
+            subject: `${title} — Agriqcap`,
+            title,
+            message,
+          });
+
+          if (result.sent) {
+            console.log(`[Communications] Email sent for ${input.event} to ${email}`);
+          } else if (result.error !== 'RESEND_API_KEY not configured') {
+            console.error(`[Communications] Email failed for ${input.event}: ${result.error}`);
+          } else {
+            console.log(`[Communications] Email skipped (no Resend key) for ${input.event}`);
+          }
+        } else {
+          console.log(`[Communications] No email address found for user ${input.user_id} — skipping email for ${input.event}`);
+        }
+      }
+
+      // SMS channel: not yet implemented — log for audit
+      if (template.defaultChannels.includes('sms')) {
+        console.log(`[Communications] SMS channel for ${input.event} — no SMS provider configured, logged for audit`);
       }
 
       return; // Success
