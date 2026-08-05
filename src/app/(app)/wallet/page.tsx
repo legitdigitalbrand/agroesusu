@@ -30,7 +30,6 @@ import {
 } from "@/components/yield";
 import {
   Plus,
-  Send,
   ArrowUpRight,
   ArrowDownLeft,
   Copy,
@@ -46,6 +45,7 @@ import {
   Clock,
   AlertCircle,
   Sparkles,
+  PiggyBank,
 } from "lucide-react";
 
 interface WalletTransaction {
@@ -267,14 +267,14 @@ export default function WalletPage() {
                     Fund
                   </Button>
                 </Link>
-                <Link href="/wallet/transfer" className="w-full">
+                <Link href="/wallet/move-to-savings" className="w-full">
                   <Button
                     variant="outline"
                     fullWidth
-                    leftIcon={<Send className="w-4 h-4 text-white" />}
+                    leftIcon={<PiggyBank className="w-4 h-4 text-white" />}
                     className="bg-paper/15 hover:bg-paper/25 text-white border-white/20 hover:border-white/40 shadow-none"
                   >
-                    Transfer
+                    Save
                   </Button>
                 </Link>
                 <Link href="/wallet/withdraw" className="w-full">
