@@ -17,6 +17,7 @@ interface FundingAccount {
 
 interface FundingDetails {
   provisioned: boolean;
+  sandbox_mode?: boolean;
   account?: FundingAccount;
   wallet_id?: string;
   instructions?: string;
@@ -301,7 +302,7 @@ export default function WalletDepositPage() {
       )}
 
       {/* Sandbox funding (testing mode) */}
-      {process.env.NODE_ENV !== 'production' && (
+      {details?.sandbox_mode && (
         <div className="mt-6 pt-6 border-t border-line">
           <button
             onClick={() => setShowManualFunding(!showManualFunding)}

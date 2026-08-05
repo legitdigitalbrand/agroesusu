@@ -58,7 +58,10 @@ export async function POST(
     }
 
     // Check if this is sandbox mode (allow self-funding for testing)
-    const isSandbox = process.env.SAFEHAVEN_API_URL?.includes('sandbox') || process.env.NODE_ENV !== 'production';
+    const isSandbox =
+      process.env.SAFE_HAVEN_ENV === 'mock' ||
+      process.env.SAFEHAVEN_API_URL?.includes('sandbox') ||
+      process.env.NODE_ENV !== 'production';
 
     if (!isSandbox && !isStaff) {
       return NextResponse.json({

@@ -5,6 +5,11 @@ import { createServiceClient } from '@/lib/supabase/service';
 // GET /api/wallets/funding-details
 // Returns the customer's Safe Haven DVA account details for wallet funding.
 // Always returns 200 with a provisioned flag — never 400 for expected states.
+const isSandboxMode = () => {
+  const env = process.env.SAFE_HAVEN_ENV || 'mock';
+  const hasCredentials = process.env.SAFE_HAVEN_API_KEY && process.env.SAFE_HAVEN_SECRET_KEY;
+  return env === 'mock' || !hasCredentials;
+};
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient();
@@ -24,6 +29,7 @@ export async function GET(request: NextRequest) {
       // who haven't completed the bootstrap step. Return 200, not 404.
       return NextResponse.json({
         provisioned: false,
+        sandbox_mode: isSandboxMode(),
         message: 'Your profile is being set up. Please complete your account setup to start funding your wallet.',
       }, { status: 200 });
     }
@@ -54,6 +60,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         provisioned: false,
+        sandbox_mode: isSandboxMode(),
         message,
         kyc_level: kycTier,
       }, { status: 200 });
@@ -62,6 +69,7 @@ export async function GET(request: NextRequest) {
     if (safeHavenAccount.status !== 'active') {
       return NextResponse.json({
         provisioned: false,
+        sandbox_mode: isSandboxMode(),
         message: `Your funding account is ${safeHavenAccount.status}. Please contact support to resolve this.`,
         account: safeHavenAccount,
       }, { status: 200 });
@@ -79,6 +87,7 @@ export async function GET(request: NextRequest) {
     if (!wallet) {
       return NextResponse.json({
         provisioned: false,
+        sandbox_mode: isSandboxMode(),
         message: 'Your wallet is not active yet. Please contact support.',
       }, { status: 200 });
     }
@@ -100,6 +109,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       provisioned: true,
+        sandbox_mode: isSandboxMode(),
       account: {
         account_name: safeHavenAccount.account_name,
         account_number: safeHavenAccount.account_number,
@@ -114,6 +124,7 @@ export async function GET(request: NextRequest) {
     console.error('[API:funding-details] Error:', error);
     return NextResponse.json({
       provisioned: false,
+        sandbox_mode: isSandboxMode(),
       message: 'We could not load your funding details. Please try again or contact support.',
     }, { status: 200 });  // Return 200 so the UI shows a proper state, not a crash
   }
