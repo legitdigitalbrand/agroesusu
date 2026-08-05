@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No email associated with account' }, { status: 400 });
   }
 
-  const useResend = isResendConfigured();
+  const useResend = process.env.OTP_PROVIDER === "resend" && isResendConfigured();
 
   if (useResend) {
     // ── Resend path: generate OTP, send branded email, store hash in cookie ──
