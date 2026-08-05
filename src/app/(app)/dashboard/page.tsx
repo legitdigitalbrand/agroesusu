@@ -4,15 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
   PiggyBank,
   Landmark,
   Bell,
@@ -22,10 +13,14 @@ import {
   Plus,
   Eye,
   EyeOff,
-  FileText,
   ChevronRight,
   Copy,
   TrendingUp,
+  Send,
+  ArrowLeftRight,
+  Receipt,
+  ShieldCheck,
+  CalendarClock,
 } from "lucide-react";
 
 import { useMe } from "@/hooks/use-me";
@@ -39,14 +34,17 @@ import {
   Button,
   StatusBadge,
   MoneyText,
-  LoadingState,
-  ErrorState,
   EmptyState,
+  Skeleton,
+  CardSkeleton,
 } from "@/components/yield";
 import { OnboardingChecklist } from "@/components/app/onboarding-checklist";
 import { WelcomeBanner } from "@/components/app/welcome-banner";
-import { formatRelativeTime, initials } from "@/lib/format";
+import { formatRelativeTime, initials, formatDate } from "@/lib/format";
 
+// ─────────────────────────────────────────────────────────────
+// Types (unchanged — same data shapes as before)
+// ─────────────────────────────────────────────────────────────
 interface WalletTransaction {
   id: string;
   transaction_type: string;
@@ -67,52 +65,60 @@ interface NotificationItem {
   created_at: string;
 }
 
-const fmtNGN = (v: number) => {
-  const formatted = new Intl.NumberFormat("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(v || 0));
-  return `${(v || 0) < 0 ? "-" : ""}₦${formatted}`;
-};
-
-function buildChartData(transactions: WalletTransaction[], currentBalance: number) {
-  if (!transactions || transactions.length === 0) {
-    return [];
-  }
-  const sorted = [...transactions].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
-
-  const netTotal = sorted.reduce((acc, tx) => {
-    return acc + (tx.direction === "credit" ? Number(tx.amount) : -Number(tx.amount));
-  }, 0);
-
-  const startBalance = Math.max(0, currentBalance - netTotal);
-  let runningBalance = startBalance;
-
-  const points = sorted.map((tx) => {
-    const delta = tx.direction === "credit" ? Number(tx.amount) : -Number(tx.amount);
-    runningBalance += delta;
-    const dateStr = new Date(tx.created_at).toLocaleDateString("en-NG", {
-      month: "short",
-      day: "numeric",
-    });
-    return {
-      date: dateStr,
-      amount: Math.max(0, runningBalance),
-    };
-  });
-
-  if (points.length === 1) {
-    const firstDate = new Date(sorted[0].created_at);
-    firstDate.setDate(firstDate.getDate() - 1);
-    const prevDateStr = firstDate.toLocaleDateString("en-NG", {
-      month: "short",
-      day: "numeric",
-    });
-    return [{ date: prevDateStr, amount: startBalance }, points[0]];
-  }
-
-  return points;
+interface LoanItem {
+  id: string;
+  status: string;
+  outstanding_balance: number;
+  next_due_date: string | null;
+  product_name?: string;
 }
 
+interface SavingsAccount {
+  id: string;
+  account_type: string;
+  balance: number;
+  product_name?: string;
+  interest_rate?: number;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// Skeleton loaders (no spinners — per design spec)
+// ═══════════════════════════════════════════════════════════════
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Hero skeleton */}
+      <div className="flex items-center gap-4">
+        <Skeleton variant="circular" width={56} height={56} />
+        <div className="space-y-2">
+          <Skeleton variant="text" className="w-64 h-7" />
+          <Skeleton variant="text" className="w-48 h-4" />
+        </div>
+      </div>
+      {/* Metrics row skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <CardSkeleton key={i} />
+        ))}
+      </div>
+      {/* Wallet hero skeleton */}
+      <Skeleton variant="rectangular" className="h-48 rounded-[20px]" />
+      {/* Quick actions skeleton */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} variant="rectangular" className="h-24 rounded-[20px]" />
+        ))}
+      </div>
+      {/* Transactions skeleton */}
+      <Skeleton variant="rectangular" className="h-64 rounded-[20px]" />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Main Dashboard Page
+// ═══════════════════════════════════════════════════════════════
 export default function DashboardPage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [copiedAcct, setCopiedAcct] = useState(false);
@@ -121,7 +127,7 @@ export default function DashboardPage() {
 
   const walletId = me?.wallet?.id;
 
-  // Transactions query
+  // ── Data queries (unchanged — same hooks as before) ──
   const { data: txData, isLoading: txLoading } = useQuery<{ transactions: WalletTransaction[] }>({
     queryKey: ["wallet-transactions", walletId],
     queryFn: async () => {
@@ -132,7 +138,6 @@ export default function DashboardPage() {
     enabled: !!walletId,
   });
 
-  // Wallet DVA query
   const { data: fundingDetails } = useQuery<{
     provisioned: boolean;
     account?: { account_number: string; account_name: string; bank_name: string };
@@ -146,7 +151,6 @@ export default function DashboardPage() {
     },
   });
 
-  // Credit score query
   const { data: creditScoreData } = useQuery<{
     has_score?: boolean;
     credit_score?: number;
@@ -161,8 +165,7 @@ export default function DashboardPage() {
     },
   });
 
-  // Notifications query
-  const { data: notifData, isLoading: notifLoading } = useQuery<{
+  const { data: notifData } = useQuery<{
     notifications: NotificationItem[];
   }>({
     queryKey: ["dashboard-notifications"],
@@ -173,14 +176,52 @@ export default function DashboardPage() {
     },
   });
 
-  if (meLoading) return <LoadingState message="Loading your dashboard…" />;
-  if (meError || !me)
-    return <ErrorState message="Couldn't load your dashboard" onRetry={() => refetchMe()} />;
+  // Loans list — for upcoming repayments in right column
+  const { data: loansData } = useQuery<{ loans?: LoanItem[] }>({
+    queryKey: ["dashboard-loans"],
+    queryFn: async () => {
+      const res = await fetch("/api/loans");
+      if (!res.ok) return {};
+      return res.json();
+    },
+    enabled: !!me,
+  });
 
+  // Savings accounts — for active savings in right column
+  const { data: savingsData } = useQuery<{ accounts?: SavingsAccount[] }>({
+    queryKey: ["dashboard-savings"],
+    queryFn: async () => {
+      const res = await fetch("/api/savings/accounts");
+      if (!res.ok) return {};
+      return res.json();
+    },
+    enabled: !!me,
+  });
+
+  // ── Loading state: skeletons, not spinners ──
+  if (meLoading) return <DashboardSkeleton />;
+  if (meError || !me)
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <p className="text-sm text-ink-soft">Couldn't load your dashboard</p>
+          <Button variant="primary" size="sm" onClick={() => refetchMe()}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    );
+
+  // ── Derived values (same logic, no changes) ──
   const wallet = me.wallet;
   const transactions = txData?.transactions || [];
   const notifications = notifData?.notifications || [];
   const dva = fundingDetails?.provisioned ? fundingDetails.account : null;
+  const activeLoans = (loansData?.loans || []).filter((l) =>
+    ["active", "disbursed", "approved"].includes(l.status)
+  );
+  const activeSavings = (savingsData?.accounts || []).filter((a) => a.balance > 0);
+  const pendingVerifications = !((me.profile?.kyc_level || 0) >= 1);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -188,10 +229,8 @@ export default function DashboardPage() {
 
   const savingsTotal = me?.summaries?.savings?.total_balance || 0;
   const savingsCount = me?.summaries?.savings?.count || 0;
-  const savingsInterest = me?.summaries?.savings?.total_interest || 0;
   const loanTotal = me?.summaries?.loans?.total_outstanding || 0;
   const loanCount = me?.summaries?.loans?.count || 0;
-  const hasKyc = (me.profile?.kyc_level || 0) >= 1;
 
   const scoreVal = creditScoreData?.credit_score ?? creditScoreData?.score;
   const creditScoreDisplay =
@@ -205,438 +244,244 @@ export default function DashboardPage() {
     }
   };
 
-  const chartData = buildChartData(transactions, wallet?.available_balance || 0);
+  // ── Quick actions config ──
+  const quickActions = [
+    { label: "Fund Wallet", href: "/wallet/deposit", icon: Plus, color: "loam" },
+    { label: "Transfer", href: "/wallet/transfer", icon: Send, color: "indigo" },
+    { label: "Withdraw", href: "/wallet/withdraw", icon: ArrowLeftRight, color: "indigo" },
+    { label: "Open Savings", href: "/savings", icon: PiggyBank, color: "loam" },
+    { label: "Apply Loan", href: "/loans", icon: Landmark, color: "indigo" },
+    { label: "Statements", href: "/statements", icon: Receipt, color: "loam" },
+  ] as const;
 
   return (
-    <div className="space-y-6">
-      {/* ── Top Header / Greeting ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-full bg-indigo flex items-center justify-center text-white font-display font-semibold text-base shadow-xs shrink-0">
+    <div className="space-y-8">
+      {/* ═══════════════════════════════════════════════════════════
+          1. HERO GREETING — premium welcome, lots of breathing room
+          ═══════════════════════════════════════════════════════════ */}
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-loam-light text-indigo flex items-center justify-center font-display font-bold text-lg border border-loam/20 shadow-xs shrink-0">
             {initials(me.profile.full_name)}
           </div>
-          <div>
-            <h1 className="font-display font-bold text-xl sm:text-2xl text-ink leading-tight">
-              {greeting}, {firstName}
+          <div className="space-y-1">
+            <h1 className="font-display font-bold text-2xl sm:text-3xl text-ink leading-tight tracking-tight">
+              {greeting}, {firstName}.
             </h1>
-            <p className="text-xs sm:text-sm text-ink-soft">
-              Here&apos;s what&apos;s happening with your money today.
+            <p className="text-sm text-ink-soft leading-relaxed">
+              Here&apos;s your financial overview today.
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-center">
-          <Link
-            href="/notifications"
-            className="relative p-2.5 rounded-xl bg-paper border border-line text-ink hover:bg-parchment transition shrink-0"
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5 text-indigo-deep" strokeWidth={1.8} />
-            {notifications.some((n) => !n.read) && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-clay" />
-            )}
-          </Link>
-        </div>
       </div>
 
-      {/* ── Banners ── */}
-      <WelcomeBanner />
-      <OnboardingChecklist />
+      {/* Banners (unchanged — just spaced better) */}
+      <div className="space-y-4">
+        <WelcomeBanner />
+        <OnboardingChecklist />
+      </div>
 
-      {/* ── 1. Overview Row: 4 StatCards in responsive grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* ═══════════════════════════════════════════════════════════
+          2. TOP METRICS — one horizontal row, soft shadows, no heavy borders
+          ═══════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <StatCard
           title="Wallet Balance"
-          value={balanceVisible ? <MoneyText amount={wallet?.available_balance || 0} size="2xl" /> : "••••••••"}
+          value={
+            balanceVisible ? (
+              <MoneyText amount={wallet?.available_balance || 0} size="2xl" className="font-bold" />
+            ) : (
+              "••••••••"
+            )
+          }
           subtitle="Spendable • doesn't earn interest"
-          icon={<Wallet className="w-5 h-5 text-indigo" />}
+          icon={<Wallet className="w-5 h-5 text-indigo" strokeWidth={1.8} />}
           action={
             <button
               onClick={() => setBalanceVisible(!balanceVisible)}
-              className="p-1 text-ink-soft hover:text-ink transition"
+              className="p-1.5 rounded-lg text-ink-soft hover:text-ink hover:bg-parchment transition"
               title={balanceVisible ? "Hide balance" : "Show balance"}
             >
-              {balanceVisible ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
+              {balanceVisible ? <EyeOff className="w-4 h-4" strokeWidth={1.8} /> : <Eye className="w-4 h-4" strokeWidth={1.8} />}
             </button>
           }
         />
-
         <StatCard
           title="Savings Balance"
-          value={<MoneyText amount={savingsTotal} size="2xl" />}
+          value={<MoneyText amount={savingsTotal} size="2xl" className="font-bold" />}
           subtitle={`${savingsCount} active ${savingsCount === 1 ? "account" : "accounts"}`}
-          icon={<PiggyBank className="w-5 h-5 text-indigo" />}
+          icon={<PiggyBank className="w-5 h-5 text-indigo" strokeWidth={1.8} />}
         />
-
         <StatCard
           title="Outstanding Loan"
-          value={<MoneyText amount={loanTotal} size="2xl" />}
+          value={<MoneyText amount={loanTotal} size="2xl" className="font-bold" />}
           subtitle={`${loanCount} active ${loanCount === 1 ? "loan" : "loans"}`}
-          icon={<Landmark className="w-5 h-5 text-indigo" />}
+          icon={<Landmark className="w-5 h-5 text-indigo" strokeWidth={1.8} />}
         />
-
         <StatCard
           title="Credit Score"
-          value={creditScoreDisplay}
+          value={<span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums">{creditScoreDisplay}</span>}
           subtitle={
             creditScoreData?.risk_band
               ? `Band: ${creditScoreData.risk_band}`
               : "Save to build credit score"
           }
-          icon={<TrendingUp className="w-5 h-5 text-indigo" />}
+          icon={<TrendingUp className="w-5 h-5 text-indigo" strokeWidth={1.8} />}
         />
       </div>
 
-      {/* ── 2. Wallet Hero Card ── */}
+      {/* ═══════════════════════════════════════════════════════════
+          3. WALLET HERO CARD — largest card, gradient, action buttons
+          ═══════════════════════════════════════════════════════════ */}
       <Card variant="dark" padding="lg" className="relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider text-white/90 font-semibold">
-                Available Wallet Balance
-              </span>
+        {/* Subtle decorative glow */}
+        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-ochre/5 pointer-events-none" />
+        <div className="absolute -left-8 -bottom-8 w-48 h-48 rounded-full bg-indigo-light/5 pointer-events-none" />
+
+        <div className="relative z-10 space-y-6">
+          {/* Top: Label + balance toggle */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase tracking-wider text-white/70 font-semibold">
+              Available Wallet Balance
+            </span>
+            <button
+              onClick={() => setBalanceVisible(!balanceVisible)}
+              className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition"
+              title={balanceVisible ? "Hide balance" : "Show balance"}
+            >
+              {balanceVisible ? <EyeOff className="w-4 h-4" strokeWidth={1.8} /> : <Eye className="w-4 h-4" strokeWidth={1.8} />}
+            </button>
+          </div>
+
+          {/* Large balance number */}
+          <div>
+            {balanceVisible ? (
+              <MoneyText
+                amount={wallet?.available_balance || 0}
+                size="3xl"
+                className="text-white font-bold"
+              />
+            ) : (
+              <span className="text-4xl sm:text-5xl font-bold font-mono text-white/40">••••••••</span>
+            )}
+          </div>
+
+          {/* DVA account number + copy */}
+          {dva && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/15">
+                <span className="text-xs text-white/60 font-medium">Safe Haven MFB</span>
+                <span className="text-xs text-white/40">•</span>
+                <span className="text-sm font-mono text-white font-semibold tracking-wide">{dva.account_number}</span>
+              </div>
               <button
-                onClick={() => setBalanceVisible(!balanceVisible)}
-                className="p-1 text-white/80 hover:text-white transition"
+                onClick={copyAcctNum}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition"
+                title="Copy account number"
               >
-                {balanceVisible ? (
-                  <EyeOff className="w-4 h-4" />
+                {copiedAcct ? (
+                  <span className="text-xs font-semibold text-ochre">Copied!</span>
                 ) : (
-                  <Eye className="w-4 h-4" />
+                  <Copy className="w-4 h-4" strokeWidth={1.8} />
                 )}
               </button>
             </div>
-            <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-              {balanceVisible ? <MoneyText amount={wallet?.available_balance || 0} size="3xl" /> : "••••••••"}
-            </div>
+          )}
 
-            {/* DVA Account strip */}
-            {dva ? (
-              <div className="pt-2 flex items-center gap-3 text-xs text-white/90 flex-wrap">
-                <span className="px-2.5 py-1 rounded-lg bg-white/15 font-mono font-medium">
-                  {dva.bank_name}: {dva.account_number}
-                </span>
-                <button
-                  onClick={copyAcctNum}
-                  className="inline-flex items-center gap-1 text-white/85 hover:text-white underline font-medium transition"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  {copiedAcct ? "Copied!" : "Copy account number"}
-                </button>
-              </div>
-            ) : !fundingDetails?.provisioned && fundingDetails ? (
-              <p className="text-xs text-white/80">
-                {fundingDetails.message ||
-                  "Complete identity verification to get your account number."}
-              </p>
-            ) : null}
-          </div>
-
-          {/* 3 Quick action buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
+          {/* Action buttons — horizontal row */}
+          <div className="flex flex-wrap gap-3 pt-2">
             <Link href="/wallet/deposit">
-              <Button
-                variant="secondary"
-                size="md"
-                leftIcon={<Plus className="w-4 h-4 text-indigo-deep" />}
-              >
-                Fund
-              </Button>
-            </Link>
-            <Link href="/wallet/move-to-savings">
-              <Button
-                variant="outline"
-                size="md"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30"
-                leftIcon={<PiggyBank className="w-4 h-4 text-white" />}
-              >
-                Save
-              </Button>
+              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ochre text-indigo-deep font-semibold text-sm hover:opacity-90 transition shadow-sm">
+                <Plus className="w-4 h-4" strokeWidth={2} /> Fund
+              </span>
             </Link>
             <Link href="/wallet/withdraw">
-              <Button
-                variant="outline"
-                size="md"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30"
-                leftIcon={<ArrowUpRight className="w-4 h-4 text-white" />}
-              >
-                Withdraw
-              </Button>
+              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition border border-white/15">
+                <ArrowUpRight className="w-4 h-4" strokeWidth={2} /> Withdraw
+              </span>
+            </Link>
+            <Link href="/wallet/transfer">
+              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition border border-white/15">
+                <Send className="w-4 h-4" strokeWidth={2} /> Transfer
+              </span>
+            </Link>
+            <Link href="/statements">
+              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition border border-white/15">
+                <Receipt className="w-4 h-4" strokeWidth={2} /> History
+              </span>
             </Link>
           </div>
         </div>
       </Card>
 
-      {/* ── 4. Quick Actions Tiles (4 tiles) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Link href="/wallet/deposit">
-          <Card
-            variant="interactive"
-            padding="sm"
-            className="flex flex-col items-center text-center gap-2 group p-4"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-loam-light text-loam border border-loam/20 flex items-center justify-center transition-transform group-hover:scale-105">
-              <Plus className="w-5 h-5" />
-            </div>
-            <span className="text-xs font-semibold text-ink">Fund Wallet</span>
-          </Card>
-        </Link>
-
-        <Link href="/savings">
-          <Card
-            variant="interactive"
-            padding="sm"
-            className="flex flex-col items-center text-center gap-2 group p-4"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-loam-light text-loam border border-loam/20 flex items-center justify-center transition-transform group-hover:scale-105">
-              <PiggyBank className="w-5 h-5" />
-            </div>
-            <span className="text-xs font-semibold text-ink">Open Savings</span>
-          </Card>
-        </Link>
-
-        <Link href="/loans">
-          <Card
-            variant="interactive"
-            padding="sm"
-            className="flex flex-col items-center text-center gap-2 group p-4"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-indigo/10 text-indigo border border-indigo/20 flex items-center justify-center transition-transform group-hover:scale-105">
-              <Landmark className="w-5 h-5" />
-            </div>
-            <span className="text-xs font-semibold text-ink">Check Loans</span>
-          </Card>
-        </Link>
-
-        <Link href="/statements">
-          <Card
-            variant="interactive"
-            padding="sm"
-            className="flex flex-col items-center text-center gap-2 group p-4"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-indigo/10 text-indigo border border-indigo/20 flex items-center justify-center transition-transform group-hover:scale-105">
-              <FileText className="w-5 h-5" />
-            </div>
-            <span className="text-xs font-semibold text-ink">Statements</span>
-          </Card>
-        </Link>
+      {/* ═══════════════════════════════════════════════════════════
+          4. QUICK ACTIONS — 6 equal buttons, minimal, rounded
+          ═══════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link key={action.label} href={action.href}>
+              <Card
+                variant="interactive"
+                padding="none"
+                className="flex flex-col items-center justify-center gap-3 p-5 h-full group hover:scale-[1.01] transition-transform duration-200"
+              >
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 ${
+                    action.color === "loam"
+                      ? "bg-loam-light text-loam border border-loam/20"
+                      : "bg-indigo/10 text-indigo border border-indigo/15"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" strokeWidth={1.8} />
+                </div>
+                <span className="text-xs font-semibold text-ink text-center leading-tight">{action.label}</span>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
-      {/* ── 3. Two-Column Layout (desktop) ── */}
+      {/* ═══════════════════════════════════════════════════════════
+          5. MAIN + RIGHT COLUMN LAYOUT
+          ═══════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Summaries + Chart */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Savings Summary */}
-          <Card variant="elevated">
+        {/* ── Left/Main: Recent Transactions Table ── */}
+        <div className="lg:col-span-8">
+          <Card variant="elevated" padding="lg">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle>Savings Summary</CardTitle>
-                <CardDescription>Target &amp; flexible savings accounts</CardDescription>
-              </div>
-              <Link
-                href="/savings"
-                className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
-              >
-                Manage <ChevronRight className="w-4 h-4" />
-              </Link>
-            </CardHeader>
-
-            <CardContent>
-              {savingsCount > 0 ? (
-                <div className="space-y-4 pt-1">
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-parchment border border-line">
-                    <div>
-                      <p className="text-xs text-ink-soft font-medium">Total Savings</p>
-                      <p className="text-[10px] text-ink-soft/70">Across all pots • earning interest</p>
-                      <p className="font-mono text-2xl font-semibold text-ink mt-0.5">
-                        <MoneyText amount={savingsTotal} size="2xl" />
-                      </p>
-                    </div>
-                    {savingsInterest > 0 && (
-                      <div className="text-right">
-                        <p className="text-xs text-ink-soft font-medium">Earned Interest</p>
-                        <p className="font-mono text-sm font-semibold text-loam mt-0.5">
-                          <MoneyText amount={savingsInterest} size="sm" direction="credit" />
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-ink-soft">
-                    <span>{savingsCount} active plan{savingsCount === 1 ? "" : "s"}</span>
-                    <Link href="/savings" className="text-indigo font-medium underline">
-                      View details
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <EmptyState
-                  title="No active savings plans"
-                  message="Start saving today with flexible or locked target plans earning up to 14% p.a. to grow your farming capital."
-                  icon={<PiggyBank className="w-6 h-6 text-indigo" />}
-                  action={
-                    <Link href="/savings">
-                      <Button variant="primary" size="sm">
-                        Open Savings Plan
-                      </Button>
-                    </Link>
-                  }
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Loan Summary */}
-          <Card variant="elevated">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle>Loan Summary</CardTitle>
-                <CardDescription>Borrow against your savings</CardDescription>
-              </div>
-              <Link
-                href="/loans"
-                className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
-              >
-                View Loans <ChevronRight className="w-4 h-4" />
-              </Link>
-            </CardHeader>
-
-            <CardContent>
-              {loanCount > 0 ? (
-                <div className="space-y-4 pt-1">
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-parchment border border-line">
-                    <div>
-                      <p className="text-xs text-ink-soft font-medium">Outstanding Balance</p>
-                      <p className="font-mono text-2xl font-semibold text-ink mt-0.5">
-                        <MoneyText amount={loanTotal} size="2xl" />
-                      </p>
-                    </div>
-                    <StatusBadge status="active" />
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-ink-soft">
-                    <span>{loanCount} active loan{loanCount === 1 ? "" : "s"}</span>
-                    <Link href="/loans" className="text-indigo font-medium underline">
-                      Loan details
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <EmptyState
-                  title="No active loans"
-                  message={
-                    hasKyc
-                      ? "Build your savings to unlock borrowing power — you can borrow up to 3× your active savings balance."
-                      : "Verify your identity (KYC) and build savings to unlock loan eligibility up to 3× your balance."
-                  }
-                  icon={<Landmark className="w-6 h-6 text-indigo" />}
-                  action={
-                    <Link href="/loans">
-                      <Button variant="outline" size="sm">
-                        Check Loan Eligibility
-                      </Button>
-                    </Link>
-                  }
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Balance Trend Area Chart */}
-          <Card variant="elevated">
-            <CardHeader>
-              <CardTitle>Balance Trend</CardTitle>
-              <CardDescription>Historical wallet balance trajectory</CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              {chartData.length > 0 ? (
-                <div className="h-[220px] w-full pt-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={chartData}
-                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                    >
-                      /* Chart colors use design system hex values: indigo=#1B5E20, line=#D6E8D2, ink-soft=#4A5A44, paper=#FBFDF9, ink=#1A2417 */
-                      <defs>
-                        <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#1B5E20" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#1B5E20" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D6E8D2" />
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fontSize: 11, fill: "#4A5A44" }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fontSize: 11, fill: "#4A5A44" }}
-                        tickFormatter={(val) =>
-                          `₦${val >= 1000 ? (val / 1000).toFixed(0) + "k" : val}`
-                        }
-                      />
-                      <Tooltip
-                        formatter={(val: number) => [fmtNGN(val), "Balance"]}
-                        contentStyle={{
-                          backgroundColor: "#FBFDF9",
-                          borderRadius: "12px",
-                          border: "1px solid #D6E8D2",
-                          boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
-                          fontSize: "12px",
-                        }}
-                        labelStyle={{ fontWeight: "600", color: "#1A2417" }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="amount"
-                        stroke="#1B5E20"
-                        strokeWidth={2.5}
-                        fillOpacity={1}
-                        fill="url(#colorBalance)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="py-8 text-center text-xs text-ink-soft">
-                  Fund your wallet or make transactions to view your balance trend over time.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Recent Activity + Notifications */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* Recent Activity */}
-          <Card variant="elevated">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest wallet transactions</CardDescription>
+                <CardTitle className="text-xl">Recent Transactions</CardTitle>
+                <CardDescription>Latest wallet activity</CardDescription>
               </div>
               <Link
                 href="/statements"
                 className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
               >
-                See all <ChevronRight className="w-4 h-4" />
+                See all <ChevronRight className="w-4 h-4" strokeWidth={2} />
               </Link>
             </CardHeader>
 
             <CardContent>
               {txLoading ? (
-                <LoadingState message="Loading activity…" />
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 py-3">
+                      <Skeleton variant="circular" width={36} height={36} />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton variant="text" className="w-1/3 h-4" />
+                        <Skeleton variant="text" className="w-1/5 h-3" />
+                      </div>
+                      <Skeleton variant="text" className="w-20 h-4" />
+                    </div>
+                  ))}
+                </div>
               ) : transactions.length === 0 ? (
                 <EmptyState
                   title="No transactions yet"
                   message="Your transaction history will appear here once you start using Agriqcap."
-                  icon={<Wallet className="w-6 h-6 text-ink-soft" />}
+                  icon={<Wallet className="w-6 h-6 text-ink-soft" strokeWidth={1.8} />}
                   action={
                     <Link href="/wallet/deposit">
                       <Button variant="primary" size="sm">
@@ -646,101 +491,205 @@ export default function DashboardPage() {
                   }
                 />
               ) : (
-                <div className="divide-y divide-line/60">
-                  {transactions.slice(0, 8).map((tx) => (
-                    <div key={tx.id} className="flex items-center gap-3 py-3">
-                      <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                          tx.direction === "credit" ? "bg-loam-light text-loam" : "bg-clay-light text-clay"
-                        }`}
-                      >
-                        {tx.direction === "credit" ? (
-                          <ArrowDownLeft className="w-4 h-4" strokeWidth={2} />
-                        ) : (
-                          <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-ink capitalize truncate">
-                          {(tx.description || tx.transaction_type).replace(/_/g, " ")}
-                        </p>
-                        <p className="text-[11px] text-ink-soft mt-0.5">
-                          {formatRelativeTime(tx.created_at)}
-                        </p>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <MoneyText
-                          amount={tx.amount}
-                          direction={tx.direction}
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                  ))}
+                /* ── Transactions Table (real data, no fakes) ── */
+                <div className="overflow-x-auto -mx-2">
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-line/60">
+                        <th className="py-3 pr-4 text-xs font-semibold text-ink-soft uppercase tracking-wider">Date</th>
+                        <th className="py-3 pr-4 text-xs font-semibold text-ink-soft uppercase tracking-wider">Description</th>
+                        <th className="py-3 pr-4 text-xs font-semibold text-ink-soft uppercase tracking-wider hidden sm:table-cell">Type</th>
+                        <th className="py-3 pr-4 text-xs font-semibold text-ink-soft uppercase tracking-wider text-right">Amount</th>
+                        <th className="py-3 pl-4 text-xs font-semibold text-ink-soft uppercase tracking-wider text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line/60">
+                      {transactions.slice(0, 8).map((tx) => (
+                        <tr key={tx.id} className="hover:bg-parchment/40 transition-colors">
+                          {/* Date */}
+                          <td className="py-3.5 pr-4 text-xs text-ink-soft whitespace-nowrap">
+                            {formatDate(tx.created_at, { month: "short", day: "numeric" })}
+                          </td>
+                          {/* Description */}
+                          <td className="py-3.5 pr-4">
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                  tx.direction === "credit"
+                                    ? "bg-loam-light text-loam"
+                                    : "bg-clay-light text-clay"
+                                }`}
+                              >
+                                {tx.direction === "credit" ? (
+                                  <ArrowDownLeft className="w-3.5 h-3.5" strokeWidth={2} />
+                                ) : (
+                                  <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
+                                )}
+                              </div>
+                              <span className="text-xs font-medium text-ink capitalize truncate max-w-[160px]">
+                                {(tx.description || tx.transaction_type).replace(/_/g, " ")}
+                              </span>
+                            </div>
+                          </td>
+                          {/* Type */}
+                          <td className="py-3.5 pr-4 text-xs text-ink-soft capitalize hidden sm:table-cell">
+                            {tx.transaction_type.replace(/_/g, " ")}
+                          </td>
+                          {/* Amount */}
+                          <td className="py-3.5 pr-4 text-right whitespace-nowrap">
+                            <MoneyText
+                              amount={tx.amount}
+                              direction={tx.direction as "credit" | "debit"}
+                              size="sm"
+                              className="font-semibold"
+                            />
+                          </td>
+                          {/* Status */}
+                          <td className="py-3.5 pl-4 text-right">
+                            <StatusBadge status={tx.status} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
           </Card>
+        </div>
 
-          {/* Notifications */}
-          <Card variant="elevated">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle>Notifications</CardTitle>
-                <CardDescription>Updates and account alerts</CardDescription>
-              </div>
-              <Link
-                href="/notifications"
-                className="text-xs font-semibold text-indigo hover:text-indigo-deep flex items-center gap-1 transition"
-              >
-                View all <ChevronRight className="w-4 h-4" />
-              </Link>
-            </CardHeader>
+        {/* ── Right Column: Contextual widgets (only shown if applicable) ── */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Upcoming Repayments — only if active loans */}
+          {activeLoans.length > 0 && (
+            <Card variant="elevated" padding="md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="w-4 h-4 text-indigo" strokeWidth={1.8} />
+                  <CardTitle className="text-base">Upcoming Repayments</CardTitle>
+                </div>
+                <Link href="/loans" className="text-xs font-semibold text-indigo hover:text-indigo-deep transition">
+                  View
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {activeLoans.slice(0, 3).map((loan) => (
+                    <div key={loan.id} className="flex items-center justify-between py-2 border-b border-line/40 last:border-0">
+                      <div>
+                        <p className="text-xs font-semibold text-ink">
+                          {loan.product_name || "Loan"}
+                        </p>
+                        <p className="text-[11px] text-ink-soft mt-0.5">
+                          {loan.next_due_date
+                            ? `Due ${formatDate(loan.next_due_date, { month: "short", day: "numeric" })}`
+                            : "No due date"}
+                        </p>
+                      </div>
+                      <MoneyText
+                        amount={loan.outstanding_balance}
+                        size="sm"
+                        className="font-semibold"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <CardContent>
-              {notifLoading ? (
-                <LoadingState message="Loading notifications…" />
-              ) : notifications.length === 0 ? (
-                <EmptyState
-                  title="No notifications"
-                  message="You'll see activity alerts and updates here."
-                  icon={<Bell className="w-6 h-6 text-ink-soft" />}
-                />
-              ) : (
-                <div className="divide-y divide-line/60">
+          {/* Active Savings — only if savings exist */}
+          {activeSavings.length > 0 && (
+            <Card variant="elevated" padding="md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="flex items-center gap-2">
+                  <PiggyBank className="w-4 h-4 text-indigo" strokeWidth={1.8} />
+                  <CardTitle className="text-base">Active Savings</CardTitle>
+                </div>
+                <Link href="/savings" className="text-xs font-semibold text-indigo hover:text-indigo-deep transition">
+                  Manage
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {activeSavings.slice(0, 3).map((acct) => (
+                    <div key={acct.id} className="flex items-center justify-between py-2 border-b border-line/40 last:border-0">
+                      <div>
+                        <p className="text-xs font-semibold text-ink capitalize">
+                          {acct.product_name || acct.account_type.replace(/_/g, " ")}
+                        </p>
+                        {acct.interest_rate ? (
+                          <p className="text-[11px] text-ink-soft mt-0.5">{acct.interest_rate}% p.a.</p>
+                        ) : null}
+                      </div>
+                      <MoneyText
+                        amount={acct.balance}
+                        size="sm"
+                        className="font-semibold"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Notifications — only if notifications exist */}
+          {notifications.length > 0 && (
+            <Card variant="elevated" padding="md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-indigo" strokeWidth={1.8} />
+                  <CardTitle className="text-base">Notifications</CardTitle>
+                </div>
+                <Link href="/notifications" className="text-xs font-semibold text-indigo hover:text-indigo-deep transition">
+                  All
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <div className="divide-y divide-line/40">
                   {notifications.slice(0, 4).map((notif) => (
                     <Link
                       key={notif.id}
                       href="/notifications"
-                      className="flex items-start gap-3 py-3 group hover:bg-parchment/30 -mx-2 px-2 rounded-xl transition"
+                      className="flex items-start gap-3 py-2.5 group hover:bg-parchment/30 -mx-2 px-2 rounded-lg transition"
                     >
-                      <div className="p-2 rounded-xl bg-parchment text-indigo shrink-0 mt-0.5">
-                        <Bell className="w-4 h-4" />
-                      </div>
+                      <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${notif.read ? "bg-line" : "bg-clay"}`} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-semibold text-ink truncate">
-                            {notif.title}
-                          </p>
-                          {!notif.read && (
-                            <span className="w-2 h-2 rounded-full bg-clay shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-ink-soft truncate mt-0.5">
-                          {notif.message}
-                        </p>
-                        <p className="text-[10px] text-ink-soft/80 mt-1">
-                          {formatRelativeTime(notif.created_at)}
-                        </p>
+                        <p className="text-xs font-semibold text-ink truncate">{notif.title}</p>
+                        <p className="text-[11px] text-ink-soft truncate mt-0.5">{notif.message}</p>
+                        <p className="text-[10px] text-ink-soft/70 mt-0.5">{formatRelativeTime(notif.created_at)}</p>
                       </div>
                     </Link>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pending Verification — only if KYC not complete */}
+          {pendingVerifications && (
+            <Card variant="elevated" padding="md" className="border-ochre/30 bg-ochre-light/30">
+              <CardContent className="pt-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-ochre/20 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5 text-indigo-deep" strokeWidth={1.8} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-ink">Verify your identity</p>
+                    <p className="text-xs text-ink-soft mt-1 leading-relaxed">
+                      Complete KYC verification to unlock all features including loans and higher limits.
+                    </p>
+                    <Link href="/settings" className="mt-2 inline-block">
+                      <span className="text-xs font-semibold text-indigo hover:text-indigo-deep transition">
+                        Verify now →
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

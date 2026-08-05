@@ -245,12 +245,11 @@
   font-display: swap;
 }
 
-/* Additional safety: import Noto Sans (has ₦ glyph) as a web font fallback
-   scoped to U+20A6 only — guarantees the glyph renders even on systems
-   with limited font libraries. */
+/* Self-hosted Noto Sans woff2 scoped to U+20A6 only — guarantees the ₦ glyph
+   renders on every system regardless of installed fonts. Can never 404. */
 @font-face {
   font-family: "NairaWebFallback";
-  src: url("https://fonts.gstatic.com/s/notosans/v36/o-0mIpQMX3kJJXBcAQ8296OcYvWt1uZ0.woff2") format("woff2");
+  src: url("/fonts/naira-fallback.woff2") format("woff2");
   unicode-range: U+20A6;
   font-display: swap;
 }
@@ -269,7 +268,7 @@ body {
 
 /* MoneyText component: ₦ symbol uses the fallback, number stays in brand mono */
 .naira-symbol {
-  font-family: "NairaFallback", "NairaWebFallback", "Segoe UI", "SF Pro Text", "Arial", sans-serif;
+  font-family: "NairaWebFallback", "NairaFallback", "Segoe UI", "SF Pro Text", "Arial", sans-serif;
   font-weight: 600;
   letter-spacing: 0;
   margin-right: 0.1em;
