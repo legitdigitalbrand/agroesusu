@@ -23,12 +23,23 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-    if (resetError) {
-      setError(resetError.message);
+      if (resetError) {
+        setError(resetError.message);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Failed to fetch") || msg.includes("ERR_")) {
+        setError("Unable to connect to the authentication service. Please check your internet connection and try again.");
+      } else {
+        setError(msg || "Failed to send reset link. Please try again.");
+      }
       setLoading(false);
       return;
     }

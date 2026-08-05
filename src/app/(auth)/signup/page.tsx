@@ -139,6 +139,9 @@ export default function SignupPage() {
         </p>
 
         <form onSubmit={handleSubmit} autoComplete="off" spellCheck={false}>
+          {/* Honeypot inputs to prevent browser password autofill */}
+          <input type="password" name="password" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} tabIndex={-1} autoComplete="off" />
+          <input type="text" name="email" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} tabIndex={-1} autoComplete="off" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <AuthInput
               label="First name"

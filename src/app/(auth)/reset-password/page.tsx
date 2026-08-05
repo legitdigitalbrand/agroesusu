@@ -151,6 +151,9 @@ function ResetPasswordContent() {
         </p>
 
         <form onSubmit={handleSubmit} autoComplete="off" spellCheck={false}>
+          {/* Honeypot inputs to prevent browser password autofill */}
+          <input type="password" name="password" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} tabIndex={-1} autoComplete="off" />
+          <input type="text" name="email" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} tabIndex={-1} autoComplete="off" />
           <PasswordInput
             label="New password"
             value={password}
