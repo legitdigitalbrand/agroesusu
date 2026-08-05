@@ -235,28 +235,41 @@
    renders from a font that has it, while everything else stays in IBM Plex Mono.
    This does NOT change the brand typeface — it adds a targeted glyph fallback. */
 
-/* Naira glyph fallback — uses system fonts known to have proper ₦ support */
+/* Naira glyph fallback — uses system fonts known to have proper ₦ support.
+   Scopes to U+20A6 ONLY so no other glyphs are affected.
+   The font stack goes: system fonts → Google Fonts Noto Sans (universal ₦). */
 @font-face {
   font-family: "NairaFallback";
-  src: local("Segoe UI"), local("SF Pro Text"), local("Arial"), local("DejaVu Sans"), local("Liberation Sans");
+  src: local("Segoe UI"), local("SF Pro Text"), local("SF Pro Display"), local("Arial"), local("DejaVu Sans"), local("Liberation Sans"), local("Noto Sans"), local("Roboto"), local("Helvetica Neue");
   unicode-range: U+20A6;
+  font-display: swap;
+}
+
+/* Additional safety: import Noto Sans (has ₦ glyph) as a web font fallback
+   scoped to U+20A6 only — guarantees the glyph renders even on systems
+   with limited font libraries. */
+@font-face {
+  font-family: "NairaWebFallback";
+  src: url("https://fonts.gstatic.com/s/notosans/v36/o-0mIpQMX3kJJXBcAQ8296OcYvWt1uZ0.woff2") format("woff2");
+  unicode-range: U+20A6;
+  font-display: swap;
 }
 
 .font-mono {
   font-feature-settings: "tnum" 1;
-  font-family: "IBM Plex Mono", "NairaFallback", monospace;
+  font-family: "IBM Plex Mono", "NairaFallback", "NairaWebFallback", monospace;
 }
 
 /* Ensure the body/sans font also has ₦ glyph fallback for inline fmtNGN() calls
    that render outside .font-mono contexts (labels, buttons, paragraphs). */
 .font-sans,
 body {
-  font-family: "IBM Plex Sans", "NairaFallback", system-ui, sans-serif;
+  font-family: "IBM Plex Sans", "NairaFallback", "NairaWebFallback", system-ui, sans-serif;
 }
 
 /* MoneyText component: ₦ symbol uses the fallback, number stays in brand mono */
 .naira-symbol {
-  font-family: "NairaFallback", "Segoe UI", "SF Pro Text", "Arial", sans-serif;
+  font-family: "NairaFallback", "NairaWebFallback", "Segoe UI", "SF Pro Text", "Arial", sans-serif;
   font-weight: 600;
   letter-spacing: 0;
   margin-right: 0.1em;

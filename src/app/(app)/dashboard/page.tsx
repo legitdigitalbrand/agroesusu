@@ -244,10 +244,10 @@ export default function DashboardPage() {
       <OnboardingChecklist />
 
       {/* ── 1. Overview Row: 4 StatCards in responsive grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           title="Wallet Balance"
-          value={balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "••••••••"}
+          value={balanceVisible ? <MoneyText amount={wallet?.available_balance || 0} size="2xl" /> : "••••••••"}
           subtitle="Spendable • doesn't earn interest"
           icon={<Wallet className="w-5 h-5 text-indigo" />}
           action={
@@ -267,14 +267,14 @@ export default function DashboardPage() {
 
         <StatCard
           title="Savings Balance"
-          value={fmtNGN(savingsTotal)}
+          value={<MoneyText amount={savingsTotal} size="2xl" />}
           subtitle={`${savingsCount} active ${savingsCount === 1 ? "account" : "accounts"}`}
           icon={<PiggyBank className="w-5 h-5 text-indigo" />}
         />
 
         <StatCard
           title="Outstanding Loan"
-          value={fmtNGN(loanTotal)}
+          value={<MoneyText amount={loanTotal} size="2xl" />}
           subtitle={`${loanCount} active ${loanCount === 1 ? "loan" : "loans"}`}
           icon={<Landmark className="w-5 h-5 text-indigo" />}
         />
@@ -310,8 +310,8 @@ export default function DashboardPage() {
                 )}
               </button>
             </div>
-            <div className="font-mono text-3xl sm:text-4xl font-bold tracking-normal text-white tabular-nums">
-              {balanceVisible ? fmtNGN(wallet?.available_balance || 0) : "••••••••"}
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              {balanceVisible ? <MoneyText amount={wallet?.available_balance || 0} size="3xl" /> : "••••••••"}
             </div>
 
             {/* DVA Account strip */}
@@ -453,14 +453,14 @@ export default function DashboardPage() {
                       <p className="text-xs text-ink-soft font-medium">Total Savings</p>
                       <p className="text-[10px] text-ink-soft/70">Across all pots • earning interest</p>
                       <p className="font-mono text-2xl font-semibold text-ink mt-0.5">
-                        {fmtNGN(savingsTotal)}
+                        <MoneyText amount={savingsTotal} size="2xl" />
                       </p>
                     </div>
                     {savingsInterest > 0 && (
                       <div className="text-right">
                         <p className="text-xs text-ink-soft font-medium">Earned Interest</p>
                         <p className="font-mono text-sm font-semibold text-loam mt-0.5">
-                          +{fmtNGN(savingsInterest)}
+                          <MoneyText amount={savingsInterest} size="sm" direction="credit" />
                         </p>
                       </div>
                     )}
@@ -511,7 +511,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-xs text-ink-soft font-medium">Outstanding Balance</p>
                       <p className="font-mono text-2xl font-semibold text-ink mt-0.5">
-                        {fmtNGN(loanTotal)}
+                        <MoneyText amount={loanTotal} size="2xl" />
                       </p>
                     </div>
                     <StatusBadge status="active" />

@@ -63,7 +63,7 @@ export function StatCard({
           )}
           <span
             className={cn(
-              "text-[11px] sm:text-xs font-semibold uppercase tracking-wide leading-tight break-words",
+              "text-[11px] sm:text-xs font-semibold uppercase tracking-wide leading-tight",
               isDark ? "text-white/80" : "text-ink-soft"
             )}
           >
@@ -79,10 +79,10 @@ export function StatCard({
       </div>
 
       {/* Main Value Display */}
-      <div className="mt-1 min-w-0">
+      <div className="mt-1 min-w-0 overflow-hidden">
         <div
           className={cn(
-            "font-mono text-xl sm:text-2xl lg:text-2xl font-semibold tracking-normal tabular-nums break-words leading-tight",
+            "font-mono text-lg sm:text-xl lg:text-2xl font-semibold tracking-normal tabular-nums leading-tight truncate",
             isDark ? "text-white" : "text-ink"
           )}
         >
@@ -112,8 +112,8 @@ export function StatCard({
             {subtitle && (
               <span
                 className={cn(
-                  "text-xs leading-tight break-words",
-                  isDark ? "text-white/70" : "text-ink-soft"
+                  "text-xs leading-tight",
+                  isDark ? "text-white/80" : "text-ink-soft"
                 )}
               >
                 {trend?.label ? trend.label : subtitle}
