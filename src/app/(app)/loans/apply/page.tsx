@@ -156,6 +156,15 @@ function LoanApplyContent() {
         }),
       });
       const data = await res.json();
+
+      // 422 = eligibility denied — the loan record is still created (status: "applied"),
+      // but the eligibility engine returned "denied". Show success state to the user
+      // (they should see "Application Submitted — we're reviewing") instead of an error.
+      if (res.status === 422 && data.loan) {
+        return data;
+      }
+
+      // Real errors (400, 401, 403, 404, 500, etc.)
       if (!res.ok) throw new Error(data.error || "Failed to apply for loan");
       return data;
     },
