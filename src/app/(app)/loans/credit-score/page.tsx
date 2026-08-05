@@ -45,7 +45,7 @@ export default function CreditScorePage() {
 
       {/* Header */}
       <div>
-        <h1 className="font-display font-bold text-[22px] text-ink">Credit Score</h1>
+        <h1 className="font-display font-bold text-xl text-ink">Credit Score</h1>
         <p className="text-[14px] text-ink-soft mt-1">
           Your credit score determines your loan eligibility. The higher your score, the more you can borrow.
         </p>
@@ -57,7 +57,7 @@ export default function CreditScorePage() {
           <div>
             <p className="text-[12px] text-white/70 uppercase tracking-wide mb-1">Your Credit Score</p>
             <p className="font-mono font-bold text-[48px] leading-tight">{hasScore ? score : "—"}</p>
-            <p className={`text-[14px] font-medium mt-1 ${hasScore ? '' : 'text-white/60'}`}>
+            <p className={`text-[14px] font-medium mt-1 ${hasScore ? '' : 'text-white/75'}`}>
               {rating.label}
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function CreditScorePage() {
 
       {/* Score range visualizer */}
       <div className="bg-paper border border-line rounded-2xl p-5">
-        <h3 className="font-display font-semibold text-[15px] text-ink mb-3">Score Range</h3>
+        <h3 className="font-display font-semibold text-sm text-ink mb-3">Score Range</h3>
         <div className="space-y-2">
           <ScoreRange label="Excellent" range="700-850" color="bg-loam" active={hasScore && score >= 700} />
           <ScoreRange label="Good" range="600-699" color="bg-loam" active={hasScore && score >= 600 && score < 700} />
@@ -85,7 +85,7 @@ export default function CreditScorePage() {
       {/* Score breakdown — if available */}
       {hasScore && breakdown && (
         <div className="bg-paper border border-line rounded-2xl p-5">
-          <h3 className="font-display font-semibold text-[15px] text-ink mb-4">What Makes Up Your Score</h3>
+          <h3 className="font-display font-semibold text-sm text-ink mb-4">What Makes Up Your Score</h3>
           <div className="space-y-4">
             <ScoreFactor
               icon={PiggyBank}
@@ -114,7 +114,7 @@ export default function CreditScorePage() {
 
       {/* How to improve */}
       <div className="bg-parchment rounded-2xl p-5">
-        <h3 className="font-display font-semibold text-[15px] text-ink mb-3">How to Improve Your Score</h3>
+        <h3 className="font-display font-semibold text-sm text-ink mb-3">How to Improve Your Score</h3>
         <div className="space-y-3">
           <ImproveTip
             title="Save consistently"
@@ -141,7 +141,7 @@ export default function CreditScorePage() {
 
       {/* What lowers score */}
       <div className="bg-clay-light rounded-2xl p-5">
-        <h3 className="font-display font-semibold text-[15px] text-ink mb-3">What Lowers Your Score</h3>
+        <h3 className="font-display font-semibold text-sm text-ink mb-3">What Lowers Your Score</h3>
         <div className="space-y-2">
           <NegativeFactor text="Defaulted loans — each default reduces your score by 100 points" />
           <NegativeFactor text="Late repayments — each late payment reduces your score by 10 points" />
@@ -154,8 +154,8 @@ export default function CreditScorePage() {
       <div className="flex items-start gap-3 bg-loam-light rounded-xl p-4">
         <Info className="w-5 h-5 text-loam flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-[13px] text-ink font-medium mb-1">How is this score calculated?</p>
-          <p className="text-[13px] text-ink-soft">
+          <p className="text-xs text-ink font-medium mb-1">How is this score calculated?</p>
+          <p className="text-xs text-ink-soft">
             Your credit score is an internal score based entirely on your savings behavior and loan history
             within Agriqcap. It is not a bureau score. It starts at 300 and can go up to 850 based on:
             savings tenure (+200 max), consistency (+150 max), stability (+100 max), minus penalties for
@@ -167,7 +167,7 @@ export default function CreditScorePage() {
       {/* CTA */}
       <Link
         href="/loans"
-        className="block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] text-center hover:opacity-90 transition"
+        className="block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-sm text-center hover:opacity-90 transition"
       >
         Check loan eligibility
       </Link>
@@ -180,7 +180,7 @@ function ScoreRange({ label, range, color, active }: { label: string; range: str
     <div className={`flex items-center gap-3 py-2 px-3 rounded-xl transition ${active ? 'bg-paper border border-line' : ''}`}>
       <div className={`w-3 h-3 rounded-full ${color} ${active ? 'ring-2 ring-offset-1 ring-indigo' : ''}`} />
       <span className={`text-[14px] font-medium flex-1 ${active ? 'text-ink' : 'text-ink-soft'}`}>{label}</span>
-      <span className="font-mono text-[13px] text-ink-soft">{range}</span>
+      <span className="font-mono text-xs text-ink-soft">{range}</span>
       {active && <Check className="w-4 h-4 text-loam" />}
     </div>
   );
@@ -197,7 +197,7 @@ function ScoreFactor({ icon: Icon, title, value, max, description }: { icon: Rea
         <div className="flex-1">
           <div className="flex justify-between items-baseline">
             <p className="text-[14px] font-medium text-ink">{title}</p>
-            <p className="font-mono text-[13px] text-ink-soft">{value}/{max}</p>
+            <p className="font-mono text-xs text-ink-soft">{value}/{max}</p>
           </div>
         </div>
       </div>
@@ -217,7 +217,7 @@ function ImproveTip({ title, description }: { title: string; description: string
       </div>
       <div>
         <p className="text-[14px] font-medium text-ink">{title}</p>
-        <p className="text-[13px] text-ink-soft mt-0.5">{description}</p>
+        <p className="text-xs text-ink-soft mt-0.5">{description}</p>
       </div>
     </div>
   );
@@ -229,7 +229,7 @@ function NegativeFactor({ text }: { text: string }) {
       <div className="w-5 h-5 rounded-full bg-clay flex items-center justify-center flex-shrink-0 mt-0.5">
         <AlertCircle className="w-3 h-3 text-white" strokeWidth={2.5} />
       </div>
-      <p className="text-[13px] text-ink">{text}</p>
+      <p className="text-xs text-ink">{text}</p>
     </div>
   );
 }

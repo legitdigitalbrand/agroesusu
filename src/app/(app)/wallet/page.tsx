@@ -196,7 +196,7 @@ export default function WalletPage() {
                     <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">
                       Agriqcap Digital Wallet
                     </p>
-                    <p className="text-xs text-white/60">
+                    <p className="text-xs text-white/75">
                       {wallet.account_number ? `Account: ${wallet.account_number}` : "Main Balance"}
                     </p>
                   </div>
@@ -213,10 +213,10 @@ export default function WalletPage() {
 
               {/* Available Balance Display */}
               <div>
-                <p className="text-xs font-medium text-white/70 uppercase tracking-widest mb-1">
+                <p className="text-xs font-medium text-white/80 uppercase tracking-widest mb-1.5">
                   Available Balance
                 </p>
-                <div className="text-3xl sm:text-4xl font-bold font-mono text-white tracking-normal leading-none">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold font-mono text-white tracking-tight leading-none tabular-nums">
                   {balanceVisible ? (
                     fmtNGN(wallet.available_balance)
                   ) : (
@@ -227,28 +227,28 @@ export default function WalletPage() {
 
               {/* Sub-stats if non-zero */}
               {hasSubStats && (
-                <div className="grid grid-cols-3 gap-3 bg-indigo-deep/40 backdrop-blur-xs border border-white/10 rounded-xl p-3.5">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 bg-indigo-deep/40 backdrop-blur-xs border border-white/15 rounded-xl p-4">
                   <div>
-                    <p className="text-[11px] font-medium text-white/60 uppercase tracking-wider mb-0.5">
+                    <p className="text-[11px] font-medium text-white/80 uppercase tracking-wider mb-1">
                       Ledger
                     </p>
-                    <p className="font-mono text-xs font-semibold text-white">
+                    <p className="font-mono text-xs sm:text-sm font-semibold text-white tabular-nums">
                       {balanceVisible ? fmtNGN(wallet.ledger_balance) : "••••"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-white/60 uppercase tracking-wider mb-0.5">
+                    <p className="text-[11px] font-medium text-white/80 uppercase tracking-wider mb-1">
                       Pending
                     </p>
-                    <p className="font-mono text-xs font-semibold text-white">
+                    <p className="font-mono text-xs sm:text-sm font-semibold text-white tabular-nums">
                       {balanceVisible ? fmtNGN(wallet.pending_balance) : "••••"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-white/60 uppercase tracking-wider mb-0.5">
+                    <p className="text-[11px] font-medium text-white/80 uppercase tracking-wider mb-1">
                       Reserved
                     </p>
-                    <p className="font-mono text-xs font-semibold text-white">
+                    <p className="font-mono text-xs sm:text-sm font-semibold text-white tabular-nums">
                       {balanceVisible ? fmtNGN(wallet.reserved_balance) : "••••"}
                     </p>
                   </div>

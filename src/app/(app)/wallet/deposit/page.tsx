@@ -115,7 +115,7 @@ export default function WalletDepositPage() {
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-indigo border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[15px] text-ink-soft">Loading funding details…</p>
+          <p className="text-sm text-ink-soft">Loading funding details…</p>
         </div>
       </div>
     );
@@ -129,11 +129,11 @@ export default function WalletDepositPage() {
           <div className="w-12 h-12 rounded-full bg-clay-light flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6 text-clay" />
           </div>
-          <h2 className="font-display font-semibold text-[22px] text-ink mb-2">We couldn&apos;t load your funding details</h2>
-          <p className="text-[15px] text-ink-soft mb-6">
+          <h2 className="font-display font-semibold text-xl text-ink mb-2">We couldn&apos;t load your funding details</h2>
+          <p className="text-sm text-ink-soft mb-6">
             This might be a temporary connection issue. Please try again.
           </p>
-          <button onClick={loadFundingDetails} className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition">
+          <button onClick={loadFundingDetails} className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-sm hover:opacity-90 transition">
             Try again
           </button>
         </div>
@@ -149,11 +149,11 @@ export default function WalletDepositPage() {
           <div className="w-12 h-12 rounded-full bg-loam-light flex items-center justify-center mx-auto mb-4">
             <Info className="w-6 h-6 text-loam" />
           </div>
-          <h2 className="font-display font-semibold text-[22px] text-ink mb-2">Your funding account isn&apos;t ready yet</h2>
-          <p className="text-[15px] text-ink-soft mb-6">
+          <h2 className="font-display font-semibold text-xl text-ink mb-2">Your funding account isn&apos;t ready yet</h2>
+          <p className="text-sm text-ink-soft mb-6">
             {details?.message || 'You need to complete identity verification before you can fund your wallet.'}
           </p>
-          <Link href="/profile" className="inline-block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition">
+          <Link href="/profile" className="inline-block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-sm hover:opacity-90 transition">
             Complete verification
           </Link>
         </div>
@@ -167,7 +167,7 @@ export default function WalletDepositPage() {
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-indigo border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[15px] text-ink-soft">Processing funding…</p>
+          <p className="text-sm text-ink-soft">Processing funding…</p>
         </div>
       </div>
     );
@@ -181,9 +181,9 @@ export default function WalletDepositPage() {
           <div className="w-16 h-16 rounded-full bg-loam-light flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-loam" />
           </div>
-          <h2 className="font-display font-semibold text-[22px] text-ink mb-2">Wallet funded!</h2>
-          <p className="text-[15px] text-ink-soft mb-6">{fmtNGN(parseFloat(manualAmount) || 0)} has been added to your wallet.</p>
-          <Link href="/wallet" className="inline-block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition">
+          <h2 className="font-display font-semibold text-xl text-ink mb-2">Wallet funded!</h2>
+          <p className="text-sm text-ink-soft mb-6">{fmtNGN(parseFloat(manualAmount) || 0)} has been added to your wallet.</p>
+          <Link href="/wallet" className="inline-block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-sm hover:opacity-90 transition">
             Back to wallet
           </Link>
         </div>
@@ -199,9 +199,9 @@ export default function WalletDepositPage() {
           <div className="w-12 h-12 rounded-full bg-clay-light flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6 text-clay" />
           </div>
-          <h2 className="font-display font-semibold text-[22px] text-ink mb-2">Funding failed</h2>
-          <p className="text-[15px] text-ink-soft mb-6">Something went wrong with the funding. Please try again.</p>
-          <button onClick={() => setStage('details')} className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition">
+          <h2 className="font-display font-semibold text-xl text-ink mb-2">Funding failed</h2>
+          <p className="text-sm text-ink-soft mb-6">Something went wrong with the funding. Please try again.</p>
+          <button onClick={() => setStage('details')} className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-sm hover:opacity-90 transition">
             Try again
           </button>
         </div>
@@ -217,8 +217,8 @@ export default function WalletDepositPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display font-bold text-[26px] text-ink">Fund Wallet</h1>
-          <p className="text-[15px] text-ink-soft mt-1">Transfer money to your dedicated account</p>
+          <h1 className="font-display font-bold text-2xl text-ink">Fund Wallet</h1>
+          <p className="text-sm text-ink-soft mt-1">Transfer money to your dedicated account</p>
         </div>
         <button onClick={loadFundingDetails} className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg hover:bg-parchment transition flex items-center justify-center">
           <RefreshCw className="w-5 h-5 text-ink-soft" />
@@ -237,7 +237,7 @@ export default function WalletDepositPage() {
             {/* Account name */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[13px] text-ink-soft uppercase tracking-wide">Account Name</p>
+                <p className="text-xs text-ink-soft uppercase tracking-wide">Account Name</p>
                 <p className="text-[16px] font-medium text-ink mt-1">{account.account_name}</p>
               </div>
             </div>
@@ -245,8 +245,8 @@ export default function WalletDepositPage() {
             {/* Account number with copy */}
             <div className="flex items-center justify-between pt-4 border-t border-line">
               <div>
-                <p className="text-[13px] text-ink-soft uppercase tracking-wide">Account Number</p>
-                <p className="font-mono text-[22px] font-bold text-ink mt-1 tracking-wider">{account.account_number}</p>
+                <p className="text-xs text-ink-soft uppercase tracking-wide">Account Number</p>
+                <p className="font-mono text-2xl font-bold text-ink mt-1 tracking-wider">{account.account_number}</p>
               </div>
               <button
                 onClick={() => copyToClipboard(account.account_number, 'account_number')}
@@ -263,7 +263,7 @@ export default function WalletDepositPage() {
             {/* Bank name with copy */}
             <div className="flex items-center justify-between pt-4 border-t border-line">
               <div>
-                <p className="text-[13px] text-ink-soft uppercase tracking-wide">Bank Name</p>
+                <p className="text-xs text-ink-soft uppercase tracking-wide">Bank Name</p>
                 <p className="text-[16px] font-medium text-ink mt-1">{account.bank_name}</p>
               </div>
               <button
@@ -293,7 +293,7 @@ export default function WalletDepositPage() {
       {account && (
         <button
           onClick={shareDetails}
-          className="w-full py-3 min-h-[44px] border border-line rounded-xl font-medium text-[15px] text-ink hover:bg-parchment transition flex items-center justify-center gap-2"
+          className="w-full py-3 min-h-[44px] border border-line rounded-xl font-medium text-sm text-ink hover:bg-parchment transition flex items-center justify-center gap-2"
         >
           <Share2 className="w-5 h-5 text-ink-soft" />
           Share account details
@@ -305,7 +305,7 @@ export default function WalletDepositPage() {
         <div className="mt-6 pt-6 border-t border-line">
           <button
             onClick={() => setShowManualFunding(!showManualFunding)}
-            className="text-[13px] text-ink-soft hover:text-ink"
+            className="text-xs text-ink-soft hover:text-ink"
           >
             {showManualFunding ? '− Hide' : '+ Show'} sandbox funding (testing only)
           </button>
@@ -321,7 +321,7 @@ export default function WalletDepositPage() {
               <button
                 onClick={handleSandboxFund}
                 disabled={!manualAmount || parseFloat(manualAmount) <= 0}
-                className="w-full py-3 bg-indigo text-white rounded-xl font-semibold text-[15px] disabled:opacity-50 transition"
+                className="w-full py-3 bg-indigo text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition"
               >
                 Fund wallet (sandbox)
               </button>
@@ -332,7 +332,7 @@ export default function WalletDepositPage() {
       )}
 
       {/* Back to wallet */}
-      <Link href="/wallet" className="flex items-center justify-center gap-1 text-[15px] text-ink-soft hover:text-ink mt-6 transition">
+      <Link href="/wallet" className="flex items-center justify-center gap-1 text-sm text-ink-soft hover:text-ink mt-6 transition">
         <ArrowLeft className="w-4 h-4" /> Back to wallet
       </Link>
     </div>

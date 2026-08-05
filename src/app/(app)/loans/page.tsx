@@ -325,7 +325,7 @@ export default function LoansPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <StatusBadge status={overallStatus} size="sm" />
-                <span className="text-xs text-white/70">Internal Score</span>
+                <span className="text-xs text-white/80">Internal Score</span>
               </div>
               <h2 className="font-display text-xl sm:text-2xl font-bold text-white leading-tight">
                 {hasApprovedProduct ? "Eligible for Credit" : "Improve Eligibility"}
@@ -337,12 +337,12 @@ export default function LoansPage() {
           </div>
 
           {/* Max Eligible Amount Box */}
-          <div className="bg-paper/10 border border-white/15 rounded-2xl p-4 sm:p-5 text-right w-full md:w-auto">
-            <p className="text-xs text-white/70 uppercase tracking-wider font-medium mb-1">
+          <div className="bg-white/10 border border-white/20 rounded-2xl p-4 sm:p-6 text-right w-full md:w-auto">
+            <p className="text-xs text-white/80 uppercase tracking-wider font-medium mb-1">
               Max Eligible Amount
             </p>
             <MoneyText amount={maxEligibleAmount} size="2xl" className="text-ochre" />
-            <p className="text-[11px] text-white/60 mt-1">
+            <p className="text-[11px] text-white/80 mt-1">
               {hasApprovedProduct ? "Instant disbursement available" : "Boost savings to unlock"}
             </p>
           </div>
@@ -352,12 +352,12 @@ export default function LoansPage() {
         {primaryResult && (
           <div className="mt-6 pt-6 border-t border-white/15 grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* WHY Eligible / Not Eligible */}
-            <div className="bg-paper/10 rounded-xl p-4">
+            <div className="bg-white/10 border border-white/15 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs uppercase tracking-wider font-semibold text-white/90 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-ochre" /> Requirement Factors
                 </h3>
-                <span className="text-[11px] text-white/70">
+                <span className="text-[11px] text-white/80">
                   {primaryResult.factors.filter((f) => f.passed).length} of {primaryResult.factors.length} Passed
                 </span>
               </div>
@@ -386,7 +386,7 @@ export default function LoansPage() {
             </div>
 
             {/* HOW to Improve */}
-            <div className="bg-paper/10 rounded-xl p-4">
+            <div className="bg-white/10 border border-white/15 rounded-xl p-4">
               <h3 className="text-xs uppercase tracking-wider font-semibold text-white/90 mb-3 flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-ochre" /> Actionable Next Steps
               </h3>
@@ -397,7 +397,7 @@ export default function LoansPage() {
                     .map((f, i) => {
                       const imp = getFactorImprovement(f, primaryResult.savings_balance);
                       return (
-                        <div key={i} className="flex items-start justify-between gap-3 text-xs text-white/80 bg-paper/5 p-2.5 rounded-lg border border-white/10">
+                        <div key={i} className="flex items-start justify-between gap-3 text-xs text-white/80 bg-white/10 p-3 rounded-lg border border-white/15">
                           <p className="flex-1 leading-relaxed">{imp.text}</p>
                           <Link href={imp.href} className="text-ochre hover:underline shrink-0 font-semibold flex items-center gap-1">
                             {imp.linkText} <ArrowRight className="w-3 h-3" />
@@ -410,7 +410,7 @@ export default function LoansPage() {
                     <p className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-ochre shrink-0" /> You meet all standard eligibility criteria!
                     </p>
-                    <p className="text-[11px] text-white/60">
+                    <p className="text-[11px] text-white/80">
                       Keep your savings consistent to maintain and grow your maximum borrowing capacity.
                     </p>
                     <div className="pt-2 flex gap-3">
@@ -493,7 +493,7 @@ export default function LoansPage() {
 
                     <CardContent className="space-y-4">
                       {/* Product Limits */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-parchment/60 p-3 rounded-xl border border-line/60">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-parchment/60 p-4 rounded-xl border border-line/60">
                         <div>
                           <p className="text-[11px] text-ink-soft font-medium">Borrow Limit</p>
                           <div className="flex items-baseline gap-1 mt-0.5">
@@ -633,7 +633,7 @@ export default function LoansPage() {
 
                     <CardContent className="space-y-4">
                       {/* Numbers Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-parchment/60 p-3.5 rounded-xl border border-line/60">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-parchment/60 p-4 rounded-xl border border-line/60">
                         <div>
                           <p className="text-[11px] text-ink-soft font-medium">Principal Amount</p>
                           <MoneyText amount={principal} size="md" className="text-ink" />

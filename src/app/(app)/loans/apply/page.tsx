@@ -64,7 +64,7 @@ function LoanApplyContent() {
     return (
       <div className="max-w-md mx-auto px-6 py-12 text-center">
         <AlertCircle className="w-12 h-12 text-clay mx-auto mb-4" />
-        <p className="text-[15px] text-ink-soft mb-4">No loan product selected.</p>
+        <p className="text-sm text-ink-soft mb-4">No loan product selected.</p>
         <Link href="/loans" className="inline-block text-[14px] text-indigo hover:underline py-2.5">
           ← Back to loans
         </Link>
@@ -79,11 +79,11 @@ function LoanApplyContent() {
           <div className="w-16 h-16 rounded-full bg-loam-light flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-loam" />
           </div>
-          <h2 className="font-display font-semibold text-[22px] text-ink mb-2">Application submitted!</h2>
-          <p className="text-[15px] text-ink-soft mb-6">
+          <h2 className="font-display font-semibold text-xl text-ink mb-2">Application submitted!</h2>
+          <p className="text-sm text-ink-soft mb-6">
             Your loan application for {fmtNGN(amount)} is now under review. You'll receive a notification once it's approved.
           </p>
-          <Link href="/loans" className="inline-block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] hover:opacity-90 transition">
+          <Link href="/loans" className="inline-block w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-sm hover:opacity-90 transition">
             View my loans
           </Link>
         </div>
@@ -108,7 +108,7 @@ function LoanApplyContent() {
         <ArrowLeft className="w-4 h-4" /> Back to loans
       </Link>
 
-      <h1 className="font-display font-semibold text-[22px] text-ink mb-1">Loan Application</h1>
+      <h1 className="font-display font-semibold text-xl text-ink mb-1">Loan Application</h1>
       <p className="text-[14px] text-ink-soft mb-6">Review and confirm your loan request</p>
 
       <div className="border border-line rounded-2xl p-4 bg-paper mb-4">
@@ -117,7 +117,7 @@ function LoanApplyContent() {
             <Landmark className="h-5 w-5 text-indigo" strokeWidth={1.8} />
           </div>
           <div>
-            <p className="font-medium text-[15px] text-ink">{product.product_name}</p>
+            <p className="font-medium text-sm text-ink">{product.product_name}</p>
             <p className="text-[12px] text-ink-soft">{product.interest_rate}% {product.interest_method === "flat" ? "flat" : "reducing balance"}</p>
           </div>
         </div>
@@ -147,7 +147,7 @@ function LoanApplyContent() {
       </div>
 
       <div className="bg-parchment rounded-xl p-3.5 mb-4">
-        <p className="text-[13px] text-ink">
+        <p className="text-xs text-ink">
           By applying, you agree to the loan terms. Your application will be reviewed by our team before disbursement.
           Funds will be credited to your wallet upon approval.
         </p>
@@ -156,14 +156,14 @@ function LoanApplyContent() {
       {error && (
         <div className="bg-clay-light rounded-xl p-3 flex items-start gap-2 mb-4">
           <AlertCircle className="w-4 h-4 text-clay mt-0.5 flex-shrink-0" />
-          <p className="text-[13px] text-clay">{error}</p>
+          <p className="text-xs text-clay">{error}</p>
         </div>
       )}
 
       <button
         onClick={() => applyMutation.mutate()}
         disabled={applyMutation.isPending}
-        className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] disabled:opacity-50 transition flex items-center justify-center gap-2"
+        className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-sm disabled:opacity-50 transition flex items-center justify-center gap-2"
       >
         {applyMutation.isPending ? (
           <>

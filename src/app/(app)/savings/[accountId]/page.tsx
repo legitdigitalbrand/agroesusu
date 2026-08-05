@@ -108,7 +108,7 @@ export default function SavingsAccountDetailPage() {
 
   return (
     <div className="space-y-5 max-w-2xl">
-      <Link href="/savings" className="flex items-center gap-1 text-[14px] text-ink-soft hover:text-ink transition">
+      <Link href="/savings" className="flex items-center gap-1 text-sm text-ink-soft hover:text-ink transition">
         <ArrowLeft className="w-4 h-4" /> Back to savings
       </Link>
 
@@ -122,29 +122,29 @@ export default function SavingsAccountDetailPage() {
                 {isFixed ? <Lock className="w-[18px] h-[18px] text-ochre" /> : <PiggyBank className="w-[18px] h-[18px] text-ochre" />}
               </div>
               <div>
-                <p className="text-[15px] font-semibold">{productName}</p>
-                <p className="text-[12px] text-white/70 capitalize">{productType.replace(/_/g, " ")} · {account.status}</p>
+                <p className="text-sm font-semibold">{productName}</p>
+                <p className="text-[12px] text-white/85 capitalize">{productType.replace(/_/g, " ")} · {account.status}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="font-mono text-[16px] text-ochre font-semibold">{fmtRate(rate)}%</p>
-              <p className="text-[11px] text-white/60">p.a.</p>
+              <p className="font-mono text-base text-ochre font-semibold">{fmtRate(rate)}%</p>
+              <p className="text-[11px] text-white/80">p.a.</p>
             </div>
           </div>
 
           {/* Balance */}
-          <p className="text-[12px] text-white/70 mb-1">Current Balance</p>
+          <p className="text-[12px] text-white/85 mb-1">Current Balance</p>
           <p className="font-mono font-bold text-[32px] leading-tight">{fmtNGN(account.current_balance || 0)}</p>
 
           {/* Interest earned */}
           <div className="flex gap-4 mt-3">
             <div>
-              <p className="text-[10px] text-white/60">Interest Earned</p>
-              <p className="font-mono text-[14px] text-white/90">{fmtNGN(account.interest_earned || 0)}</p>
+              <p className="text-[10px] text-white/80">Interest Earned</p>
+              <p className="font-mono text-sm text-white/90">{fmtNGN(account.interest_earned || 0)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-white/60">Interest Type</p>
-              <p className="font-mono text-[14px] text-white/90 capitalize">{product?.interest_method || 'compound'}</p>
+              <p className="text-[10px] text-white/80">Interest Type</p>
+              <p className="font-mono text-sm text-white/90 capitalize">{product?.interest_method || 'compound'}</p>
             </div>
           </div>
 
@@ -156,7 +156,7 @@ export default function SavingsAccountDetailPage() {
                 <p className="text-[12px] text-white/90 font-medium">
                   Matures in {daysRemaining} days
                 </p>
-                <p className="text-[11px] text-white/60">
+                <p className="text-[11px] text-white/80">
                   {new Date(account.maturity_date!).toLocaleDateString("en-NG", { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
@@ -177,7 +177,7 @@ export default function SavingsAccountDetailPage() {
               className="flex items-center justify-center gap-2 bg-ochre py-3 rounded-xl flex-1 hover:opacity-90 transition"
             >
               <Plus className="w-4 h-4 text-indigo-deep" strokeWidth={2.5} />
-              <span className="text-[13px] font-semibold text-indigo-deep">Deposit</span>
+              <span className="text-xs font-semibold text-indigo-deep">Deposit</span>
             </button>
             {canWithdraw && (
               <button
@@ -194,8 +194,8 @@ export default function SavingsAccountDetailPage() {
 
       {/* Account details grid */}
       <div className="bg-paper border border-line rounded-2xl p-5">
-        <h3 className="font-display font-semibold text-[15px] text-ink mb-3">Account Details</h3>
-        <div className="space-y-2.5 text-[14px]">
+        <h3 className="font-display font-semibold text-sm text-ink mb-3">Account Details</h3>
+        <div className="space-y-2.5 text-sm">
           <DetailRow label="Account type" value={productName} />
           <DetailRow label="Status" value={(account.status || "pending").charAt(0).toUpperCase() + (account.status || "pending").slice(1)} />
           <DetailRow label="Interest rate" value={`${fmtRate(rate)}% p.a.`} />
@@ -221,8 +221,8 @@ export default function SavingsAccountDetailPage() {
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-ink-soft flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-[13px] font-medium text-ink mb-1">How this account works</p>
-            <p className="text-[13px] text-ink-soft">
+            <p className="text-xs font-medium text-ink mb-1">How this account works</p>
+            <p className="text-xs text-ink-soft">
               {isFixed
                 ? `Your money is locked for ${product?.lock_period_days || 90} days and earns ${fmtRate(rate)}% interest per annum. You can withdraw early but will pay a ${product?.early_withdrawal_penalty_rate || 0}% penalty. Interest is calculated at maturity.`
                 : `You can deposit and withdraw anytime. Your balance earns ${fmtRate(rate)}% interest per annum, calculated daily and compounded. There is no minimum balance requirement.`}
@@ -348,7 +348,7 @@ function FundsModal({
               {isDeposit ? <Plus className="h-5 w-5 text-indigo" /> : <ArrowUpRight className="h-5 w-5 text-indigo" />}
             </div>
             <div>
-              <p className="font-display font-semibold text-[16px] text-ink">
+              <p className="font-display font-semibold text-base text-ink">
                 {isDeposit ? "Move to " + (account.pot_name || "Savings") : "Withdraw from " + (account.pot_name || "Savings")}
               </p>
               <p className="text-[12px] text-ink-soft">
@@ -369,7 +369,7 @@ function FundsModal({
             <h3 className="font-display font-semibold text-[18px] text-ink mb-2">
               {isDeposit ? "Deposited!" : "Withdrawn!"}
             </h3>
-            <p className="text-[14px] text-ink-soft mb-4">
+            <p className="text-sm text-ink-soft mb-4">
               {fmtNGN(parseFloat(amount) || 0)} has been {isDeposit ? "moved from your wallet to your savings" : "moved from your savings to your wallet"}.
             </p>
           </div>
@@ -385,7 +385,7 @@ function FundsModal({
 
             {/* Amount input */}
             <div>
-              <label className="text-[13px] text-ink-soft font-medium block mb-1.5">Amount</label>
+              <label className="text-xs text-ink-soft font-medium block mb-1.5">Amount</label>
               <input
                 type="number"
                 value={amount}
@@ -401,7 +401,7 @@ function FundsModal({
                 <button
                   key={amt}
                   onClick={() => setAmount(String(amt))}
-                  className="flex-1 py-2 border border-line rounded-lg text-[13px] text-ink-soft hover:bg-parchment transition"
+                  className="flex-1 py-2 border border-line rounded-lg text-xs text-ink-soft hover:bg-parchment transition"
                 >
                   {fmtNGN(amt)}
                 </button>

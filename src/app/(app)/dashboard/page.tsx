@@ -20,12 +20,10 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Plus,
-  Send,
   Eye,
   EyeOff,
   FileText,
   ChevronRight,
-  Building2,
   Copy,
   TrendingUp,
 } from "lucide-react";
@@ -298,12 +296,12 @@ export default function DashboardPage() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider text-white/80 font-semibold">
+              <span className="text-xs uppercase tracking-wider text-white/90 font-semibold">
                 Available Wallet Balance
               </span>
               <button
                 onClick={() => setBalanceVisible(!balanceVisible)}
-                className="p-1 text-white/70 hover:text-white transition"
+                className="p-1 text-white/80 hover:text-white transition"
               >
                 {balanceVisible ? (
                   <EyeOff className="w-4 h-4" />
@@ -319,19 +317,19 @@ export default function DashboardPage() {
             {/* DVA Account strip */}
             {dva ? (
               <div className="pt-2 flex items-center gap-3 text-xs text-white/90 flex-wrap">
-                <span className="px-2.5 py-1 rounded-lg bg-white/10 font-mono font-medium">
+                <span className="px-2.5 py-1 rounded-lg bg-white/15 font-mono font-medium">
                   {dva.bank_name}: {dva.account_number}
                 </span>
                 <button
                   onClick={copyAcctNum}
-                  className="inline-flex items-center gap-1 text-white/80 hover:text-white underline font-medium transition"
+                  className="inline-flex items-center gap-1 text-white/85 hover:text-white underline font-medium transition"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   {copiedAcct ? "Copied!" : "Copy account number"}
                 </button>
               </div>
             ) : !fundingDetails?.provisioned && fundingDetails ? (
-              <p className="text-xs text-white/70">
+              <p className="text-xs text-white/80">
                 {fundingDetails.message ||
                   "Complete identity verification to get your account number."}
               </p>
@@ -349,14 +347,14 @@ export default function DashboardPage() {
                 Fund
               </Button>
             </Link>
-            <Link href="/wallet/transfer">
+            <Link href="/wallet/move-to-savings">
               <Button
                 variant="outline"
                 size="md"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30"
-                leftIcon={<Send className="w-4 h-4 text-white" />}
+                leftIcon={<PiggyBank className="w-4 h-4 text-white" />}
               >
-                Transfer
+                Save
               </Button>
             </Link>
             <Link href="/wallet/withdraw">
@@ -364,7 +362,7 @@ export default function DashboardPage() {
                 variant="outline"
                 size="md"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30"
-                leftIcon={<Building2 className="w-4 h-4 text-white" />}
+                leftIcon={<ArrowUpRight className="w-4 h-4 text-white" />}
               >
                 Withdraw
               </Button>
@@ -561,6 +559,7 @@ export default function DashboardPage() {
                       data={chartData}
                       margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                     >
+                      /* Chart colors use design system hex values: indigo=#1B5E20, line=#D6E8D2, ink-soft=#4A5A44, paper=#FBFDF9, ink=#1A2417 */
                       <defs>
                         <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#1B5E20" stopOpacity={0.25} />

@@ -136,7 +136,7 @@ export default function TransferPage() {
           <Link href="/wallet" className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0">
             <ArrowLeft className="w-4 h-4 text-ink" />
           </Link>
-          <h1 className="font-display font-bold text-[20px] text-ink">Transfer</h1>
+          <h1 className="font-display font-bold text-xl text-ink">Transfer</h1>
         </div>
 
         <motion.div
@@ -220,7 +220,7 @@ export default function TransferPage() {
           >
             <ArrowLeft className="w-4 h-4 text-ink" />
           </button>
-          <h1 className="font-display font-bold text-[20px] text-ink">Confirm Transfer</h1>
+          <h1 className="font-display font-bold text-xl text-ink">Confirm Transfer</h1>
         </div>
 
         <Card variant="light" padding="lg" className="space-y-5">
@@ -294,7 +294,7 @@ export default function TransferPage() {
         <Link href="/wallet" className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0">
           <ArrowLeft className="w-4 h-4 text-ink" />
         </Link>
-        <h1 className="font-display font-bold text-[20px] text-ink">Transfer</h1>
+        <h1 className="font-display font-bold text-xl text-ink">Transfer</h1>
       </div>
 
       <Card variant="light" padding="lg" className="space-y-5">

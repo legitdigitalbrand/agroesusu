@@ -183,7 +183,7 @@ export default function MoveToSavingsPage() {
           >
             <ArrowLeft className="w-4 h-4 text-ink" />
           </Link>
-          <h1 className="font-display font-bold text-[20px] text-ink">
+          <h1 className="font-display font-bold text-xl text-ink">
             Move to Savings
           </h1>
         </div>
@@ -237,7 +237,7 @@ export default function MoveToSavingsPage() {
         >
           <ArrowLeft className="w-4 h-4 text-ink" />
         </Link>
-        <h1 className="font-display font-bold text-[20px] text-ink">
+        <h1 className="font-display font-bold text-xl text-ink">
           Move to Savings
         </h1>
       </div>
@@ -245,7 +245,7 @@ export default function MoveToSavingsPage() {
       {/* Wallet balance card */}
       <div className="bg-paper border border-line rounded-2xl p-4">
         <p className="text-[11px] text-ink-soft mb-1">Wallet Balance</p>
-        <p className="font-mono font-semibold text-[22px] text-ink">
+        <p className="font-mono font-semibold text-2xl text-ink">
           {fmtNGN(walletBalance)}
         </p>
       </div>
@@ -274,7 +274,7 @@ export default function MoveToSavingsPage() {
       {/* Stage: Select savings account */}
       {savingsAccounts.length > 0 && stage === "select" && (
         <div className="space-y-4">
-          <p className="text-[13px] font-medium text-ink">
+          <p className="text-xs font-medium text-ink">
             Choose a savings pot to fund:
           </p>
           <div className="space-y-3">
@@ -296,7 +296,7 @@ export default function MoveToSavingsPage() {
                     <Icon className="w-5 h-5 text-indigo" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-display font-semibold text-[15px] text-ink truncate">
+                    <p className="font-display font-semibold text-sm text-ink truncate">
                       {label}
                     </p>
                     <p className="text-[12px] text-ink-soft">
@@ -332,7 +332,7 @@ export default function MoveToSavingsPage() {
                   })()}
                 </div>
                 <div className="flex-1">
-                  <p className="font-display font-semibold text-[15px] text-ink">
+                  <p className="font-display font-semibold text-sm text-ink">
                     {getAccountLabel(selectedAccount)}
                   </p>
                   <p className="text-[12px] text-ink-soft">
@@ -367,7 +367,7 @@ export default function MoveToSavingsPage() {
 
               {/* Amount input */}
               <div>
-                <label className="text-[13px] text-ink-soft font-medium block mb-1.5">
+                <label className="text-xs text-ink-soft font-medium block mb-1.5">
                   Amount to move
                 </label>
                 <input
@@ -394,7 +394,7 @@ export default function MoveToSavingsPage() {
                       setAmount(String(Math.min(amt, walletBalance)))
                     }
                     disabled={amt > walletBalance}
-                    className="flex-1 py-2.5 border border-line rounded-lg text-[13px] text-ink-soft hover:bg-parchment transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex-1 py-2.5 border border-line rounded-lg text-xs text-ink-soft hover:bg-parchment transition disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {fmtNGN(amt)}
                   </button>
@@ -402,7 +402,7 @@ export default function MoveToSavingsPage() {
                 {walletBalance > 0 && (
                   <button
                     onClick={() => setAmount(String(walletBalance))}
-                    className="flex-1 py-2.5 border border-indigo/30 rounded-lg text-[13px] text-indigo font-medium hover:bg-indigo/5 transition"
+                    className="flex-1 py-2.5 border border-indigo/30 rounded-lg text-xs text-indigo font-medium hover:bg-indigo/5 transition"
                   >
                     Max
                   </button>
@@ -413,7 +413,7 @@ export default function MoveToSavingsPage() {
               {errorMsg && (
                 <div className="bg-clay-light/30 rounded-xl p-3 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-clay shrink-0 mt-0.5" />
-                  <p className="text-[13px] text-clay">{errorMsg}</p>
+                  <p className="text-xs text-clay">{errorMsg}</p>
                 </div>
               )}
 

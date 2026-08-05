@@ -165,7 +165,7 @@ export default function WithdrawPage() {
         <Link href="/wallet" className="w-11 h-11 rounded-lg bg-parchment flex items-center justify-center hover:bg-track transition shrink-0">
           <ArrowLeft className="w-4 h-4 text-ink" />
         </Link>
-        <h1 className="font-display font-bold text-[20px] text-ink">Withdraw</h1>
+        <h1 className="font-display font-bold text-xl text-ink">Withdraw</h1>
       </div>
 
       {/* Progress indicator */}
@@ -189,14 +189,14 @@ export default function WithdrawPage() {
       {/* Available balance */}
       <div className="bg-paper border border-line rounded-2xl p-4">
         <p className="text-[11px] text-ink-soft mb-1">Available Balance</p>
-        <p className="font-mono font-semibold text-[22px] text-ink">{fmtNGN(availableBalance)}</p>
+        <p className="font-mono font-semibold text-2xl text-ink">{fmtNGN(availableBalance)}</p>
       </div>
 
       {/* Step 1: Bank selection */}
       {step === "bank" && (
         <div className="space-y-4">
           <div>
-            <label className="text-[13px] font-medium text-ink mb-2 block">Select Destination Bank</label>
+            <label className="text-xs font-medium text-ink mb-2 block">Select Destination Bank</label>
             <div className="relative">
               <select
                 value={bankCode}
@@ -231,7 +231,7 @@ export default function WithdrawPage() {
       {step === "account" && (
         <div className="space-y-4">
           <div>
-            <label className="text-[13px] font-medium text-ink mb-2 block">Destination Bank</label>
+            <label className="text-xs font-medium text-ink mb-2 block">Destination Bank</label>
             <div className="bg-paper border border-line rounded-xl px-4 py-3 text-base text-ink flex items-center justify-between">
               <span>{bankName || banks.find(b => b.code === bankCode)?.name}</span>
               <button onClick={() => setStep("bank")} className="text-[11px] text-indigo hover:underline">Change</button>
@@ -239,7 +239,7 @@ export default function WithdrawPage() {
           </div>
 
           <div>
-            <label className="text-[13px] font-medium text-ink mb-2 block">Account Number</label>
+            <label className="text-xs font-medium text-ink mb-2 block">Account Number</label>
             <input
               type="tel"
               inputMode="numeric"
@@ -272,7 +272,7 @@ export default function WithdrawPage() {
           {error && (
             <div className="flex items-start gap-2 bg-clay/10 border border-clay/30 rounded-xl p-3">
               <AlertCircle className="w-4 h-4 text-clay flex-shrink-0 mt-0.5" />
-              <p className="text-[13px] text-clay">{error}</p>
+              <p className="text-xs text-clay">{error}</p>
             </div>
           )}
         </div>
@@ -286,21 +286,21 @@ export default function WithdrawPage() {
               <div className="w-8 h-8 rounded-full bg-indigo/10 flex items-center justify-center">
                 <Check className="w-4 h-4" />
               </div>
-              <span className="text-[13px] font-medium">Account Verified</span>
+              <span className="text-xs font-medium">Account Verified</span>
             </div>
 
             <div className="space-y-2 pt-2">
               <div>
                 <p className="text-[11px] text-ink-soft">Account Name</p>
-                <p className="text-[15px] font-medium text-ink">{nameEnquiry.accountName}</p>
+                <p className="text-sm font-medium text-ink">{nameEnquiry.accountName}</p>
               </div>
               <div>
                 <p className="text-[11px] text-ink-soft">Account Number</p>
-                <p className="text-[15px] font-mono text-ink">{nameEnquiry.accountNumber}</p>
+                <p className="text-sm font-mono text-ink">{nameEnquiry.accountNumber}</p>
               </div>
               <div>
                 <p className="text-[11px] text-ink-soft">Bank</p>
-                <p className="text-[15px] text-ink">{nameEnquiry.bankName}</p>
+                <p className="text-sm text-ink">{nameEnquiry.bankName}</p>
               </div>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function WithdrawPage() {
       {step === "amount" && (
         <div className="space-y-4">
           <div>
-            <label className="text-[13px] font-medium text-ink mb-2 block">Withdrawal Amount</label>
+            <label className="text-xs font-medium text-ink mb-2 block">Withdrawal Amount</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-ink-soft font-mono">₦</span>
               <input
@@ -342,7 +342,7 @@ export default function WithdrawPage() {
           </div>
 
           <div>
-            <label className="text-[13px] font-medium text-ink mb-2 block">Narration (optional)</label>
+            <label className="text-xs font-medium text-ink mb-2 block">Narration (optional)</label>
             <input
               type="text"
               value={narration}
@@ -373,31 +373,31 @@ export default function WithdrawPage() {
 
             <div className="space-y-2.5">
               <div className="flex justify-between">
-                <span className="text-[13px] text-ink-soft">Amount</span>
+                <span className="text-xs text-ink-soft">Amount</span>
                 <span className="text-[15px] font-mono font-medium text-ink">{fmtNGN(Number(amount))}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[13px] text-ink-soft">Fee</span>
-                <span className="text-[15px] font-mono text-ink">{fmtNGN(0)}</span>
+                <span className="text-xs text-ink-soft">Fee</span>
+                <span className="text-sm font-mono text-ink">{fmtNGN(0)}</span>
               </div>
               <div className="border-t border-line pt-2.5 flex justify-between">
-                <span className="text-[13px] font-medium text-ink">Total</span>
+                <span className="text-xs font-medium text-ink">Total</span>
                 <span className="text-[18px] font-mono font-semibold text-ink">{fmtNGN(Number(amount))}</span>
               </div>
             </div>
 
             <div className="border-t border-line pt-3 space-y-2">
               <div className="flex justify-between">
-                <span className="text-[13px] text-ink-soft">To</span>
-                <span className="text-[13px] text-ink">{nameEnquiry.accountName}</span>
+                <span className="text-xs text-ink-soft">To</span>
+                <span className="text-xs text-ink">{nameEnquiry.accountName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[13px] text-ink-soft">Account</span>
-                <span className="text-[13px] font-mono text-ink">{nameEnquiry.accountNumber}</span>
+                <span className="text-xs text-ink-soft">Account</span>
+                <span className="text-xs font-mono text-ink">{nameEnquiry.accountNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[13px] text-ink-soft">Bank</span>
-                <span className="text-[13px] text-ink">{nameEnquiry.bankName}</span>
+                <span className="text-xs text-ink-soft">Bank</span>
+                <span className="text-xs text-ink">{nameEnquiry.bankName}</span>
               </div>
             </div>
           </div>
@@ -427,7 +427,7 @@ export default function WithdrawPage() {
           </div>
           <div className="text-center">
             <h3 className="font-display font-semibold text-[18px] text-ink">Processing Withdrawal</h3>
-            <p className="text-[13px] text-ink-soft mt-1">
+            <p className="text-xs text-ink-soft mt-1">
               Reserving funds and submitting transfer to Safe Haven…
             </p>
           </div>
@@ -445,21 +445,21 @@ export default function WithdrawPage() {
                 </div>
                 <h3 className="font-display font-semibold text-[18px] text-ink">Withdrawal Successful</h3>
                 <p className="text-[22px] font-mono font-semibold text-ink">{fmtNGN(Number(amount))}</p>
-                <p className="text-[13px] text-ink-soft">Reference: {withdrawalResult.payment_reference}</p>
+                <p className="text-xs text-ink-soft">Reference: {withdrawalResult.payment_reference}</p>
               </div>
 
               <div className="bg-paper border border-line rounded-2xl p-4 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-[13px] text-ink-soft">Status</span>
-                  <span className="text-[13px] text-indigo font-medium">Completed</span>
+                  <span className="text-xs text-ink-soft">Status</span>
+                  <span className="text-xs text-indigo font-medium">Completed</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[13px] text-ink-soft">Beneficiary</span>
-                  <span className="text-[13px] text-ink">{nameEnquiry?.accountName}</span>
+                  <span className="text-xs text-ink-soft">Beneficiary</span>
+                  <span className="text-xs text-ink">{nameEnquiry?.accountName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[13px] text-ink-soft">Account</span>
-                  <span className="text-[13px] font-mono text-ink">{accountNumber}</span>
+                  <span className="text-xs text-ink-soft">Account</span>
+                  <span className="text-xs font-mono text-ink">{accountNumber}</span>
                 </div>
               </div>
             </>
@@ -472,10 +472,10 @@ export default function WithdrawPage() {
                   <Loader2 className="w-8 h-8 text-ochre animate-spin" />
                 </div>
                 <h3 className="font-display font-semibold text-[18px] text-ink">Transfer Submitted</h3>
-                <p className="text-[13px] text-ink-soft text-center max-w-xs">
+                <p className="text-xs text-ink-soft text-center max-w-xs">
                   Your withdrawal is being processed. You'll be notified when it's completed.
                 </p>
-                <p className="text-[13px] font-mono text-ink-soft">Ref: {withdrawalResult.payment_reference}</p>
+                <p className="text-xs font-mono text-ink-soft">Ref: {withdrawalResult.payment_reference}</p>
               </div>
             </>
           )}
@@ -487,7 +487,7 @@ export default function WithdrawPage() {
                   <X className="w-8 h-8 text-clay" />
                 </div>
                 <h3 className="font-display font-semibold text-[18px] text-ink">Withdrawal Failed</h3>
-                <p className="text-[13px] text-clay text-center max-w-xs">{withdrawalResult.message || error || "The transfer could not be completed."}</p>
+                <p className="text-xs text-clay text-center max-w-xs">{withdrawalResult.message || error || "The transfer could not be completed."}</p>
               </div>
             </>
           )}
@@ -498,7 +498,7 @@ export default function WithdrawPage() {
                 <AlertCircle className="w-8 h-8 text-clay" />
               </div>
               <h3 className="font-display font-semibold text-[18px] text-ink">Error</h3>
-              <p className="text-[13px] text-clay text-center">{error}</p>
+              <p className="text-xs text-clay text-center">{error}</p>
             </div>
           )}
 

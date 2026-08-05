@@ -101,7 +101,7 @@ export default function NotificationsPage() {
             variant="ghost"
             onClick={() => markAllReadMutation.mutate()}
             disabled={markAllReadMutation.isPending}
-            className="text-[13px]"
+            className="text-xs"
           >
             <CheckCheck className="w-4 h-4 mr-1" />
             Mark all read
@@ -113,7 +113,7 @@ export default function NotificationsPage() {
       <div className="flex gap-2">
         <button
           onClick={() => setFilter("all")}
-          className={`px-4 py-2 rounded-xl text-[13px] font-medium transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-medium transition ${
             filter === "all" ? "bg-indigo text-white" : "bg-parchment text-ink-soft"
           }`}
         >
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
         </button>
         <button
           onClick={() => setFilter("unread")}
-          className={`px-4 py-2 rounded-xl text-[13px] font-medium transition ${
+          className={`px-4 py-2 rounded-xl text-xs font-medium transition ${
             filter === "unread" ? "bg-indigo text-white" : "bg-parchment text-ink-soft"
           }`}
         >
@@ -157,7 +157,7 @@ export default function NotificationsPage() {
                     <p className={`text-sm ${isUnread ? "font-semibold text-ink" : "font-medium text-ink-soft"}`}>
                       {notif.title}
                     </p>
-                    <p className="text-[13px] text-ink-soft mt-0.5">{notif.message}</p>
+                    <p className="text-xs text-ink-soft mt-0.5">{notif.message}</p>
                     <p className="text-[11px] text-ink-soft mt-1">
                       {formatRelativeTime(notif.created_at)}
                     </p>
