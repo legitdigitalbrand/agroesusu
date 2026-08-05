@@ -6,6 +6,7 @@ import {
   OTP_PENDING_COOKIE_NAME,
   OTP_LENGTH,
 } from '@/lib/auth/device';
+import { verifyOtp } from '@/lib/auth/otp';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // ════════════════════════════════════════════════════════════
@@ -14,6 +15,11 @@ import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 // Verifies the 6-digit OTP code entered by the user during sign-in.
 // On success, sets the otp_verified cookie — which the middleware
 // checks to allow access to protected routes.
+//
+// If the pending cookie has provider 'resend': verifies the OTP
+// by comparing the hash stored in the cookie (no external call).
+// If provider is 'gotrue' or missing: falls back to Supabase
+// GoTrue's verifyOtp().
 //
 // Body: { code: string }
 // Requires: active Supabase session + otp_pending cookie.
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let pendingData: { email?: string; expiresAt?: number };
+  let pendingData: { email?: string; expiresAt?: number; otpHash?: string; provider?: string };
   try {
     pendingData = JSON.parse(pendingCookie);
   } catch {
@@ -71,42 +77,63 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid session state' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const provider = pendingData.provider || 'gotrue';
 
-  // Verify the OTP through Supabase's GoTrue
-  try {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: 'email',
-    });
+  if (provider === 'resend' && pendingData.otpHash) {
+    // ── Resend path: verify OTP hash from cookie ──
 
-    if (error) {
-      // Common errors: invalid token, expired token, already used
-      const message = error.message.toLowerCase();
-      if (message.includes('expired') || message.includes('invalid') || message.includes('no longer')) {
-        return NextResponse.json(
-          { error: 'Invalid or expired code. Please check and try again.', code: 'invalid_otp' },
-          { status: 400 }
-        );
-      }
-      console.error('[verify-login-otp] verifyOtp error:', error.message);
+    const isValid = verifyOtp(code, pendingData.otpHash);
+    if (!isValid) {
       return NextResponse.json(
-        { error: 'Verification failed. Please try again.', code: 'verify_failed' },
+        { error: 'Invalid or expired code. Please check and try again.', code: 'invalid_otp' },
         { status: 400 }
       );
     }
-  } catch (err) {
-    console.error('[verify-login-otp] Network error:', err instanceof Error ? err.message : err);
-    return NextResponse.json(
-      { error: 'Unable to verify code. Please check your connection.', code: 'network_error' },
-      { status: 503 }
-    );
-  }
 
-  // OTP verified — set the verified cookie and clear the pending cookie
-  const res = NextResponse.json({ success: true });
-  res.cookies.set(OTP_VERIFIED_COOKIE_NAME, 'true', OTP_VERIFIED_COOKIE_OPTIONS);
-  res.cookies.delete(OTP_PENDING_COOKIE_NAME);
-  return res;
+    // OTP verified — set the verified cookie and clear the pending cookie
+    const res = NextResponse.json({ success: true });
+    res.cookies.set(OTP_VERIFIED_COOKIE_NAME, 'true', OTP_VERIFIED_COOKIE_OPTIONS);
+    res.cookies.delete(OTP_PENDING_COOKIE_NAME);
+    return res;
+
+  } else {
+    // ── Supabase GoTrue fallback path ──
+
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'email',
+      });
+
+      if (error) {
+        const message = error.message.toLowerCase();
+        if (message.includes('expired') || message.includes('invalid') || message.includes('no longer')) {
+          return NextResponse.json(
+            { error: 'Invalid or expired code. Please check and try again.', code: 'invalid_otp' },
+            { status: 400 }
+          );
+        }
+        console.error('[verify-login-otp] verifyOtp error:', error.message);
+        return NextResponse.json(
+          { error: 'Verification failed. Please try again.', code: 'verify_failed' },
+          { status: 400 }
+        );
+      }
+    } catch (err) {
+      console.error('[verify-login-otp] Network error:', err instanceof Error ? err.message : err);
+      return NextResponse.json(
+        { error: 'Unable to verify code. Please check your connection.', code: 'network_error' },
+        { status: 503 }
+      );
+    }
+
+    // OTP verified — set the verified cookie and clear the pending cookie
+    const res = NextResponse.json({ success: true });
+    res.cookies.set(OTP_VERIFIED_COOKIE_NAME, 'true', OTP_VERIFIED_COOKIE_OPTIONS);
+    res.cookies.delete(OTP_PENDING_COOKIE_NAME);
+    return res;
+  }
 }
