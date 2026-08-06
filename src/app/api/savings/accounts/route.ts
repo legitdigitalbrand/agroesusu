@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { openAccount, listCustomerAccounts, deposit, getSavingsBalance } from '@/modules/savings';
+import { openAccount, listCustomerAccounts, deposit, getSavingsBalance, getGoalsForAccounts, calculateProgress } from '@/modules/savings';
 
 // POST /api/savings/accounts — open a new savings account
 export async function POST(request: NextRequest) {
@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
     let walletId: string;
 
     if (isStaff) {
-      // Staff can open accounts for customers — requires customer_id in body
       if (!body.customer_id) {
         return NextResponse.json({ error: 'customer_id is required for staff' }, { status: 400 });
       }
@@ -44,7 +43,6 @@ export async function POST(request: NextRequest) {
       if (!wallet) return NextResponse.json({ error: 'No active wallet found for customer' }, { status: 400 });
       walletId = wallet.id;
     } else {
-      // Customer opening for themselves
       const { data: customer } = await supabase
         .from('customers')
         .select('id')
@@ -72,7 +70,6 @@ export async function POST(request: NextRequest) {
       initial_deposit,
     });
 
-    // Process initial deposit if provided
     if (initial_deposit && initial_deposit > 0) {
       try {
         const depositResult = await deposit({
@@ -105,6 +102,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/savings/accounts — list customer's savings accounts
+// Enriched with balance + goal metadata (for Savings Pots)
 export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient();
@@ -120,10 +118,9 @@ export async function GET(_request: NextRequest) {
       .maybeSingle();
 
     if (!customer) {
-      // Staff can list all or filter
       const { data: isStaff } = await supabase.rpc('is_staff');
-      if (!isStaff) return NextResponse.json({ accounts: [] });  // Return empty, not 404
-      
+      if (!isStaff) return NextResponse.json({ accounts: [] });
+
       const serviceClient = createServiceClient();
       const { data: accounts } = await serviceClient
         .from('savings_accounts')
@@ -134,8 +131,7 @@ export async function GET(_request: NextRequest) {
 
     const accounts = await listCustomerAccounts(customer.id);
 
-    // Enrich each account with balance from Ledger and map field names
-    // A6: Deduplicate accounts by ID to prevent duplicate rendering
+    // Deduplicate accounts by ID
     const seenAccountIds = new Set();
     const uniqueAccounts = (accounts || []).filter((acct) => {
       if (seenAccountIds.has(acct.id)) return false;
@@ -143,16 +139,38 @@ export async function GET(_request: NextRequest) {
       return true;
     });
 
+    // Fetch goals for all accounts in one batch
+    const accountIds = uniqueAccounts.map((a) => a.id);
+    const goalsMap = accountIds.length > 0
+      ? await getGoalsForAccounts(accountIds)
+      : new Map();
+
+    // Enrich each account with balance and goal metadata
     const enrichedAccounts = await Promise.all(
       uniqueAccounts.map(async (acct) => {
         try {
           const balance = await getSavingsBalance(acct.id);
+          const goal = goalsMap.get(acct.id);
+          const accountType = acct.product?.product_type || 'flexible';
+
+          // For custom_pot accounts with a goal, include goal metadata
+          const goalData = (accountType === 'custom_pot' && goal) ? {
+            name: goal.pot_name,
+            target: goal.target_amount,
+            progress: calculateProgress(balance, goal.target_amount),
+            target_date: goal.target_date,
+            monthly_target: goal.monthly_target,
+            goal_status: goal.status,
+          } : undefined;
+
           return {
             ...acct,
             interest_earned: acct.total_interest_earned || 0,
             current_balance: balance,
             available_balance: balance,
             locked_balance: 0,
+            goal: goalData,
+            type: accountType === 'custom_pot' ? 'goal' : 'flexible',
           };
         } catch {
           return {

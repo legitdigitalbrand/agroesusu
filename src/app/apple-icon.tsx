@@ -1,12 +1,10 @@
 import { ImageResponse } from 'next/og';
 
-// App Router favicon — generates /icon at build time.
-// Matches the LogoMark design: green rounded square + ochre ring + ochre dot.
-
-export const size = { width: 32, height: 32 };
+// Apple touch icon — 180x180, same LogoMark design on green background.
+export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
 
-export default function Icon() {
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
@@ -17,16 +15,16 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: '#1B5E20',
-          borderRadius: '8px',
+          borderRadius: '42px',
         }}
       >
         {/* Outer ring */}
         <div
           style={{
-            width: '22px',
-            height: '22px',
+            width: '120px',
+            height: '120px',
             borderRadius: '50%',
-            border: '3px solid #BBDC12',
+            border: '16px solid #BBDC12',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -35,8 +33,8 @@ export default function Icon() {
           {/* Inner dot */}
           <div
             style={{
-              width: '7px',
-              height: '7px',
+              width: '36px',
+              height: '36px',
               borderRadius: '50%',
               backgroundColor: '#BBDC12',
             }}

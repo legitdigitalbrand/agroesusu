@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getAccount, getSavingsBalance } from '@/modules/savings';
+import { getAccount, getSavingsBalance, getGoalByAccountId, calculateProgress } from '@/modules/savings';
 
-// GET /api/savings/accounts/[accountId] — get account details + balance
+// GET /api/savings/accounts/[accountId] — get account details + balance + goal metadata
 export async function GET(
   _request: NextRequest,
   context: { params: { accountId: string } }
@@ -36,7 +36,24 @@ export async function GET(
     // Get balance from Ledger
     const balance = await getSavingsBalance(context.params.accountId);
 
-    // Map DB field names to frontend-expected field names
+    // Get goal metadata if this is a custom_pot
+    const accountType = account.product?.product_type || 'flexible';
+    let goalData: Record<string, unknown> | undefined;
+    if (accountType === 'custom_pot') {
+      const goal = await getGoalByAccountId(context.params.accountId);
+      if (goal) {
+        goalData = {
+          name: goal.pot_name,
+          target: goal.target_amount,
+          progress: calculateProgress(balance, goal.target_amount),
+          target_date: goal.target_date,
+          monthly_target: goal.monthly_target,
+          goal_status: goal.status,
+          goal_id: goal.goal_id,
+        };
+      }
+    }
+
     return NextResponse.json({
       account: {
         ...account,
@@ -44,6 +61,8 @@ export async function GET(
         current_balance: balance,
         available_balance: balance,
         locked_balance: 0,
+        goal: goalData,
+        type: accountType === 'custom_pot' ? 'goal' : 'flexible',
       },
     });
 

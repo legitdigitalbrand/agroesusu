@@ -8,6 +8,7 @@
  *   - Withdrawal flow (validates lock/penalty rules → calls Orchestrator)
  *   - Interest accrual (scheduled → posts through Orchestrator)
  *   - History signals (for Phase 6 credit scoring)
+ *   - Savings Goals (pot metadata: target, date, monthly target, archive)
  * 
  * All financial movements go through the Orchestrator — no direct ledger writes.
  */
@@ -31,6 +32,10 @@ export { calculateInterest, accrueInterest, accrueInterestForAllAccounts } from 
 
 // History signals
 export { computeSavingsSignal, computeAllSavingsSignals, getLatestSignal } from './history';
+
+// Savings Goals (pot metadata)
+export { createGoal, getGoalByAccountId, getGoalsForAccounts, updateGoal, archiveGoal, calculateProgress, getMilestone, getInsight } from './goals';
+export type { SavingsGoal, CreateGoalRequest, UpdateGoalRequest } from './goals';
 
 // Types
 export type {

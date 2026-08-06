@@ -1,29 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { LoadingState, ErrorState } from "@/components/yield";
-import {
-  ArrowLeft, Lock, Check, AlertCircle, Plus, ArrowUpRight,
-  PiggyBank, Calendar, Info, X,
-} from "lucide-react";
+import { LoadingState, ErrorState, Card, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ProgressRing, MoneyText, StatusBadge } from "@/components/yield";
+import { ArrowLeft, AlertCircle, Plus, ArrowUpRight, PiggyBank, Calendar, Target, Edit3, Archive, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 const fmtNGN = (v: number) => `₦${(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
 const fmtRate = (rate: number) => rate.toFixed(1).replace(/\.0$/, "");
+const fmtDate = (d?: string | null) => {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+};
 
-// ════════════════════════════════════════════════════════════
-// Savings Account Detail Page
-//
-// Shows everything about a savings account:
-//   - Account name, type, status
-//   - Current balance, available balance, locked balance
-//   - Interest earned, interest rate, next interest date
-//   - Deposit and Withdraw buttons
-//   - Transaction history
-//   - Lock period info (for fixed deposits)
-// ════════════════════════════════════════════════════════════
+// ── Milestones ──
+function getMilestone(pct: number): { emoji: string; label: string } | null {
+  if (pct >= 100) return { emoji: "🎉", label: "Goal Achieved" };
+  if (pct >= 75) return { emoji: "🌳", label: "Almost There" };
+  if (pct >= 50) return { emoji: "🌿", label: "Great Progress" };
+  if (pct >= 25) return { emoji: "🌱", label: "Getting Started" };
+  return null;
+}
+
+function getInsight(pct: number, balance: number, target: number, monthlyTarget: number | null): string | null {
+  const remaining = target - balance;
+  if (remaining <= 0 || pct >= 100) return null;
+  if (monthlyTarget && monthlyTarget > 0) {
+    if (pct >= 90) return "One more deposit completes this goal.";
+    return `Deposit ${fmtNGN(monthlyTarget)} this month to stay on track.`;
+  }
+  return null;
+}
 
 interface AccountDetail {
   id: string;
@@ -37,6 +45,16 @@ interface AccountDetail {
   pot_name?: string | null;
   pot_icon?: string | null;
   pot_color?: string | null;
+  type?: string;
+  goal?: {
+    name: string;
+    target: number;
+    progress: number;
+    target_date: string | null;
+    monthly_target: number | null;
+    goal_status: string;
+    goal_id: string;
+  };
   product: {
     product_name: string;
     product_code: string;
@@ -58,7 +76,6 @@ interface AccountDetail {
   };
 }
 
-
 export default function SavingsAccountDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,6 +83,9 @@ export default function SavingsAccountDetailPage() {
   const queryClient = useQueryClient();
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showEditTargetModal, setShowEditTargetModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
 
   const { data: account, isLoading, error, refetch } = useQuery<AccountDetail>({
     queryKey: ["savings-account", accountId],
@@ -86,361 +106,503 @@ export default function SavingsAccountDetailPage() {
     },
   });
 
+  // Rename mutation
+  const renameMutation = useMutation({
+    mutationFn: async (newName: string) => {
+      const res = await fetch(`/api/savings/pots/${accountId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pot_name: newName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to rename");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      setShowRenameModal(false);
+    },
+  });
+
+  // Edit target mutation
+  const editTargetMutation = useMutation({
+    mutationFn: async (data: { target_amount?: number; target_date?: string | null; monthly_target?: number | null }) => {
+      const res = await fetch(`/api/savings/pots/${accountId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to update target");
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      setShowEditTargetModal(false);
+    },
+  });
+
+  // Archive mutation
+  const archiveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/savings/pots/${accountId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "archived" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to archive");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      router.push("/savings");
+    },
+  });
+
+  // Deposit mutation
+  const depositMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      const res = await fetch(`/api/savings/accounts/${accountId}/deposit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, wallet_id: me?.wallet?.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Deposit failed");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      setShowDepositModal(false);
+    },
+  });
+
+  // Withdraw mutation
+  const withdrawMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      const res = await fetch(`/api/savings/accounts/${accountId}/withdraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, wallet_id: me?.wallet?.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Withdrawal failed");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      setShowWithdrawModal(false);
+    },
+  });
+
   if (isLoading) return <LoadingState message="Loading account details…" />;
   if (error || !account) return <ErrorState message="Couldn't load account details" onRetry={() => refetch()} />;
 
   const product = account.product;
-  const productType = product?.product_type || 'flexible';
+  const productType = product?.product_type || "flexible";
   const productName = product?.product_name || "Savings";
   const rate = product?.interest_rate || account.product_terms_snapshot?.interest_rate || 0;
-  const isFixed = productType === 'fixed_deposit';
-  const isLocked = isFixed && account.status === 'active';
-  const isMatured = account.status === 'matured';
-  const isPending = account.status === 'pending';
+  const isPot = productType === "custom_pot";
   const walletBalance = me?.wallet?.available_balance || 0;
 
-  const daysRemaining = account.maturity_date
-    ? Math.max(0, Math.ceil((new Date(account.maturity_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null;
-
-  const canWithdraw = (product?.withdrawal_allowed || !isFixed) && !isPending;
-  const canDeposit = walletBalance > 0 && !isMatured;
+  const balance = account.current_balance || 0;
+  const goal = account.goal;
+  const potName = goal?.name || account.pot_name || productName;
+  const target = goal?.target || 0;
+  const progress = goal?.progress || 0;
+  const targetDate = goal?.target_date;
+  const monthlyTarget = goal?.monthly_target || null;
+  const milestone = getMilestone(progress);
+  const insight = getInsight(progress, balance, target, monthlyTarget);
+  const exceeded = target > 0 && balance > target;
+  const remaining = target > 0 ? Math.max(0, target - balance) : 0;
 
   return (
-    <div className="space-y-5 max-w-2xl">
-      <Link href="/savings" className="flex items-center gap-1 text-sm text-ink-soft hover:text-ink transition">
-        <ArrowLeft className="w-4 h-4" /> Back to savings
+    <div className="space-y-6 pb-12">
+      {/* Back link */}
+      <Link href="/savings" className="inline-flex items-center gap-1 text-sm text-ink-soft hover:text-ink transition">
+        <ArrowLeft className="w-4 h-4" /> Back to Savings
       </Link>
 
-      {/* Account hero card */}
-      <div className="relative bg-gradient-to-br from-indigo to-indigo-deep rounded-2xl overflow-hidden text-white">
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-paper/5 pointer-events-none" />
-        <div className="relative p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-paper/15 flex items-center justify-center">
-                {isFixed ? <Lock className="w-[18px] h-[18px] text-ochre" /> : <PiggyBank className="w-[18px] h-[18px] text-ochre" />}
-              </div>
-              <div>
-                <p className="text-sm font-semibold">{productName}</p>
-                <p className="text-[12px] text-white/85 capitalize">{productType.replace(/_/g, " ")} · {account.status}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="font-mono text-base text-ochre font-semibold">{fmtRate(rate)}%</p>
-              <p className="text-[11px] text-white/80">p.a.</p>
-            </div>
-          </div>
-
-          {/* Balance */}
-          <p className="text-[12px] text-white/85 mb-1">Current Balance</p>
-          <p className="font-mono font-bold text-[32px] leading-tight">{fmtNGN(account.current_balance || 0)}</p>
-
-          {/* Interest earned */}
-          <div className="flex gap-4 mt-3">
-            <div>
-              <p className="text-[10px] text-white/80">Interest Earned</p>
-              <p className="font-mono text-sm text-white/90">{fmtNGN(account.interest_earned || 0)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-white/80">Interest Type</p>
-              <p className="font-mono text-sm text-white/90 capitalize">{product?.interest_method || 'compound'}</p>
-            </div>
-          </div>
-
-          {/* Maturity date for fixed deposits */}
-          {isLocked && daysRemaining !== null && (
-            <div className="mt-3 bg-paper/10 rounded-xl p-3 flex items-center gap-2.5">
-              <Calendar className="w-4 h-4 text-ochre flex-shrink-0" />
-              <div>
-                <p className="text-[12px] text-white/90 font-medium">
-                  Matures in {daysRemaining} days
-                </p>
-                <p className="text-[11px] text-white/80">
-                  {new Date(account.maturity_date!).toLocaleDateString("en-NG", { day: 'numeric', month: 'long', year: 'numeric' })}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {isMatured && (
-            <div className="mt-3 bg-ochre/20 rounded-xl p-3 flex items-center gap-2.5">
-              <Check className="w-4 h-4 text-ochre flex-shrink-0" />
-              <p className="text-[12px] text-white font-medium">Matured — you can withdraw anytime</p>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={() => canDeposit ? setShowDepositModal(true) : router.push("/wallet/deposit")}
-              className="flex items-center justify-center gap-2 bg-ochre py-3 rounded-xl flex-1 hover:opacity-90 transition"
-            >
-              <Plus className="w-4 h-4 text-indigo-deep" strokeWidth={2.5} />
-              <span className="text-xs font-semibold text-indigo-deep">Deposit</span>
-            </button>
-            {canWithdraw && (
-              <button
-                onClick={() => setShowWithdrawModal(true)}
-                className="flex items-center justify-center gap-2 bg-paper/15 py-3 rounded-xl flex-1 hover:bg-paper/20 transition"
-              >
-                <ArrowUpRight className="w-4 h-4 text-white" strokeWidth={2} />
-                <span className="text-[13px] font-medium text-white">Withdraw</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Account details grid */}
-      <div className="bg-paper border border-line rounded-2xl p-5">
-        <h3 className="font-display font-semibold text-sm text-ink mb-3">Account Details</h3>
-        <div className="space-y-2.5 text-sm">
-          <DetailRow label="Account type" value={productName} />
-          <DetailRow label="Status" value={(account.status || "pending").charAt(0).toUpperCase() + (account.status || "pending").slice(1)} />
-          <DetailRow label="Interest rate" value={`${fmtRate(rate)}% p.a.`} />
-          <DetailRow label="Interest method" value={product?.interest_method === 'compound' ? 'Compound' : 'Flat'} />
-          <DetailRow label="Interest cadence" value={product?.interest_cadence || 'daily'} />
-          {isFixed && (
-            <>
-              <DetailRow label="Lock period" value={`${product?.lock_period_days || 90} days`} />
-              {product?.early_withdrawal_penalty_rate > 0 && (
-                <DetailRow label="Early exit penalty" value={`${product.early_withdrawal_penalty_rate}% of balance`} />
-              )}
-            </>
-          )}
-          <DetailRow label="Minimum deposit" value={fmtNGN(product?.minimum_deposit || 100)} />
-          {account.opened_at && (
-            <DetailRow label="Opened on" value={new Date(account.opened_at).toLocaleDateString("en-NG", { day: 'numeric', month: 'short', year: 'numeric' })} />
-          )}
-        </div>
-      </div>
-
-      {/* Contextual help */}
-      <div className="bg-parchment rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-ink-soft flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xs font-medium text-ink mb-1">How this account works</p>
-            <p className="text-xs text-ink-soft">
-              {isFixed
-                ? `Your money is locked for ${product?.lock_period_days || 90} days and earns ${fmtRate(rate)}% interest per annum. You can withdraw early but will pay a ${product?.early_withdrawal_penalty_rate || 0}% penalty. Interest is calculated at maturity.`
-                : `You can deposit and withdraw anytime. Your balance earns ${fmtRate(rate)}% interest per annum, calculated daily and compounded. There is no minimum balance requirement.`}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Deposit modal */}
-      {showDepositModal && (
-        <FundsModal
-          type="deposit"
-          account={account}
-          walletBalance={walletBalance}
-          onClose={() => setShowDepositModal(false)}
-          accountId={accountId}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
-            queryClient.invalidateQueries({ queryKey: ["me"] });
-            setShowDepositModal(false);
-          }}
-        />
-      )}
-
-      {/* Withdraw modal */}
-      {showWithdrawModal && (
-        <FundsModal
-          type="withdraw"
-          account={account}
-          walletBalance={walletBalance}
-          onClose={() => setShowWithdrawModal(false)}
-          accountId={accountId}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
-            queryClient.invalidateQueries({ queryKey: ["me"] });
-            setShowWithdrawModal(false);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-// ─── Detail row ───
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-ink-soft">{label}</span>
-      <span className="text-ink font-medium">{value}</span>
-    </div>
-  );
-}
-
-// ─── Deposit/Withdraw Modal ───
-function FundsModal({
-  type, account, walletBalance, onClose, accountId, onSuccess,
-}: {
-  type: "deposit" | "withdraw";
-  account: AccountDetail;
-  walletBalance: number;
-  onClose: () => void;
-  accountId: string;
-  onSuccess: () => void;
-}) {
-  const [amount, setAmount] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const handleSubmit = async () => {
-    const amt = parseFloat(amount);
-    if (!amt || amt <= 0) {
-      setError("Enter a valid amount");
-      return;
-    }
-
-    if (type === "deposit" && amt > walletBalance) {
-      setError(`Your wallet balance is ${fmtNGN(walletBalance)}. Fund your wallet first.`);
-      return;
-    }
-
-    if (type === "withdraw" && amt > (account.current_balance || 0)) {
-      setError("Amount exceeds your savings balance");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const endpoint = type === "deposit"
-        ? `/api/savings/accounts/${accountId}/deposit`
-        : `/api/savings/accounts/${accountId}/withdraw`;
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amt }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Failed to ${type}`);
-
-      setSuccess(true);
-      setTimeout(() => onSuccess(), 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to ${type}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isDeposit = type === "deposit";
-  const available = isDeposit ? walletBalance : (account.current_balance || 0);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-indigo-deep/40 backdrop-blur-sm p-4">
-      <div className="bg-paper rounded-2xl border border-line w-full max-w-md overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+      {/* Header Card */}
+      <Card variant="light" padding="lg">
+        <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-loam-light flex items-center justify-center">
-              {isDeposit ? <Plus className="h-5 w-5 text-indigo" /> : <ArrowUpRight className="h-5 w-5 text-indigo" />}
+            <div className="p-3 rounded-2xl bg-parchment border border-line shrink-0">
+              {isPot ? <Target className="w-6 h-6 text-loam" /> : <PiggyBank className="w-6 h-6 text-indigo" />}
             </div>
             <div>
-              <p className="font-display font-semibold text-base text-ink">
-                {isDeposit ? "Move to " + (account.pot_name || "Savings") : "Withdraw from " + (account.pot_name || "Savings")}
-              </p>
-              <p className="text-[12px] text-ink-soft">
-                {isDeposit ? `From your Wallet → ${account.pot_name || "Savings pot"}` : `From ${account.pot_name || "Savings"} → your Wallet`}
-              </p>
+              <h1 className="font-display text-2xl font-bold text-ink leading-tight">{potName}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <StatusBadge status={account.status} />
+                <span className="text-xs text-ink-soft">{fmtRate(rate)}% p.a.</span>
+              </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-parchment transition">
-            <X className="w-5 h-5 text-ink-soft" />
-          </button>
+          {isPot && (
+            <div className="flex flex-col gap-2">
+              <Button variant="ghost" size="sm" leftIcon={<Edit3 className="w-3.5 h-3.5" />} onClick={() => setShowRenameModal(true)}>
+                Rename
+              </Button>
+            </div>
+          )}
         </div>
 
-        {success ? (
-          <div className="p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-loam-light flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-loam" />
-            </div>
-            <h3 className="font-display font-semibold text-[18px] text-ink mb-2">
-              {isDeposit ? "Deposited!" : "Withdrawn!"}
-            </h3>
-            <p className="text-sm text-ink-soft mb-4">
-              {fmtNGN(parseFloat(amount) || 0)} has been {isDeposit ? "moved from your wallet to your savings" : "moved from your savings to your wallet"}.
-            </p>
-          </div>
-        ) : (
-          <div className="p-5 space-y-4">
-            {/* Available balance */}
-            <div className="bg-parchment rounded-xl p-3.5">
-              <p className="text-[12px] text-ink-soft">
-                {isDeposit ? "Wallet balance" : "Available to withdraw"}
-              </p>
-              <p className="font-mono text-[18px] font-semibold text-ink mt-0.5">{fmtNGN(available)}</p>
-            </div>
-
-            {/* Amount input */}
-            <div>
-              <label className="text-xs text-ink-soft font-medium block mb-1.5">Amount</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0"
-                className="w-full px-4 py-3 border border-line rounded-xl text-[20px] font-mono bg-paper text-ink focus:outline-none focus:border-indigo"
-              />
-            </div>
-
-            {/* Quick amounts */}
-            <div className="flex gap-2">
-              {[1000, 5000, 10000].map((amt) => (
-                <button
-                  key={amt}
-                  onClick={() => setAmount(String(amt))}
-                  className="flex-1 py-2 border border-line rounded-lg text-xs text-ink-soft hover:bg-parchment transition"
-                >
-                  {fmtNGN(amt)}
-                </button>
-              ))}
-            </div>
-
-            {/* Flow explanation */}
-            <div className="flex items-center gap-2 text-[12px] text-ink-soft">
-              <span className="px-2 py-1 bg-parchment rounded">{isDeposit ? "Wallet" : "Savings"}</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              <span className="px-2 py-1 bg-parchment rounded">{isDeposit ? "Savings" : "Wallet"}</span>
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="bg-clay-light rounded-xl p-3 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-clay mt-0.5 flex-shrink-0" />
-                <p className="text-[13px] text-clay">{error}</p>
+        {/* Pot: Progress Ring + Details */}
+        {isPot && target > 0 && (
+          <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
+            <ProgressRing progress={progress} size={120} strokeWidth={10} label={`${progress}%`} sublabel="complete" variant="indigo" />
+            <div className="flex-1 space-y-3">
+              <div>
+                <p className="text-xs text-ink-soft uppercase font-medium tracking-wider">Current Balance</p>
+                <MoneyText amount={balance} size="2xl" />
               </div>
-            )}
-
-            {/* Submit */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full py-3 bg-ochre text-indigo-deep rounded-xl font-semibold text-[15px] disabled:opacity-50 transition flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-indigo-deep border-t-transparent rounded-full animate-spin" />
-                  {isDeposit ? "Depositing…" : "Withdrawing…"}
-                </>
-              ) : (
-                isDeposit ? `Deposit ${amount ? fmtNGN(parseFloat(amount)) : ""}` : `Withdraw ${amount ? fmtNGN(parseFloat(amount)) : ""}`
+              {remaining > 0 && (
+                <div>
+                  <p className="text-xs text-ink-soft uppercase font-medium tracking-wider">Remaining</p>
+                  <p className="font-display text-lg font-semibold text-ink">{fmtNGN(remaining)}</p>
+                </div>
               )}
-            </button>
+              <div>
+                <p className="text-xs text-ink-soft uppercase font-medium tracking-wider">Target</p>
+                <p className="font-display text-lg font-semibold text-ink">{fmtNGN(target)}</p>
+              </div>
+              {targetDate && (
+                <div className="flex items-center gap-1.5 text-sm text-ink-soft">
+                  <Calendar className="w-4 h-4" />
+                  <span>Target: {fmtDate(targetDate)}</span>
+                </div>
+              )}
+              {monthlyTarget && (
+                <div>
+                  <p className="text-xs text-ink-soft uppercase font-medium tracking-wider">Monthly Goal</p>
+                  <p className="text-sm font-semibold text-ink">{fmtNGN(monthlyTarget)}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </div>
+
+        {/* Flexible: Balance only */}
+        {!isPot && (
+          <div className="mb-6">
+            <p className="text-xs text-ink-soft uppercase font-medium tracking-wider">Available Balance</p>
+            <MoneyText amount={balance} size="2xl" />
+          </div>
+        )}
+
+        {/* Progress Bar (pot) */}
+        {isPot && target > 0 && (
+          <div className="mb-6">
+            <div className="h-3 rounded-full bg-parchment border border-line/60 overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-1000 ${progress >= 100 ? "bg-loam" : "bg-indigo"}`} style={{ width: `${Math.min(100, progress)}%` }} />
+            </div>
+            <div className="flex items-center justify-between mt-2 text-sm">
+              <span className="text-ink-soft">{fmtNGN(balance)} of {fmtNGN(target)}</span>
+              <span className="font-semibold text-ink">{progress}%</span>
+            </div>
+            {exceeded && (
+              <p className="text-sm text-loam font-medium mt-1">🎉 Goal Achieved — Exceeded by {fmtNGN(balance - target)}</p>
+            )}
+          </div>
+        )}
+
+        {/* Milestone + Insight (pot) */}
+        {isPot && milestone && (
+          <div className="flex flex-col gap-2 mb-6">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-parchment border border-line/60">
+              <span className="text-lg">{milestone.emoji}</span>
+              <span className="text-sm font-semibold text-ink">{milestone.label}</span>
+            </div>
+            {insight && (
+              <div className="px-3 py-2 rounded-xl bg-parchment border border-line/60 text-sm text-ink-soft">
+                {insight}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Interest Earned */}
+        {(account.interest_earned || 0) > 0 && (
+          <div className="flex items-center gap-2 text-sm mb-6">
+            <TrendingUp className="w-4 h-4 text-loam" />
+            <span className="text-ink-soft">Interest earned: </span>
+            <span className="font-semibold text-loam">{fmtNGN(account.interest_earned || 0)}</span>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-3">
+          <Button variant="secondary" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowDepositModal(true)}>
+            Deposit
+          </Button>
+          <Button variant="outline" leftIcon={<ArrowUpRight className="w-4 h-4" />} onClick={() => setShowWithdrawModal(true)} disabled={account.status === "pending"}>
+            Withdraw
+          </Button>
+          {isPot && (
+            <>
+              <Button variant="ghost" leftIcon={<Edit3 className="w-4 h-4" />} onClick={() => setShowEditTargetModal(true)}>
+                Edit Target
+              </Button>
+              <Button variant="ghost" leftIcon={<Archive className="w-4 h-4" />} onClick={() => setShowArchiveModal(true)}>
+                Archive Pot
+              </Button>
+            </>
+          )}
+        </div>
+      </Card>
+
+      {/* Deposit Modal */}
+      {showDepositModal && (
+        <DepositModal
+          onClose={() => setShowDepositModal(false)}
+          onDeposit={(amt) => depositMutation.mutate(amt)}
+          isLoading={depositMutation.isPending}
+          error={depositMutation.error?.message}
+          walletBalance={walletBalance}
+          potName={potName}
+        />
+      )}
+
+      {/* Withdraw Modal */}
+      {showWithdrawModal && (
+        <WithdrawModal
+          onClose={() => setShowWithdrawModal(false)}
+          onWithdraw={(amt) => withdrawMutation.mutate(amt)}
+          isLoading={withdrawMutation.isPending}
+          error={withdrawMutation.error?.message}
+          maxAmount={balance}
+          potName={potName}
+        />
+      )}
+
+      {/* Rename Modal */}
+      {showRenameModal && (
+        <RenameModal
+          currentName={potName}
+          onClose={() => setShowRenameModal(false)}
+          onRename={(name) => renameMutation.mutate(name)}
+          isLoading={renameMutation.isPending}
+          error={renameMutation.error?.message}
+        />
+      )}
+
+      {/* Edit Target Modal */}
+      {showEditTargetModal && (
+        <EditTargetModal
+          currentTarget={target}
+          currentDate={targetDate ?? null}
+          currentMonthly={monthlyTarget ?? null}
+          onClose={() => setShowEditTargetModal(false)}
+          onSave={(data) => editTargetMutation.mutate(data)}
+          isLoading={editTargetMutation.isPending}
+          error={editTargetMutation.error?.message}
+        />
+      )}
+
+      {/* Archive Modal */}
+      {showArchiveModal && (
+        <Dialog open onOpenChange={(open) => !open && setShowArchiveModal(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Archive {potName}?</DialogTitle>
+              <DialogDescription>
+                Archived pots are hidden from your dashboard but remain in your transaction history and statements.
+              </DialogDescription>
+            </DialogHeader>
+            {balance > 0 ? (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Cannot archive a pot with a positive balance. Please withdraw all funds first.</span>
+              </div>
+            ) : archiveMutation.error ? (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{archiveMutation.error.message}</span>
+              </div>
+            ) : (
+              <p className="text-sm text-ink-soft">This pot has a zero balance and can be safely archived.</p>
+            )}
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setShowArchiveModal(false)} disabled={archiveMutation.isPending}>Cancel</Button>
+              <Button variant="primary" onClick={() => archiveMutation.mutate()} isLoading={archiveMutation.isPending} disabled={balance > 0}>
+                Archive Pot
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
+  );
+}
+
+// ─── Deposit Modal ────────────────────────────────────────
+function DepositModal({ onClose, onDeposit, isLoading, error, walletBalance, potName }: {
+  onClose: () => void;
+  onDeposit: (amount: number) => void;
+  isLoading: boolean;
+  error?: string;
+  walletBalance: number;
+  potName: string;
+}) {
+  const [amount, setAmount] = useState("");
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Deposit to {potName}</DialogTitle>
+          <DialogDescription>Move money from your wallet to this savings account.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 pt-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-ink-soft">Wallet Balance</span>
+            <span className="font-semibold text-ink">{fmtNGN(walletBalance)}</span>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Amount</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-soft">₦</span>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
+            </div>
+          </div>
+          {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
+            <Button variant="primary" onClick={() => onDeposit(parseFloat(amount))} isLoading={isLoading} disabled={!amount || parseFloat(amount) <= 0}>Deposit</Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Withdraw Modal ───────────────────────────────────────
+function WithdrawModal({ onClose, onWithdraw, isLoading, error, maxAmount, potName }: {
+  onClose: () => void;
+  onWithdraw: (amount: number) => void;
+  isLoading: boolean;
+  error?: string;
+  maxAmount: number;
+  potName: string;
+}) {
+  const [amount, setAmount] = useState("");
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Withdraw from {potName}</DialogTitle>
+          <DialogDescription>Move money from this savings account to your wallet.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 pt-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-ink-soft">Available Balance</span>
+            <span className="font-semibold text-ink">{fmtNGN(maxAmount)}</span>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Amount</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-soft">₦</span>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
+            </div>
+          </div>
+          {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
+            <Button variant="primary" onClick={() => onWithdraw(parseFloat(amount))} isLoading={isLoading} disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > maxAmount}>Withdraw</Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Rename Modal ─────────────────────────────────────────
+function RenameModal({ currentName, onClose, onRename, isLoading, error }: {
+  currentName: string;
+  onClose: () => void;
+  onRename: (name: string) => void;
+  isLoading: boolean;
+  error?: string;
+}) {
+  const [newName, setNewName] = useState(currentName);
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Rename Pot</DialogTitle>
+          <DialogDescription>Change the name of this savings pot. Your account ID, balance, and transactions remain unchanged.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 pt-2">
+          <div>
+            <label className="text-xs font-semibold text-ink block mb-1.5">New Name</label>
+            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value.slice(0, 50))} autoFocus maxLength={50} className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
+            <p className="text-[11px] text-ink-soft mt-1">{newName.length}/50 characters</p>
+          </div>
+          {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
+            <Button variant="primary" onClick={() => onRename(newName.trim())} isLoading={isLoading} disabled={newName.trim().length < 2 || newName.trim() === currentName}>Rename</Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Edit Target Modal ────────────────────────────────────
+function EditTargetModal({ currentTarget, currentDate, currentMonthly, onClose, onSave, isLoading, error }: {
+  currentTarget: number;
+  currentDate: string | null;
+  currentMonthly: number | null;
+  onClose: () => void;
+  onSave: (data: { target_amount?: number; target_date?: string | null; monthly_target?: number | null }) => void;
+  isLoading: boolean;
+  error?: string;
+}) {
+  const [target, setTarget] = useState(String(currentTarget || ""));
+  const [date, setDate] = useState(currentDate ? currentDate.split("T")[0] : "");
+  const [monthly, setMonthly] = useState(currentMonthly ? String(currentMonthly) : "");
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Goal</DialogTitle>
+          <DialogDescription>Update your target amount, target date, or monthly target. Progress recalculates automatically.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Target Amount</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-soft">₦</span>
+              <input type="number" value={target} onChange={(e) => setTarget(e.target.value)} className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Target Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Monthly Target</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-soft">₦</span>
+              <input type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
+            </div>
+          </div>
+          {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
+            <Button variant="primary" onClick={() => onSave({ target_amount: parseFloat(target) || undefined, target_date: date || null, monthly_target: monthly ? parseFloat(monthly) : null })} isLoading={isLoading} disabled={!target || parseFloat(target) <= 0}>Save Changes</Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

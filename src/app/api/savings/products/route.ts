@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { listActiveProducts } from '@/modules/savings';
 
-// GET /api/savings/products — list all active savings products
+// GET /api/savings/products — list active savings products
+// Customers see only 'flexible' and 'custom_pot' types.
+// Staff see all active products (for admin views).
 export async function GET() {
   try {
     const supabase = createClient();
@@ -12,7 +14,21 @@ export async function GET() {
     }
 
     const products = await listActiveProducts();
-    return NextResponse.json({ products });
+
+    // Check if user is staff
+    const { data: isStaff } = await supabase.rpc('is_staff');
+
+    if (isStaff) {
+      // Staff see all active products
+      return NextResponse.json({ products });
+    }
+
+    // Customers see only flexible + custom_pot
+    const customerProducts = products.filter(
+      (p) => p.product_type === 'flexible' || p.product_type === 'custom_pot'
+    );
+
+    return NextResponse.json({ products: customerProducts });
 
   } catch (error) {
     console.error('[API:savings-products] Error:', error);

@@ -2,17 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { openCustomPot, deposit } from '@/modules/savings';
+import { openCustomPot, deposit, createGoal } from '@/modules/savings';
 
-// POST /api/savings/pots — create a custom savings pot
+// POST /api/savings/pots — create a custom savings pot with goal metadata
 // Body: {
-//   pot_name: string,
-//   pot_icon?: string,
-//   pot_color?: string,
-//   lock_type: 'flexible' | 'locked',
-//   lock_until_date?: string | null,
-//   target_amount?: number,
-//   initial_deposit?: number,
+//   pot_name: string,          — required, max 50 chars
+//   target_amount: number,     — required, > 0
+//   target_date?: string,      — optional ISO date
+//   monthly_target?: number,   — optional, > 0
+//   initial_deposit?: number,  — optional
 // }
 export async function POST(request: NextRequest) {
   const limited = applyRateLimit(request, "/api/savings/pots", RATE_LIMITS.SAVINGS);
@@ -27,37 +25,51 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       pot_name,
-      pot_icon,
-      pot_color,
-      lock_type,
-      lock_until_date,
       target_amount,
+      target_date,
+      monthly_target,
       initial_deposit,
     } = body;
 
-    // Validate
+    // Validate pot_name
     if (!pot_name || pot_name.trim().length < 2) {
       return NextResponse.json(
         { error: 'Pot name must be at least 2 characters' },
         { status: 400 }
       );
     }
-
-    if (lock_type === 'locked' && !lock_until_date) {
+    if (pot_name.length > 50) {
       return NextResponse.json(
-        { error: 'Locked pots require a lock-until date' },
+        { error: 'Pot name must be 50 characters or fewer' },
         { status: 400 }
       );
     }
 
-    if (lock_until_date) {
-      const lockDate = new Date(lock_until_date);
-      if (lockDate.getTime() <= Date.now()) {
+    // Validate target_amount (required per spec)
+    if (!target_amount || target_amount <= 0) {
+      return NextResponse.json(
+        { error: 'Target amount is required and must be greater than zero' },
+        { status: 400 }
+      );
+    }
+
+    // Validate target_date (optional, but if provided must be in the future)
+    if (target_date) {
+      const d = new Date(target_date);
+      if (d.getTime() <= Date.now()) {
         return NextResponse.json(
-          { error: 'Lock date must be in the future' },
+          { error: 'Target date must be in the future' },
           { status: 400 }
         );
       }
+    }
+
+    // Validate monthly_target (optional)
+    if (monthly_target !== undefined && monthly_target !== null && monthly_target <= 0) {
+      return NextResponse.json(
+        { error: 'Monthly target must be greater than zero' },
+        { status: 400 }
+      );
     }
 
     // Get customer and wallet
@@ -114,18 +126,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the pot
+    // Create the savings account (pot)
     const account = await openCustomPot({
       customer_id: customer.id,
       wallet_id: wallet.id,
       product_id: product.id,
       pot_name: pot_name.trim(),
-      pot_icon: pot_icon || 'piggybank',
-      pot_color: pot_color || 'indigo',
-      lock_type: lock_type || 'flexible',
-      lock_until_date: lock_until_date || null,
-      target_amount: target_amount || undefined,
+      pot_icon: 'piggybank',
+      pot_color: 'indigo',
+      lock_type: 'flexible',
+      lock_until_date: null,
+      target_amount,
       initial_deposit: initial_deposit || undefined,
+    });
+
+    // Create the savings goal record
+    const goal = await createGoal({
+      account_id: account.id,
+      pot_name: pot_name.trim(),
+      target_amount,
+      target_date: target_date || null,
+      monthly_target: monthly_target || null,
     });
 
     // Process initial deposit if provided
@@ -140,6 +161,7 @@ export async function POST(request: NextRequest) {
         if (!depositResult.success) {
           return NextResponse.json({
             account,
+            goal,
             warning: `Pot created but initial deposit failed: ${depositResult.error}`,
           }, { status: 201 });
         }
@@ -147,12 +169,13 @@ export async function POST(request: NextRequest) {
         console.error('[API:savings-pots] Initial deposit error:', depErr);
         return NextResponse.json({
           account,
+          goal,
           warning: 'Pot created but initial deposit failed — please deposit manually',
         }, { status: 201 });
       }
     }
 
-    return NextResponse.json({ account }, { status: 201 });
+    return NextResponse.json({ account, goal }, { status: 201 });
 
   } catch (error) {
     console.error('[API:savings-pots] Error:', error);
