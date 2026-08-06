@@ -124,7 +124,7 @@ export default function SignupPage() {
 
   return (
     <AuthLayout rightPanel={<SignupRightPanel />}>
-      <AuthLogo />
+      <AuthLogo showHome />
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}

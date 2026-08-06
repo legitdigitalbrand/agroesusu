@@ -116,7 +116,7 @@ function LoginContent() {
 
   return (
     <AuthLayout rightPanel={<LoginRightPanel />}>
-      <AuthLogo />
+      <AuthLogo showHome />
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
