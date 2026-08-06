@@ -1,7 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { initiate } from '@/modules/orchestrator';
 import { dispatchNotification } from '@/modules/communications';
+
+// ── Self-healing: ensure wallet has a ledger account ──
+// The trigger trg_wallet_create_ledger_account should fire on wallet creation,
+// but it can miss if the wallet was created before the migration or if the
+// parent account (2000) didn't exist yet. This ensures the ledger account exists.
+async function ensureWalletLedgerAccount(walletId: string): Promise<void> {
+  const serviceClient = createServiceClient();
+
+  // Check if ledger account already exists
+  const { data: existing } = await serviceClient
+    .from('accounts')
+    .select('id')
+    .eq('owner_wallet_id', walletId)
+    .eq('account_category', 'customer_wallet')
+    .maybeSingle();
+
+  if (existing) return; // Already has a ledger account
+
+  // Look up the wallet to get wallet_number and customer_id
+  const { data: wallet } = await serviceClient
+    .from('wallets')
+    .select('id, wallet_number, customer_id, status')
+    .eq('id', walletId)
+    .maybeSingle();
+
+  if (!wallet) return; // Can't create without wallet info
+
+  // Find parent account (2000 - Customer Wallet Accounts)
+  const { data: parent } = await serviceClient
+    .from('accounts')
+    .select('id')
+    .eq('account_code', '2000')
+    .eq('account_category', 'customer_wallet')
+    .maybeSingle();
+
+  if (!parent) {
+    console.error('[API:wallet-deposit] Parent ledger account 2000 not found — chart of accounts may not be seeded');
+    return;
+  }
+
+  // Create the wallet ledger account
+  const accountCode = `2000.${wallet.wallet_number}`;
+  const { error } = await serviceClient
+    .from('accounts')
+    .insert({
+      account_code: accountCode,
+      account_type: 'liability',
+      account_category: 'customer_wallet',
+      name: `Wallet: ${wallet.wallet_number}`,
+      description: `Customer wallet account for ${wallet.wallet_number}`,
+      owner_wallet_id: wallet.id,
+      parent_account_id: parent.id,
+      is_system_account: false,
+      is_active: true,
+      metadata: { wallet_number: wallet.wallet_number, customer_id: wallet.customer_id },
+    });
+
+  if (error) {
+    console.error('[API:wallet-deposit] Failed to create wallet ledger account:', error.message);
+  } else {
+    console.log('[API:wallet-deposit] Self-healed: created ledger account for wallet', wallet.wallet_number);
+  }
+}
 
 // POST /api/wallets/[walletId]/deposit
 // Manual wallet funding (sandbox/testing mode).
@@ -70,6 +134,9 @@ export async function POST(
       }, { status: 403 });
     }
 
+    // Self-healing: ensure wallet has a ledger account before processing
+    await ensureWalletLedgerAccount(context.params.walletId);
+
     // Process the deposit through the Orchestrator
     const result = await initiate({
       transaction_type: 'wallet_deposit',
@@ -87,6 +154,7 @@ export async function POST(
     });
 
     if (result.status === 'failed') {
+      console.error('[API:wallet-deposit] Orchestrator failed:', result.error);
       return NextResponse.json({ error: result.error || 'Deposit failed' }, { status: 400 });
     }
 
