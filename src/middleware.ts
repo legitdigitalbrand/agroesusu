@@ -134,7 +134,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check OTP verification for API routes (except auth routes)
-    if (!pathname.startsWith('/api/auth/')) {
+    // Gated by NEXT_PUBLIC_OTP_ENABLED — disabled until Resend domain is verified
+    if (process.env.NEXT_PUBLIC_OTP_ENABLED === 'true' && !pathname.startsWith('/api/auth/')) {
       const otpVerified = request.cookies.get(OTP_VERIFIED_COOKIE_NAME)?.value;
       if (!otpVerified) {
         return NextResponse.json(
@@ -182,37 +183,38 @@ export async function middleware(request: NextRequest) {
   response.cookies.set(LAST_ACTIVITY_COOKIE_NAME, now.toString(), LAST_ACTIVITY_COOKIE_OPTIONS);
 
   // ── Email OTP verification gate ──
-  // After password login, user must verify email OTP before accessing app.
-  // The /verify-login page is allowed, and /api/auth/* routes are allowed (for sending/verifying OTP).
-  // All other routes require the otp_verified cookie.
-  const otpVerified = request.cookies.get(OTP_VERIFIED_COOKIE_NAME)?.value;
-  if (!otpVerified) {
-    // Allow the verify-login page itself
-    if (pathname === '/verify-login') {
-      return response;
-    }
-    // Allow auth pages (login, signup, etc.) — user might want to go back
-    if (pathname === '/login' || pathname === '/signup') {
-      // Redirect to verify-login since they already have a session
+  // Gated by NEXT_PUBLIC_OTP_ENABLED — disabled until Resend domain is verified
+  if (process.env.NEXT_PUBLIC_OTP_ENABLED === 'true') {
+    const otpVerified = request.cookies.get(OTP_VERIFIED_COOKIE_NAME)?.value;
+    if (!otpVerified) {
+      // Allow the verify-login page itself
+      if (pathname === '/verify-login') {
+        return response;
+      }
+      // Allow auth pages (login, signup, etc.) — user might want to go back
+      if (pathname === '/login' || pathname === '/signup') {
+        // Redirect to verify-login since they already have a session
+        const verifyUrl = new URL('/verify-login', request.url);
+        if (session.user.email) {
+          verifyUrl.searchParams.set('email', session.user.email);
+        }
+        return NextResponse.redirect(verifyUrl);
+      }
+      // Everything else → redirect to verify-login
       const verifyUrl = new URL('/verify-login', request.url);
       if (session.user.email) {
         verifyUrl.searchParams.set('email', session.user.email);
       }
+      if (pathname !== '/dashboard') {
+        verifyUrl.searchParams.set('redirect', pathname);
+      }
       return NextResponse.redirect(verifyUrl);
     }
-    // Everything else → redirect to verify-login
-    const verifyUrl = new URL('/verify-login', request.url);
-    if (session.user.email) {
-      verifyUrl.searchParams.set('email', session.user.email);
-    }
-    if (pathname !== '/dashboard') {
-      verifyUrl.searchParams.set('redirect', pathname);
-    }
-    return NextResponse.redirect(verifyUrl);
   }
 
   // Email verification guard: if user is not confirmed, force /verify-email
-  if (!session.user.email_confirmed_at && pathname !== '/verify-email') {
+  // Gated by NEXT_PUBLIC_OTP_ENABLED — disabled until email verification is configured
+  if (process.env.NEXT_PUBLIC_OTP_ENABLED === 'true' && !session.user.email_confirmed_at && pathname !== '/verify-email') {
     const verifyUrl = new URL('/verify-email', request.url);
     if (session.user.email) {
       verifyUrl.searchParams.set('email', session.user.email);

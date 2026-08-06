@@ -50,32 +50,32 @@ function LoginContent() {
       }
 
       // ── Send email OTP for 2nd factor verification ──
-      // After successful password authentication, we send a 6-digit
-      // OTP to the user's email. They must enter it before accessing
-      // the app. The middleware blocks all routes except /verify-login
-      // until the OTP is confirmed.
-      try {
-        const otpRes = await fetch("/api/auth/send-login-otp", { method: "POST" });
-        if (otpRes.ok) {
-          // OTP sent — redirect to verify-login page
-          const params = new URLSearchParams();
-          params.set("email", email);
-          if (redirectPath !== "/dashboard") {
-            params.set("redirect", redirectPath);
+      // Gated by NEXT_PUBLIC_OTP_ENABLED — disabled until Resend domain is verified.
+      // When disabled, login proceeds directly to dashboard after password auth.
+      if (process.env.NEXT_PUBLIC_OTP_ENABLED === 'true') {
+        try {
+          const otpRes = await fetch("/api/auth/send-login-otp", { method: "POST" });
+          if (otpRes.ok) {
+            // OTP sent — redirect to verify-login page
+            const params = new URLSearchParams();
+            params.set("email", email);
+            if (redirectPath !== "/dashboard") {
+              params.set("redirect", redirectPath);
+            }
+            router.push(`/verify-login?${params.toString()}`);
+            router.refresh();
+            return;
           }
-          router.push(`/verify-login?${params.toString()}`);
-          router.refresh();
-          return;
+          // If OTP sending fails, log the error but proceed with login
+          // (fail-open for usability — the password was already verified)
+          const otpData = await otpRes.json().catch(() => ({}));
+          console.error("[login] send-login-otp failed:", otpData.error || otpRes.status);
+        } catch (otpErr) {
+          console.error("[login] OTP send error:", otpErr);
         }
-        // If OTP sending fails, log the error but proceed with login
-        // (fail-open for usability — the password was already verified)
-        const otpData = await otpRes.json().catch(() => ({}));
-        console.error("[login] send-login-otp failed:", otpData.error || otpRes.status);
-      } catch (otpErr) {
-        console.error("[login] OTP send error:", otpErr);
       }
 
-      // ── Fallback: proceed without OTP if sending failed ──
+      // ── Proceed to dashboard (OTP disabled or send failed) ──
       // Check if staff and bootstrap customer if needed
       let isStaff = false;
       try {
