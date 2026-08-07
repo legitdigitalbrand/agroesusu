@@ -26,7 +26,21 @@ export async function GET(request: Request) {
       getAdminOverview(),
     ]);
 
-    return NextResponse.json({ dashboard, admin });
+    // Map API response to the shape the frontend expects
+    return NextResponse.json({
+      operational: {
+        total_wallets: dashboard.portfolio.total_wallet_balances || 0,
+        total_wallet_balance: dashboard.portfolio.total_wallet_balances || 0,
+        total_savings_balance: dashboard.portfolio.total_savings || 0,
+        total_loans_outstanding: dashboard.portfolio.total_loans_outstanding || 0,
+        active_loans: dashboard.loans.total_active_loans || 0,
+        pending_loans: 0,
+        total_investments_value: dashboard.portfolio.total_investments || 0,
+        active_investment_accounts: dashboard.investments.total_active_accounts || 0,
+        total_group_savings: dashboard.portfolio.total_group_savings || 0,
+      },
+      overview: admin,
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
   }
