@@ -37,7 +37,7 @@ BEGIN
     SET
       product_id = flex_product_id,
       goal_enabled = true,
-      target_amount = COALESCE(target_amount, sg.target_amount),
+      target_amount = COALESCE(savings_accounts.target_amount, sg.target_amount),
       goal_date = sg.target_date,
       monthly_target = sg.monthly_target,
       pot_name = COALESCE(savings_accounts.pot_name, sg.pot_name)
