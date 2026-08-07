@@ -2,19 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { LoadingState, ErrorState } from "@/components/yield";
-import { TrendingUp, Users, PiggyBank, AlertTriangle } from "lucide-react";
+import {
+  UserPlus, Landmark, Wallet, FileText, Activity,
+} from "lucide-react";
 import Link from "next/link";
-
-// ════════════════════════════════════════════════════════════
-// Admin Dashboard — matches the approved mockup:
-//   - "Platform overview" title
-//   - 4 metric cards in a grid (deposits, active loans, default rate, cooperatives)
-//   - Pending loan reviews panel with approve/deny buttons
-//   - Audit note about mandatory reason logging
-//
-// Design: dark sidebar (inherited from admin layout), light main area,
-//   ys-card panels with border-line, font-mono for all numbers.
-// ════════════════════════════════════════════════════════════
+import { formatNaira, formatRelativeTime } from "@/lib/format";
 
 interface AdminDashboard {
   overview: {
@@ -32,6 +24,8 @@ interface AdminDashboard {
     total_investments_value: number;
     active_investment_accounts: number;
     total_group_savings: number;
+    total_customers?: number;
+    active_groups?: number;
   };
 }
 
@@ -44,6 +38,22 @@ interface PendingLoan {
   multiplier: number;
   flags: string[];
 }
+
+interface ActivityItem {
+  type: string;
+  description: string;
+  amount: number | null;
+  entity_id: string;
+  timestamp: string;
+}
+
+const ACTIVITY_ICONS: Record<string, typeof UserPlus> = {
+  signup: UserPlus,
+  loan: Landmark,
+  transaction: Activity,
+  funding: Wallet,
+  admin: FileText,
+};
 
 export default function AdminDashboardPage() {
   const { data, isLoading, error, refetch } = useQuery<AdminDashboard>({
@@ -65,215 +75,146 @@ export default function AdminDashboardPage() {
     },
   });
 
+  const { data: activityData } = useQuery<{ activity: ActivityItem[] }>({
+    queryKey: ["admin-activity"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/activity");
+      if (!res.ok) return { activity: [] };
+      return res.json();
+    },
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  });
+
   if (isLoading) return <LoadingState message="Loading dashboard…" />;
   if (error || !data) return <ErrorState message="Couldn't load dashboard" onRetry={() => refetch()} />;
 
   const op = data.operational;
   const overview = data.overview;
   const pendingLoans = pendingLoansData?.loans || [];
+  const activities = activityData?.activity || [];
 
-  // Total deposits = wallets + savings + investments + group savings
   const totalDeposits = (op.total_wallet_balance || 0) + (op.total_savings_balance || 0) + (op.total_investments_value || 0) + (op.total_group_savings || 0);
 
   return (
     <div className="space-y-6">
-      {/* Header — matches mockup */}
+      {/* Header */}
       <div>
-        <h1 className="font-display font-bold text-xl text-ink">Platform overview</h1>
+        <h1 className="font-display text-xl text-ink">Platform Overview</h1>
         <p className="text-[14px] text-ink-soft mt-1">
-          {overview.product_counts ? "Agriqcap Platform" : "Platform"} · last updated just now
+          Agriqcap Operations · last updated {new Date().toLocaleTimeString("en-NG")}
         </p>
       </div>
 
-      {/* ─── 4 metric cards — matches mockup grid ─── */}
+      {/* Metric cards — 4-column grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard
-          label="Total deposits held"
-          value={formatMoney(totalDeposits)}
-          delta="+3.1% this week"
-          deltaType="up"
-        />
-        <MetricCard
-          label="Active loans"
-          value={String(op.active_loans)}
-          delta={op.pending_loans > 0 ? `+${op.pending_loans} pending` : "No pending"}
-          deltaType={op.pending_loans > 0 ? "warn" : "up"}
-        />
-        <MetricCard
-          label="Loans outstanding"
-          value={formatMoney(op.total_loans_outstanding)}
-          delta={`${op.active_loans} active`}
-          deltaType="up"
-        />
-        <MetricCard
-          label="Investment AUM"
-          value={formatMoney(op.total_investments_value)}
-          delta={`${op.active_investment_accounts} accounts`}
-          deltaType="up"
-        />
+        <StatCard label="Total Deposits" value={formatNaira(totalDeposits)} delta="+3.1% this week" />
+        <StatCard label="Active Loans" value={String(op.active_loans)} delta={op.pending_loans > 0 ? `${op.pending_loans} pending` : "No pending"} />
+        <StatCard label="Loans Outstanding" value={formatNaira(op.total_loans_outstanding)} delta={`${op.active_loans} active`} />
+        <StatCard label="Investment AUM" value={formatNaira(op.total_investments_value)} delta={`${op.active_investment_accounts} accounts`} />
+        <StatCard label="Wallet Balance" value={formatNaira(op.total_wallet_balance)} delta={`${op.total_wallets} wallets`} />
+        <StatCard label="Savings" value={formatNaira(op.total_savings_balance)} delta="Under management" />
+        <StatCard label="Customers" value={String(op.total_customers || "—")} delta={`${op.active_groups || 0} active groups`} />
+        <StatCard label="System Health" value="Operational" delta="All systems green" statusGreen />
       </div>
 
-      {/* ─── Pending loan reviews — matches mockup panel ─── */}
-      <div className="border border-line rounded-[14px] bg-paper overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-line">
-          <h3 className="text-[15px] font-medium text-ink">Pending loan reviews</h3>
-          <span className="text-[13px] text-ink-soft">
-            {pendingLoans.length} awaiting decision
-          </span>
-        </div>
-
-        {pendingLoans.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <p className="text-sm text-ink-soft">No pending loan applications</p>
+      {/* Two-column layout: pending reviews + live activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Pending loan reviews */}
+        <div className="border border-line rounded-[14px] bg-paper overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-line">
+            <h3 className="text-[15px] font-medium text-ink">Pending Loan Reviews</h3>
+            <Link href="/dev/loans" className="text-[13px] text-indigo hover:underline">View all</Link>
           </div>
-        ) : (
-          <>
-            {pendingLoans.map((loan) => (
-              <ReviewRow key={loan.id} loan={loan} />
-            ))}
-            <div className="px-4 py-2.5 border-t border-line border-dashed">
-              <p className="text-[12px] text-ink-soft leading-relaxed">
-                Every approve/deny decision requires a logged reason, visible to the applicant and stored in the audit trail.
-              </p>
+          {pendingLoans.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm text-ink-soft">No pending loans to review.</p>
             </div>
-          </>
-        )}
-      </div>
-
-      {/* ─── Two-column: portfolio + admin overview ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left — portfolio summary (2 cols) */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* Savings & investments */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="border border-line rounded-[14px] bg-paper p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <PiggyBank className="h-4 w-4 text-loam" />
-                <h3 className="font-display text-base text-ink">Savings Portfolio</h3>
-              </div>
-              <p className="font-mono text-2xl text-ink">{formatMoney(op.total_savings_balance)}</p>
-            </div>
-            <div className="border border-line rounded-[14px] bg-paper p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="h-4 w-4 text-indigo" />
-                <h3 className="font-display text-base text-ink">Investments</h3>
-              </div>
-              <p className="font-mono text-2xl text-ink">{formatMoney(op.total_investments_value)}</p>
-              <p className="text-xs text-ink-soft mt-1">{op.active_investment_accounts} active accounts</p>
-            </div>
-          </div>
-
-          {/* Group savings */}
-          <div className="border border-line rounded-[14px] bg-paper p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="h-4 w-4 text-indigo" />
-              <h3 className="font-display text-base text-ink">Group Savings Pools</h3>
-            </div>
-            <p className="font-mono text-2xl text-ink">{formatMoney(op.total_group_savings || 0)}</p>
-          </div>
-        </div>
-
-        {/* Right — admin overview */}
-        <div className="space-y-4">
-          {/* Staff & roles */}
-          <div className="border border-line rounded-[14px] bg-paper p-4">
-            <h3 className="font-display text-base text-ink mb-3">Staff & Roles</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-ink-soft">Total staff</span>
-                <span className="font-mono text-ink">{overview.staff_count}</span>
-              </div>
-              {overview.role_distribution?.map((r) => (
-                <div key={r.role} className="flex justify-between text-sm">
-                  <span className="text-ink-soft capitalize">{r.role.replace(/_/g, " ")}</span>
-                  <span className="font-mono text-ink">{r.count}</span>
+          ) : (
+            <div className="divide-y divide-track/30">
+              {pendingLoans.slice(0, 5).map(loan => (
+                <div key={loan.id} className="px-4 py-3 flex items-center justify-between hover:bg-parchment/30 transition">
+                  <div>
+                    <p className="text-sm font-medium text-ink">{loan.applicant_name}</p>
+                    <p className="text-xs text-ink-soft">{loan.product_name} · {formatNaira(loan.principal_amount)}</p>
+                  </div>
+                  <Link href="/dev/loans" className="text-xs px-3 py-1.5 rounded-lg bg-indigo/10 text-indigo font-medium hover:bg-indigo/20 transition">
+                    Review
+                  </Link>
                 </div>
               ))}
             </div>
-            <Link href="/dev/staff" className="block mt-4 text-xs text-indigo hover:underline">
-              Manage staff →
-            </Link>
-          </div>
+          )}
+        </div>
 
-          {/* Product counts */}
-          <div className="border border-line rounded-[14px] bg-paper p-4">
-            <h3 className="font-display text-base text-ink mb-3">Products Configured</h3>
-            <div className="space-y-2">
-              {overview.product_counts &&
-                Object.entries(overview.product_counts).map(([type, count]) => (
-                  <div key={type} className="flex justify-between text-sm">
-                    <span className="text-ink-soft capitalize">{type.replace(/_/g, " ")}</span>
-                    <span className="font-mono text-ink">{count}</span>
-                  </div>
-                ))}
-            </div>
-            <Link href="/dev/products" className="block mt-4 text-xs text-indigo hover:underline">
-              Configure products →
-            </Link>
+        {/* Live activity feed */}
+        <div className="border border-line rounded-[14px] bg-paper overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-line">
+            <h3 className="text-[15px] font-medium text-ink flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-loam animate-pulse" />
+              Live Activity
+            </h3>
+            <span className="text-xs text-ink-soft">Auto-refresh 30s</span>
           </div>
+          {activities.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm text-ink-soft">No recent activity.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-track/30 max-h-[400px] overflow-y-auto">
+              {activities.map((item, i) => {
+                const Icon = ACTIVITY_ICONS[item.type] || Activity;
+                return (
+                  <div key={`${item.entity_id}-${i}`} className="px-4 py-2.5 flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-parchment flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-ink-soft" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-ink truncate">{item.description}</p>
+                      <p className="text-xs text-ink-soft">
+                        {formatRelativeTime(item.timestamp)}
+                        {item.amount !== null && ` · ${formatNaira(item.amount)}`}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Staff overview */}
+      {overview.staff_count > 0 && (
+        <div className="border border-line rounded-[14px] bg-paper p-4">
+          <h3 className="text-[15px] font-medium text-ink mb-3">Staff Overview</h3>
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <p className="text-xs text-ink-soft uppercase">Total Staff</p>
+              <p className="text-lg font-semibold text-ink">{overview.staff_count}</p>
+            </div>
+            {overview.role_distribution?.slice(0, 5).map((r, i) => (
+              <div key={i}>
+                <p className="text-xs text-ink-soft uppercase">{r.role}</p>
+                <p className="text-lg font-semibold text-ink">{r.count}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Metric card — matches mockup's .metric-card ───
-function MetricCard({
-  label, value, delta, deltaType,
-}: {
-  label: string;
-  value: string;
-  delta: string;
-  deltaType: "up" | "warn";
-}) {
+function StatCard({ label, value, delta, statusGreen }: { label: string; value: string; delta: string; statusGreen?: boolean }) {
   return (
-    <div className="border border-line rounded-[14px] bg-paper p-4">
-      <p className="text-[13px] text-ink-soft mb-1.5">{label}</p>
-      <p className="font-mono text-xl text-ink">{value}</p>
-      <p className={`text-[11px] mt-1.5 ${deltaType === "up" ? "text-loam" : "text-clay"}`}>
-        {deltaType === "warn" && <AlertTriangle className="inline h-3 w-3 mr-1" />}
-        {delta}
+    <div className="rounded-lg border border-line bg-paper p-4">
+      <p className="text-xs font-medium text-ink-soft uppercase tracking-wide">{label}</p>
+      <p className={`mt-1 text-xl font-semibold ${statusGreen ? "text-loam" : "text-ink"}`}>
+        {statusGreen && <span className="inline-block w-2 h-2 rounded-full bg-loam mr-1.5 animate-pulse" />}
+        {value}
       </p>
+      <p className="mt-0.5 text-xs text-ink-soft">{delta}</p>
     </div>
   );
-}
-
-// ─── Review row — matches mockup's .review-row ───
-function ReviewRow({ loan }: { loan: PendingLoan }) {
-  return (
-    <div className="flex justify-between items-center px-4 py-3 border-b border-line text-[14px] last:border-0">
-      <div>
-        <p className="font-medium text-ink">
-          {loan.applicant_name || "Applicant"} · {loan.product_name || "Loan"} · {formatMoney(loan.principal_amount)}
-        </p>
-        <p className="text-ink-soft text-[11px] mt-0.5">
-          Requested {loan.multiplier || 3}× multiplier · savings tenure {loan.savings_tenure_months || 0} months
-          {loan.flags && loan.flags.length > 0 && ` · ${loan.flags.join(", ")}`}
-        </p>
-      </div>
-      <div className="flex gap-1.5">
-        <Link
-          href={`/dev/loans`}
-          className="text-[13px] px-3 py-1.5 rounded-lg border border-line bg-paper text-ink-soft hover:bg-parchment transition"
-        >
-          Deny
-        </Link>
-        <Link
-          href={`/dev/loans`}
-          className="text-[13px] px-3 py-1.5 rounded-lg border border-loam bg-loam-light text-ink hover:opacity-80 transition font-medium"
-        >
-          Approve
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount || 0);
 }

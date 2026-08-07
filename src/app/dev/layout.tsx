@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, PiggyBank, Landmark, TrendingUp, Users,
   FileText, Shield, ScrollText, LogOut, Menu, X,
+  UserSearch, CheckCircle, Wallet, Receipt,
 } from "lucide-react";
 import { LogoMark, LoadingState } from "@/components/yield";
 import { cn } from "@/lib/utils";
@@ -16,12 +17,16 @@ import { useMe } from "@/hooks/use-me";
 
 const adminNav = [
   { name: "Dashboard", href: "/dev/dashboard", icon: LayoutDashboard },
-  { name: "Products", href: "/dev/products", icon: PiggyBank },
+  { name: "Customers", href: "/dev/customers", icon: UserSearch },
+  { name: "Verification", href: "/dev/verification", icon: CheckCircle },
+  { name: "Wallets", href: "/dev/wallets", icon: Wallet },
+  { name: "Transactions", href: "/dev/transactions", icon: Receipt },
   { name: "Loan Review", href: "/dev/loans", icon: Landmark },
+  { name: "Products", href: "/dev/products", icon: PiggyBank },
   { name: "Investments", href: "/dev/investments", icon: TrendingUp },
   { name: "Cooperatives", href: "/dev/cooperatives", icon: Users },
   { name: "Audit Log", href: "/dev/audit", icon: ScrollText },
-  { name: "Compliance", href: "/dev/reports", icon: FileText },
+  { name: "Reports", href: "/dev/reports", icon: FileText },
   { name: "Staff & RBAC", href: "/dev/staff", icon: Shield },
 ];
 
@@ -31,12 +36,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: me, isLoading, error } = useMe();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
 
-  // Lock body scroll when drawer is open
   useEffect(() => {
     if (drawerOpen) {
       document.body.style.overflow = "hidden";
@@ -46,7 +49,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => { document.body.style.overflow = ""; };
   }, [drawerOpen]);
 
-  // Client-side guard: only staff users may access admin pages
   const [bootstrapping, setBootstrapping] = useState(false);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
@@ -65,7 +67,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const res = await fetch("/api/dev/bootstrap", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create admin");
-      // Reload to pick up new staff status
       window.location.reload();
     } catch (err) {
       setBootstrapError(err instanceof Error ? err.message : "Failed to create admin");
@@ -73,7 +74,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
-  // Show loading state while checking auth
   if (isLoading) {
     return (
       <div className="min-h-screen bg-paper flex items-center justify-center">
@@ -82,7 +82,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Not authenticated
   if (!me) {
     return (
       <div className="min-h-screen bg-paper flex items-center justify-center">
@@ -91,7 +90,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Authenticated but not staff — show bootstrap option (DEV ONLY)
   if (me.type !== "staff") {
     return (
       <div className="min-h-screen bg-paper flex items-center justify-center px-4">
@@ -134,18 +132,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-paper flex">
-      {/* ─── Desktop sidebar — fixed, dark indigo-deep ─── */}
+      {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-indigo-deep flex-col hidden md:flex">
-        {/* Logo */}
         <div className="flex items-center gap-2.5 px-6 py-6">
           <LogoMark size={32} variant="admin" />
           <div>
             <span className="font-display text-xl text-white block leading-tight">Agriqcap</span>
-            <span className="text-[12px] text-white/70 uppercase tracking-wider">Admin Console</span>
+            <span className="text-[12px] text-white/70 uppercase tracking-wider">Operations</span>
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {adminNav.map((item) => {
             const Icon = item.icon;
@@ -168,7 +164,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Footer — logout */}
         <div className="px-3 py-4 border-t border-white/10">
           <Link
             href="/"
@@ -180,7 +175,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* ─── Mobile drawer overlay ─── */}
+      {/* Mobile drawer */}
       {drawerOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -188,20 +183,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       )}
 
-      {/* ─── Mobile drawer sidebar ─── */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 bg-indigo-deep flex flex-col md:hidden transition-transform duration-300",
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo + close button */}
         <div className="flex items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2.5">
             <LogoMark size={32} variant="admin" />
             <div>
               <span className="font-display text-xl text-white block leading-tight">Agriqcap</span>
-              <span className="text-[12px] text-white/70 uppercase tracking-wider">Admin Console</span>
+              <span className="text-[12px] text-white/70 uppercase tracking-wider">Operations</span>
             </div>
           </div>
           <button
@@ -213,7 +206,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {adminNav.map((item) => {
             const Icon = item.icon;
@@ -236,7 +228,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Footer — logout */}
         <div className="px-3 py-4 border-t border-white/10">
           <Link
             href="/"
@@ -248,9 +239,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* ─── Main area ─── */}
+      {/* Main area */}
       <div className="flex-1 md:ml-64 flex flex-col min-w-0">
-        {/* Mobile top bar with hamburger */}
+        {/* Mobile top bar */}
         <header className="sticky top-0 z-30 bg-paper border-b border-line md:hidden flex items-center justify-between px-4 py-3">
           <button
             onClick={() => setDrawerOpen(true)}
@@ -261,19 +252,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
           <div className="flex items-center gap-2">
             <LogoMark size={24} variant="admin" />
-            <span className="font-display font-semibold text-[15px] text-ink">Admin</span>
+            <span className="font-display text-sm text-ink">Operations</span>
           </div>
-          <Link
-            href="/"
-            className="h-10 w-10 rounded-lg flex items-center justify-center text-ink-soft hover:bg-parchment transition"
-            aria-label="Exit console"
-          >
-            <LogOut className="h-[18px] w-[18px]" />
-          </Link>
         </header>
 
-        {/* Content */}
-        <main className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden">
+        {/* Page content */}
+        <main className="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto">
           {children}
         </main>
       </div>
