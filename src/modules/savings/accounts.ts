@@ -36,6 +36,9 @@ export interface AccountWithProduct extends SavingsAccount {
  * Open a savings account.
  * Prevents duplicate flexible accounts. Fixed deposits can have multiple.
  * Captures a snapshot of the product terms at opening.
+ * 
+ * For Flexible Savings with goal tracking, pass goal_enabled=true along with
+ * goal_amount, goal_date, monthly_target, and nickname.
  */
 export async function openAccount(request: OpenAccountRequest): Promise<SavingsAccount> {
   const supabase = getServiceClient();
@@ -45,18 +48,36 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
   if (!product) throw new Error('Product not found');
   if (!product.is_active) throw new Error('Product is not active');
 
-  // 2. Prevent duplicate flexible accounts (one per customer)
+  // 2. Prevent duplicate flexible accounts (one per customer, unless goal-enabled)
   if (product.product_type === 'flexible') {
-    const { data: existing } = await supabase
-      .from('savings_accounts')
-      .select('id, status')
-      .eq('customer_id', request.customer_id)
-      .eq('product_id', request.product_id)
-      .in('status', ['pending', 'active'])
-      .maybeSingle();
+    if (request.goal_enabled) {
+      // Goal-based flexible accounts can have multiple (one per goal)
+      // Check for limit of 10 active goal-based flexible accounts
+      const { data: existingGoals } = await supabase
+        .from('savings_accounts')
+        .select('id')
+        .eq('customer_id', request.customer_id)
+        .eq('product_id', request.product_id)
+        .eq('goal_enabled', true)
+        .in('status', ['pending', 'active']);
+      
+      if (existingGoals && existingGoals.length >= 10) {
+        throw new Error('You can have at most 10 active savings goals. Consider archiving completed ones.');
+      }
+    } else {
+      // Non-goal flexible: one per customer
+      const { data: existing } = await supabase
+        .from('savings_accounts')
+        .select('id, status')
+        .eq('customer_id', request.customer_id)
+        .eq('product_id', request.product_id)
+        .eq('goal_enabled', false)
+        .in('status', ['pending', 'active'])
+        .maybeSingle();
 
-    if (existing) {
-      throw new Error('You already have an active Flexible Savings account. Deposit into it instead of opening a new one.');
+      if (existing) {
+        throw new Error('You already have an active Flexible Savings account. Deposit into it instead of opening a new one.');
+      }
     }
   }
 
@@ -69,6 +90,7 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
     early_withdrawal_penalty_rate: product.early_withdrawal_penalty_rate,
     early_withdrawal_allowed: product.early_withdrawal_allowed,
     minimum_balance: product.minimum_balance,
+    minimum_deposit: product.minimum_deposit,
     term_days: product.term_days,
   };
 
@@ -81,17 +103,30 @@ export async function openAccount(request: OpenAccountRequest): Promise<SavingsA
   }
 
   // 5. Create the account (status: pending — activates on first deposit)
+  const insertData: Record<string, unknown> = {
+    customer_id: request.customer_id,
+    wallet_id: request.wallet_id,
+    product_id: request.product_id,
+    status: 'pending',
+    product_terms_snapshot: termsSnapshot,
+    maturity_date: maturityDate,
+  };
+
+  // Goal tracking fields (Flexible Savings only)
+  if (product.product_type === 'flexible' && request.goal_enabled) {
+    insertData.goal_enabled = true;
+    insertData.target_amount = request.goal_amount || request.target_amount || null;
+    insertData.goal_date = request.goal_date || null;
+    insertData.monthly_target = request.monthly_target || null;
+    insertData.pot_name = request.nickname || null;
+  } else if (request.target_amount) {
+    // Legacy: target_amount without goal_enabled
+    insertData.target_amount = request.target_amount;
+  }
+
   const { data, error } = await supabase
     .from('savings_accounts')
-    .insert({
-      customer_id: request.customer_id,
-      wallet_id: request.wallet_id,
-      product_id: request.product_id,
-      status: 'pending',
-      product_terms_snapshot: termsSnapshot,
-      maturity_date: maturityDate,
-      target_amount: request.target_amount || null,
-    })
+    .insert(insertData)
     .select('*')
     .single();
 
@@ -220,17 +255,46 @@ export async function closeAccount(accountId: string, reason?: string): Promise<
     .eq('id', accountId)
     .in('status', ['active', 'matured', 'withdrawn']);
 
-  if (error) throw new Error(`Failed to close account: ${error.message}`);
+  if (error) throw new Error(`Failed to close savings account: ${error.message}`);
 }
 
+/** Update goal metadata on a savings account (Flexible Savings with goal tracking) */
+export async function updateAccountGoal(
+  accountId: string,
+  updates: {
+    nickname?: string;
+    target_amount?: number;
+    goal_date?: string | null;
+    monthly_target?: number | null;
+    goal_enabled?: boolean;
+  }
+): Promise<SavingsAccount> {
+  const supabase = getServiceClient();
+
+  const updateData: Record<string, unknown> = {};
+  if (updates.nickname !== undefined) updateData.pot_name = updates.nickname;
+  if (updates.target_amount !== undefined) updateData.target_amount = updates.target_amount;
+  if (updates.goal_date !== undefined) updateData.goal_date = updates.goal_date || null;
+  if (updates.monthly_target !== undefined) {
+    updateData.monthly_target = updates.monthly_target || null;
+  }
+  if (updates.goal_enabled !== undefined) updateData.goal_enabled = updates.goal_enabled;
+
+  const { data, error } = await supabase
+    .from('savings_accounts')
+    .update(updateData)
+    .eq('id', accountId)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(`Failed to update savings goal: ${error.message}`);
+  return data as SavingsAccount;
+}
 
 /**
- * Open a custom savings pot.
- * Unlike openAccount, this allows:
- *   - Custom pot name and icon
- *   - User-chosen lock date (not product-defined term)
- *   - Interest rate calculated from lock duration
- *   - No duplicate restriction (users can have unlimited pots)
+ * Open a custom savings pot. — DEPRECATED
+ * Use openAccount() with goal_enabled=true instead.
+ * Kept for backwards compatibility.
  */
 export async function openCustomPot(request: OpenPotRequest): Promise<SavingsAccount> {
   const supabase = getServiceClient();
@@ -249,13 +313,11 @@ export async function openCustomPot(request: OpenPotRequest): Promise<SavingsAcc
     const lockDate = new Date(request.lock_until_date);
     lockPeriodDays = Math.max(1, Math.ceil((lockDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
-    // Rate schedule: longer lock = higher rate
-    // Engineering defaults within existing bands (4% flexible → 12% for 90 days)
     if (lockPeriodDays >= 365) interestRate = 16;
     else if (lockPeriodDays >= 180) interestRate = 14;
     else if (lockPeriodDays >= 90) interestRate = 12;
     else if (lockPeriodDays >= 30) interestRate = 8;
-    else interestRate = 6; // Short lock (1-29 days)
+    else interestRate = 6;
   }
 
   // 3. Capture terms snapshot
@@ -267,7 +329,7 @@ export async function openCustomPot(request: OpenPotRequest): Promise<SavingsAcc
     early_withdrawal_penalty_rate: product.early_withdrawal_penalty_rate,
     early_withdrawal_allowed: product.early_withdrawal_allowed,
     minimum_balance: product.minimum_balance,
-    term_days: null, // Custom pots use lock_until_date, not fixed term
+    term_days: null,
     lock_type: request.lock_type,
     lock_until_date: request.lock_until_date,
   };
@@ -288,7 +350,6 @@ export async function openCustomPot(request: OpenPotRequest): Promise<SavingsAcc
       pot_color: request.pot_color || 'indigo',
       metadata: {
         lock_type: request.lock_type,
-        lock_until_date: request.lock_until_date,
         is_custom_pot: true,
       },
     })
@@ -299,7 +360,6 @@ export async function openCustomPot(request: OpenPotRequest): Promise<SavingsAcc
 
   const account = data as SavingsAccount;
 
-  // 5. If initial deposit provided, activate the account
   if (request.initial_deposit && request.initial_deposit > 0) {
     await activateAccount(account.id);
   }

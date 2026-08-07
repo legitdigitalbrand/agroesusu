@@ -47,6 +47,9 @@ export interface SavingsAccount {
   pot_name?: string | null;
   pot_icon?: string | null;
   pot_color?: string | null;
+  goal_enabled?: boolean;
+  goal_date?: string | null;
+  monthly_target?: number | null;
   metadata: Record<string, unknown>;
   created_at: string;
 }
@@ -57,6 +60,12 @@ export interface OpenAccountRequest {
   product_id: string;
   target_amount?: number;
   initial_deposit?: number;
+  // Goal tracking fields (Flexible Savings only)
+  nickname?: string;
+  goal_enabled?: boolean;
+  goal_amount?: number;
+  goal_date?: string | null;
+  monthly_target?: number | null;
 }
 
 export interface DepositRequest {
@@ -98,8 +107,8 @@ export interface SavingsHistorySignal {
   tenure_score: number;
 }
 
-
-// Custom Pot creation request
+// Custom Pot creation request — DEPRECATED, use OpenAccountRequest with goal_enabled
+// Kept for backwards compatibility
 export interface OpenPotRequest {
   customer_id: string;
   wallet_id: string;
@@ -108,8 +117,8 @@ export interface OpenPotRequest {
   pot_icon?: string;
   pot_color?: string;
   lock_type: 'flexible' | 'locked';
-  lock_until_date?: string | null;  // ISO date for locked pots
+  lock_until_date?: string | null;
   target_amount?: number;
   initial_deposit?: number;
-  interest_rate?: number;  // Calculated based on lock duration
+  interest_rate?: number;
 }

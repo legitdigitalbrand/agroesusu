@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { openCustomPot, deposit, createGoal } from '@/modules/savings';
+import { openAccount, deposit } from '@/modules/savings';
 
-// POST /api/savings/pots — create a custom savings pot with goal metadata
+// POST /api/savings/pots — create a Flexible Savings account with goal tracking
+// This is a backwards-compatible wrapper around /api/savings/accounts
 // Body: {
 //   pot_name: string,          — required, max 50 chars
 //   target_amount: number,     — required, > 0
@@ -94,18 +95,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active wallet found' }, { status: 400 });
     }
 
-    // Find the Custom Pot product
+    // Find the FLEX product
     const serviceClient = createServiceClient();
     const { data: product } = await serviceClient
       .from('savings_products')
       .select('id')
-      .eq('product_code', 'CUSTOM-POT')
+      .eq('product_code', 'FLEX')
       .eq('is_active', true)
       .maybeSingle();
 
     if (!product) {
       return NextResponse.json(
-        { error: 'Custom Pot product is not configured. Run migration 00042.' },
+        { error: 'Flexible Savings product is not configured.' },
         { status: 500 }
       );
     }
@@ -126,27 +127,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the savings account (pot)
-    const account = await openCustomPot({
+    // Create a Flexible Savings account with goal tracking enabled
+    const account = await openAccount({
       customer_id: customer.id,
       wallet_id: wallet.id,
       product_id: product.id,
-      pot_name: pot_name.trim(),
-      pot_icon: 'piggybank',
-      pot_color: 'indigo',
-      lock_type: 'flexible',
-      lock_until_date: null,
-      target_amount,
-      initial_deposit: initial_deposit || undefined,
-    });
-
-    // Create the savings goal record
-    const goal = await createGoal({
-      account_id: account.id,
-      pot_name: pot_name.trim(),
-      target_amount,
-      target_date: target_date || null,
+      goal_enabled: true,
+      goal_amount: target_amount,
+      goal_date: target_date || null,
       monthly_target: monthly_target || null,
+      nickname: pot_name.trim(),
+      initial_deposit: initial_deposit || undefined,
     });
 
     // Process initial deposit if provided
@@ -161,21 +152,19 @@ export async function POST(request: NextRequest) {
         if (!depositResult.success) {
           return NextResponse.json({
             account,
-            goal,
-            warning: `Pot created but initial deposit failed: ${depositResult.error}`,
+            warning: `Account created but initial deposit failed: ${depositResult.error}`,
           }, { status: 201 });
         }
       } catch (depErr) {
         console.error('[API:savings-pots] Initial deposit error:', depErr);
         return NextResponse.json({
           account,
-          goal,
-          warning: 'Pot created but initial deposit failed — please deposit manually',
+          warning: 'Account created but initial deposit failed — please deposit manually',
         }, { status: 201 });
       }
     }
 
-    return NextResponse.json({ account, goal }, { status: 201 });
+    return NextResponse.json({ account }, { status: 201 });
 
   } catch (error) {
     console.error('[API:savings-pots] Error:', error);

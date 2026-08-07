@@ -36,10 +36,10 @@ export async function GET(
     // Get balance from Ledger
     const balance = await getSavingsBalance(context.params.accountId);
 
-    // Get goal metadata if this is a custom_pot
-    const accountType = account.product?.product_type || 'flexible';
+    // Get goal metadata from savings_accounts (goal_enabled)
+    const isGoalEnabled = account.goal_enabled || false;
     let goalData: Record<string, unknown> | undefined;
-    if (accountType === 'custom_pot') {
+    if (isGoalEnabled) {
       const goal = await getGoalByAccountId(context.params.accountId);
       if (goal) {
         goalData = {
@@ -49,10 +49,11 @@ export async function GET(
           target_date: goal.target_date,
           monthly_target: goal.monthly_target,
           goal_status: goal.status,
-          goal_id: goal.goal_id,
         };
       }
     }
+
+    const accountType = account.product?.product_type || 'flexible';
 
     return NextResponse.json({
       account: {
@@ -62,7 +63,7 @@ export async function GET(
         available_balance: balance,
         locked_balance: 0,
         goal: goalData,
-        type: accountType === 'custom_pot' ? 'goal' : 'flexible',
+        type: isGoalEnabled ? 'goal' : accountType,
       },
     });
 

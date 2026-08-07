@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { openAccount, listCustomerAccounts, deposit, getSavingsBalance, getGoalsForAccounts, calculateProgress } from '@/modules/savings';
 
 // POST /api/savings/accounts — open a new savings account
+// Supports flexible (with optional goal tracking) and fixed deposit
 export async function POST(request: NextRequest) {
   const limited = applyRateLimit(request, "/api/savings/accounts", RATE_LIMITS.SAVINGS);
   if (limited) return limited;
@@ -16,7 +17,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { product_id, target_amount, initial_deposit } = body;
+    const { 
+      product_id, 
+      target_amount, 
+      initial_deposit,
+      // Goal tracking fields (Flexible Savings only)
+      nickname,
+      goal_enabled,
+      goal_amount,
+      goal_date,
+      monthly_target,
+    } = body;
 
     if (!product_id) {
       return NextResponse.json({ error: 'product_id is required' }, { status: 400 });
@@ -66,8 +77,14 @@ export async function POST(request: NextRequest) {
       customer_id: customerId,
       wallet_id: walletId,
       product_id,
-      target_amount,
+      target_amount: goal_enabled ? (goal_amount || target_amount) : target_amount,
       initial_deposit,
+      // Goal tracking
+      nickname,
+      goal_enabled: goal_enabled || false,
+      goal_amount: goal_amount || target_amount,
+      goal_date: goal_date || null,
+      monthly_target: monthly_target || null,
     });
 
     if (initial_deposit && initial_deposit > 0) {
@@ -102,7 +119,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/savings/accounts — list customer's savings accounts
-// Enriched with balance + goal metadata (for Savings Pots)
+// Enriched with balance + goal metadata (from savings_accounts columns)
 export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient();
@@ -139,7 +156,7 @@ export async function GET(_request: NextRequest) {
       return true;
     });
 
-    // Fetch goals for all accounts in one batch
+    // Fetch goals for all accounts in one batch (now reads from savings_accounts)
     const accountIds = uniqueAccounts.map((a) => a.id);
     const goalsMap = accountIds.length > 0
       ? await getGoalsForAccounts(accountIds)
@@ -152,9 +169,10 @@ export async function GET(_request: NextRequest) {
           const balance = await getSavingsBalance(acct.id);
           const goal = goalsMap.get(acct.id);
           const accountType = acct.product?.product_type || 'flexible';
+          const isGoalEnabled = acct.goal_enabled || false;
 
-          // For custom_pot accounts with a goal, include goal metadata
-          const goalData = (accountType === 'custom_pot' && goal) ? {
+          // Build goal metadata for goal-enabled accounts
+          const goalData = (isGoalEnabled && goal) ? {
             name: goal.pot_name,
             target: goal.target_amount,
             progress: calculateProgress(balance, goal.target_amount),
@@ -170,7 +188,7 @@ export async function GET(_request: NextRequest) {
             available_balance: balance,
             locked_balance: 0,
             goal: goalData,
-            type: accountType === 'custom_pot' ? 'goal' : 'flexible',
+            type: isGoalEnabled ? 'goal' : accountType,
           };
         } catch {
           return {

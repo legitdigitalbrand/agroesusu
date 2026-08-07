@@ -3,8 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { listActiveProducts } from '@/modules/savings';
 
 // GET /api/savings/products — list active savings products
-// Customers see only 'flexible' and 'custom_pot' types.
-// Staff see all active products (for admin views).
+// Customers see: flexible, fixed_deposit, esusu
+// Staff see all active products (for admin views)
 export async function GET() {
   try {
     const supabase = createClient();
@@ -23,9 +23,10 @@ export async function GET() {
       return NextResponse.json({ products });
     }
 
-    // Customers see only flexible + custom_pot
+    // Customers see: flexible, fixed_deposit, esusu
+    // custom_pot is excluded — goal tracking is now part of flexible savings
     const customerProducts = products.filter(
-      (p) => p.product_type === 'flexible' || p.product_type === 'custom_pot'
+      (p) => ['flexible', 'fixed_deposit', 'esusu'].includes(p.product_type)
     );
 
     return NextResponse.json({ products: customerProducts });

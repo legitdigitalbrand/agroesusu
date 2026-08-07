@@ -1,9 +1,15 @@
 // ============================================================================
-// Savings Goals (Pot Metadata) Management
+// Savings Goals Management
 //
-// Extends the savings engine with goal-specific metadata for Savings Pots.
-// Balance remains the source of truth in savings_accounts. Progress is
-// calculated dynamically from balance / target_amount.
+// Goal metadata lives directly on savings_accounts:
+//   - pot_name       → nickname
+//   - target_amount  → goal amount
+//   - goal_enabled   → whether progress tracking is active
+//   - goal_date      → optional target date
+//   - monthly_target → optional monthly contribution target
+//
+// Balance remains the source of truth in the ledger. Progress is calculated
+// dynamically from balance / target_amount.
 // ============================================================================
 
 import { createClient } from '@supabase/supabase-js';
@@ -16,35 +22,23 @@ function getServiceClient() {
 }
 
 export interface SavingsGoal {
-  goal_id: string;
   account_id: string;
   pot_name: string;
   target_amount: number;
   target_date: string | null;
   monthly_target: number | null;
+  goal_enabled: boolean;
   status: 'active' | 'archived';
-  created_at: string;
-  updated_at: string;
 }
 
-export interface CreateGoalRequest {
+/** Create a savings goal by updating the savings account with goal metadata */
+export async function createGoal(request: {
   account_id: string;
   pot_name: string;
   target_amount: number;
   target_date?: string | null;
   monthly_target?: number | null;
-}
-
-export interface UpdateGoalRequest {
-  pot_name?: string;
-  target_amount?: number;
-  target_date?: string | null;
-  monthly_target?: number | null;
-  status?: 'active' | 'archived';
-}
-
-/** Create a savings goal linked to a savings account */
-export async function createGoal(request: CreateGoalRequest): Promise<SavingsGoal> {
+}): Promise<SavingsGoal> {
   const supabase = getServiceClient();
 
   if (!request.pot_name || request.pot_name.trim().length === 0) {
@@ -58,55 +52,94 @@ export async function createGoal(request: CreateGoalRequest): Promise<SavingsGoa
   }
 
   const { data, error } = await supabase
-    .from('savings_goals')
-    .insert({
-      account_id: request.account_id,
+    .from('savings_accounts')
+    .update({
+      goal_enabled: true,
       pot_name: request.pot_name.trim(),
       target_amount: request.target_amount,
-      target_date: request.target_date || null,
+      goal_date: request.target_date || null,
       monthly_target: request.monthly_target || null,
-      status: 'active',
     })
-    .select('*')
+    .eq('id', request.account_id)
+    .select('id, pot_name, target_amount, goal_date, monthly_target, goal_enabled, status')
     .single();
 
   if (error) throw new Error(`Failed to create savings goal: ${error.message}`);
-  return data as SavingsGoal;
+
+  const row = data as Record<string, unknown>;
+  return {
+    account_id: row.id as string,
+    pot_name: row.pot_name as string,
+    target_amount: row.target_amount as number,
+    target_date: (row.goal_date as string) || null,
+    monthly_target: (row.monthly_target as number) || null,
+    goal_enabled: (row.goal_enabled as boolean) || true,
+    status: 'active',
+  };
 }
 
-/** Get the active goal for a savings account (if any) */
+/** Get the goal metadata for a savings account */
 export async function getGoalByAccountId(accountId: string): Promise<SavingsGoal | null> {
   const supabase = getServiceClient();
   const { data, error } = await supabase
-    .from('savings_goals')
-    .select('*')
-    .eq('account_id', accountId)
-    .eq('status', 'active')
+    .from('savings_accounts')
+    .select('id, pot_name, target_amount, goal_date, monthly_target, goal_enabled, status')
+    .eq('id', accountId)
     .maybeSingle();
 
   if (error) throw new Error(`Failed to get savings goal: ${error.message}`);
-  return data as SavingsGoal | null;
+  if (!data) return null;
+
+  const row = data as Record<string, unknown>;
+  if (!row.goal_enabled) return null;
+
+  return {
+    account_id: row.id as string,
+    pot_name: row.pot_name as string,
+    target_amount: row.target_amount as number,
+    target_date: (row.goal_date as string) || null,
+    monthly_target: (row.monthly_target as number) || null,
+    goal_enabled: true,
+    status: (row.status as string) === 'closed' ? 'archived' : 'active',
+  };
 }
 
 /** Get goals for multiple account IDs (for batch enrichment) */
 export async function getGoalsForAccounts(accountIds: string[]): Promise<Map<string, SavingsGoal>> {
   const supabase = getServiceClient();
   const { data, error } = await supabase
-    .from('savings_goals')
-    .select('*')
-    .in('account_id', accountIds)
-    .eq('status', 'active');
+    .from('savings_accounts')
+    .select('id, pot_name, target_amount, goal_date, monthly_target, goal_enabled, status')
+    .in('id', accountIds)
+    .eq('goal_enabled', true);
 
   if (error) throw new Error(`Failed to get savings goals: ${error.message}`);
   const map = new Map<string, SavingsGoal>();
-  for (const goal of (data || []) as SavingsGoal[]) {
-    map.set(goal.account_id, goal);
+  for (const row of (data || []) as Record<string, unknown>[]) {
+    map.set(row.id as string, {
+      account_id: row.id as string,
+      pot_name: row.pot_name as string,
+      target_amount: row.target_amount as number,
+      target_date: (row.goal_date as string) || null,
+      monthly_target: (row.monthly_target as number) || null,
+      goal_enabled: true,
+      status: (row.status as string) === 'closed' ? 'archived' : 'active',
+    });
   }
   return map;
 }
 
 /** Update a savings goal (rename, edit target, etc.) */
-export async function updateGoal(goalId: string, updates: UpdateGoalRequest): Promise<SavingsGoal> {
+export async function updateGoal(
+  accountId: string,
+  updates: {
+    pot_name?: string;
+    target_amount?: number;
+    target_date?: string | null;
+    monthly_target?: number | null;
+    status?: 'active' | 'archived';
+  }
+): Promise<SavingsGoal> {
   const supabase = getServiceClient();
 
   const updateData: Record<string, unknown> = {};
@@ -120,7 +153,7 @@ export async function updateGoal(goalId: string, updates: UpdateGoalRequest): Pr
     updateData.target_amount = updates.target_amount;
   }
   if (updates.target_date !== undefined) {
-    updateData.target_date = updates.target_date || null;
+    updateData.goal_date = updates.target_date || null;
   }
   if (updates.monthly_target !== undefined) {
     if (updates.monthly_target !== null && updates.monthly_target <= 0) {
@@ -129,30 +162,44 @@ export async function updateGoal(goalId: string, updates: UpdateGoalRequest): Pr
     updateData.monthly_target = updates.monthly_target || null;
   }
   if (updates.status !== undefined) {
-    updateData.status = updates.status;
+    if (updates.status === 'archived') {
+      updateData.status = 'closed';
+      updateData.goal_enabled = false;
+      updateData.closed_at = new Date().toISOString();
+    }
   }
 
   const { data, error } = await supabase
-    .from('savings_goals')
+    .from('savings_accounts')
     .update(updateData)
-    .eq('goal_id', goalId)
-    .select('*')
+    .eq('id', accountId)
+    .select('id, pot_name, target_amount, goal_date, monthly_target, goal_enabled, status')
     .single();
 
   if (error) throw new Error(`Failed to update savings goal: ${error.message}`);
-  return data as SavingsGoal;
+
+  const row = data as Record<string, unknown>;
+  return {
+    account_id: row.id as string,
+    pot_name: row.pot_name as string,
+    target_amount: row.target_amount as number,
+    target_date: (row.goal_date as string) || null,
+    monthly_target: (row.monthly_target as number) || null,
+    goal_enabled: (row.goal_enabled as boolean) || false,
+    status: (row.status as string) === 'closed' ? 'archived' : 'active',
+  };
 }
 
-/** Archive a savings goal (hide from dashboard, keep in history) */
-export async function archiveGoal(goalId: string): Promise<SavingsGoal> {
-  return updateGoal(goalId, { status: 'archived' });
+/** Archive a savings goal (close the account, keep history) */
+export async function archiveGoal(accountId: string): Promise<SavingsGoal> {
+  return updateGoal(accountId, { status: 'archived' });
 }
 
 /** Calculate progress percentage (capped at 100) */
 export function calculateProgress(balance: number, targetAmount: number): number {
   if (targetAmount <= 0) return 0;
   const pct = (balance / targetAmount) * 100;
-  return Math.min(100, Math.round(pct * 10) / 10); // 1 decimal place, capped at 100
+  return Math.min(100, Math.round(pct * 10) / 10);
 }
 
 /** Get milestone message based on progress percentage */
@@ -168,9 +215,7 @@ export function getMilestone(progressPct: number): { emoji: string; label: strin
 export function getInsight(progressPct: number, balance: number, target: number, monthlyTarget: number | null): string | null {
   const remaining = target - balance;
   if (remaining <= 0) return null;
-
   if (progressPct >= 100) return null;
-
   if (monthlyTarget && monthlyTarget > 0) {
     if (progressPct >= 90) return 'One more deposit completes this goal.';
     if (monthlyTarget <= remaining) {
@@ -178,6 +223,5 @@ export function getInsight(progressPct: number, balance: number, target: number,
     }
     return 'You are ahead of schedule.';
   }
-
   return null;
 }

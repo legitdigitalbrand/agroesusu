@@ -1,14 +1,14 @@
 /**
  * Savings Engine Module
  * 
- * The first real consumer of the Orchestrator. Manages:
+ * Manages:
  *   - Product configuration (admin-configurable savings products)
  *   - Account lifecycle (open, activate, mature, close)
  *   - Deposit flow (validates → calls Orchestrator)
  *   - Withdrawal flow (validates lock/penalty rules → calls Orchestrator)
  *   - Interest accrual (scheduled → posts through Orchestrator)
- *   - History signals (for Phase 6 credit scoring)
- *   - Savings Goals (pot metadata: target, date, monthly target, archive)
+ *   - History signals (for credit scoring)
+ *   - Savings Goals (goal metadata on savings_accounts: target, date, monthly target)
  * 
  * All financial movements go through the Orchestrator — no direct ledger writes.
  */
@@ -17,7 +17,7 @@
 export { listActiveProducts, getProduct, getProductByCode, createProduct, updateProduct } from './products';
 
 // Account lifecycle
-export { openAccount, openCustomPot, activateAccount, getAccount, listCustomerAccounts, getSavingsBalance, markAsMatured, closeAccount } from './accounts';
+export { openAccount, openCustomPot, activateAccount, getAccount, listCustomerAccounts, getSavingsBalance, markAsMatured, closeAccount, updateAccountGoal } from './accounts';
 export type { AccountWithProduct } from './accounts';
 export type { OpenPotRequest } from './types';
 
@@ -33,9 +33,9 @@ export { calculateInterest, accrueInterest, accrueInterestForAllAccounts } from 
 // History signals
 export { computeSavingsSignal, computeAllSavingsSignals, getLatestSignal } from './history';
 
-// Savings Goals (pot metadata)
+// Savings Goals (goal metadata on savings_accounts)
 export { createGoal, getGoalByAccountId, getGoalsForAccounts, updateGoal, archiveGoal, calculateProgress, getMilestone, getInsight } from './goals';
-export type { SavingsGoal, CreateGoalRequest, UpdateGoalRequest } from './goals';
+export type { SavingsGoal } from './goals';
 
 // Types
 export type {
