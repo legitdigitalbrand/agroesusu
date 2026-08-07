@@ -21,7 +21,7 @@ export async function GET(
       .from('staff_users')
       .select('id')
       .eq('auth_id', user.id)
-      .eq('status', 'active')
+      .eq('employment_status', 'active')
       .maybeSingle();
     if (!staff) return NextResponse.json({ error: 'Staff access required' }, { status: 403 });
 
