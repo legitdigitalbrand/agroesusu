@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { LoadingState, ErrorState, Card, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ProgressRing, MoneyText, StatusBadge } from "@/components/yield";
-import { ArrowLeft, AlertCircle, Plus, ArrowUpRight, PiggyBank, Calendar, Target, Edit3, Archive, TrendingUp, Lock } from "lucide-react";
+import { ArrowLeft, AlertCircle, Plus, ArrowUpRight, PiggyBank, Calendar, Target, Edit3, Archive, Trash2, TrendingUp, Lock } from "lucide-react";
 import Link from "next/link";
 
 const fmtNGN = (v: number) => `₦${(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
@@ -88,6 +88,7 @@ export default function SavingsAccountDetailPage() {
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showEditTargetModal, setShowEditTargetModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: account, isLoading, error, refetch } = useQuery<AccountDetail>({
     queryKey: ["savings-account", accountId],
@@ -156,6 +157,22 @@ export default function SavingsAccountDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to archive");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      router.push("/savings");
+    },
+  });
+
+  // Delete mutation — permanently removes the goal (only if balance is zero)
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/savings/pots/${accountId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete");
       return data;
     },
     onSuccess: () => {
@@ -395,6 +412,9 @@ export default function SavingsAccountDetailPage() {
               <Button variant="ghost" leftIcon={<Archive className="w-4 h-4" />} onClick={() => setShowArchiveModal(true)}>
                 Archive
               </Button>
+              <Button variant="ghost" leftIcon={<Trash2 className="w-4 h-4" />} onClick={() => setShowDeleteModal(true)} className="text-destructive hover:text-destructive">
+                Delete
+              </Button>
             </>
           )}
         </div>
@@ -475,6 +495,42 @@ export default function SavingsAccountDetailPage() {
               <Button variant="ghost" onClick={() => setShowArchiveModal(false)} disabled={archiveMutation.isPending}>Cancel</Button>
               <Button variant="primary" onClick={() => archiveMutation.mutate()} isLoading={archiveMutation.isPending} disabled={balance > 0}>
                 Archive
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && (
+        <Dialog open onOpenChange={(open) => !open && setShowDeleteModal(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete {displayName}?</DialogTitle>
+              <DialogDescription>
+                This permanently removes the goal and all its data. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {balance > 0 ? (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Cannot delete a goal with a positive balance. Please withdraw all funds first.</span>
+              </div>
+            ) : deleteMutation.error ? (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{deleteMutation.error.message}</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-ink-soft">This goal has a zero balance and can be permanently deleted.</p>
+                <p className="text-xs text-destructive font-medium">All transaction history for this goal will be lost.</p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setShowDeleteModal(false)} disabled={deleteMutation.isPending}>Cancel</Button>
+              <Button variant="primary" onClick={() => deleteMutation.mutate()} isLoading={deleteMutation.isPending} disabled={balance > 0} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                Delete Permanently
               </Button>
             </DialogFooter>
           </DialogContent>
