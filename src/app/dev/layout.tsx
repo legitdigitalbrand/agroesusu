@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, PiggyBank, Landmark, TrendingUp, Users,
-  FileText, Shield, ScrollText, LogOut, Menu, X,
+  FileText, Shield, ScrollText, LogOut, Menu, X, Scale,
   UserSearch, CheckCircle, Wallet, Receipt, Headphones, CreditCard, Building2,
 } from "lucide-react";
 import { LogoMark, LoadingState } from "@/components/yield";
@@ -18,11 +18,13 @@ const adminNav = [
   { name: "Verification", href: "/dev/verification", icon: CheckCircle },
   { name: "Wallets", href: "/dev/wallets", icon: Wallet },
   { name: "Transactions", href: "/dev/transactions", icon: Receipt },
+  { name: "Reconciliation", href: "/dev/reconciliation", icon: Scale },
   { name: "Loan Review", href: "/dev/loans", icon: Landmark },
   { name: "Products", href: "/dev/products", icon: PiggyBank },
   { name: "Investments", href: "/dev/investments", icon: TrendingUp },
   { name: "Credit Scores", href: "/dev/credit-scores", icon: CreditCard },
   { name: "Support", href: "/dev/support", icon: Headphones },
+  { name: "Fraud Monitor", href: "/dev/fraud", icon: Shield },
   { name: "Safe Haven", href: "/dev/safe-haven", icon: Building2 },
   { name: "Cooperatives", href: "/dev/cooperatives", icon: Users },
   { name: "Audit Log", href: "/dev/audit", icon: ScrollText },
