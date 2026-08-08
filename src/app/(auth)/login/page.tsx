@@ -101,6 +101,9 @@ function LoginContent() {
         }
       }
 
+      // Confirm server has the session before navigating — prevents 401 race
+      // where dashboard queries fire before cookies are committed.
+      await fetch("/api/auth/post-login", { method: "POST" });
       router.push(isStaff ? "/dev/dashboard" : redirectPath);
       router.refresh();
     } catch (err) {

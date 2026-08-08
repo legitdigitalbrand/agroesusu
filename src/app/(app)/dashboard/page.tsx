@@ -149,6 +149,7 @@ export default function DashboardPage() {
       if (!res.ok) return { provisioned: false };
       return res.json();
     },
+    enabled: !!me,
   });
 
   const { data: creditScoreData } = useQuery<{
@@ -163,6 +164,7 @@ export default function DashboardPage() {
       if (!res.ok) return {};
       return res.json();
     },
+    enabled: !!me,
   });
 
   const { data: notifData } = useQuery<{
@@ -174,6 +176,7 @@ export default function DashboardPage() {
       if (!res.ok) return { notifications: [] };
       return res.json();
     },
+    enabled: !!me,
   });
 
   // Loans list — for upcoming repayments in right column

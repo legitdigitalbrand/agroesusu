@@ -83,11 +83,10 @@ export function useMe() {
       return res.json() as Promise<MeResponse>;
     },
     staleTime: 60 * 1000, // 1 min
-    // Don't retry on network errors — Supabase is likely unreachable (DNS failure,
-    // paused project). Retrying would compound the sign-out loop described in §2.
     retry: (failureCount, error) => {
       if (isNetworkError(error as Error)) return false;
-      return failureCount < 1;
+      return failureCount < 2;
     },
+    retryDelay: (attemptIndex) => Math.min(1000 * (attemptIndex + 1), 2000),
   });
 }
