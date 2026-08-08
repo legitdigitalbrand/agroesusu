@@ -374,7 +374,7 @@ export default function WalletPage() {
                   <div className="flex items-start gap-2 bg-parchment/40 rounded-xl p-3 border border-line/60 text-xs text-ink-soft">
                     <Info className="w-4 h-4 text-indigo shrink-0 mt-0.5" />
                     <span>
-                      Transfers to this dedicated Virtual Account are processed automatically 24/7 by Safe Haven MFB.
+                      Transfers to this dedicated Virtual Account are processed automatically 24/7.
                     </span>
                   </div>
                 </div>
@@ -403,7 +403,7 @@ export default function WalletPage() {
                       <div className="w-6 h-6 rounded-full bg-ochre text-indigo-deep flex items-center justify-center text-xs font-bold animate-pulse">
                         2
                       </div>
-                      <span className="text-xs font-medium text-ink">Provisioning Safe Haven DVA</span>
+                      <span className="text-xs font-medium text-ink">Provisioning your funding account</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-track text-ink-soft flex items-center justify-center text-xs font-bold">
@@ -584,7 +584,7 @@ export default function WalletPage() {
                   2
                 </div>
                 <p className="text-xs text-ink-soft leading-relaxed">
-                  Safe Haven MFB automatically detects incoming bank transfers instantly.
+                  Incoming bank transfers are detected and credited instantly.
                 </p>
               </div>
               <div className="flex items-start gap-3">
@@ -624,7 +624,7 @@ export default function WalletPage() {
             <ShieldCheck className="w-6 h-6 text-indigo mx-auto" />
             <p className="text-xs font-medium text-ink">Bank-Grade Protection</p>
             <p className="text-[11px] text-ink-soft leading-relaxed">
-              Secured by Safe Haven MFB — Licensed by the Central Bank of Nigeria (CBN) and insured by NDIC.
+              Secured and regulated by the Central Bank of Nigeria (CBN) and insured by NDIC.
             </p>
           </div>
         </div>

@@ -240,20 +240,26 @@ export async function middleware(request: NextRequest) {
   }
 
   // Onboarding guard: if user is on /dashboard but hasn't completed onboarding
-  // (kyc_level < 1), redirect to /onboarding to force BVN verification first.
+  // (kyc_tier is tier_0), redirect to /onboarding to force BVN verification first.
+  // NOTE: The column is kyc_tier (string enum), NOT kyc_level (number).
+  // The old code queried kyc_level which doesn't exist — Postgres errored,
+  // the catch block swallowed it, and the guard was dead code.
   if (pathname === '/dashboard') {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('kyc_level')
+        .select('kyc_tier')
         .eq('id', session.user.id)
         .maybeSingle();
 
-      if (profile && (profile.kyc_level === 0 || profile.kyc_level === null)) {
+      // If profile row doesn't exist OR kyc_tier is tier_0, redirect to onboarding
+      if (!profile || (profile as { kyc_tier?: string })?.kyc_tier === 'tier_0' || !(profile as { kyc_tier?: string })?.kyc_tier) {
         return NextResponse.redirect(new URL('/onboarding', request.url));
       }
     } catch {
-      // If we can't check, allow proceeding (don't block on DB error)
+      // If we can't check (table missing, etc.), allow proceeding
+      // but log it — this should not happen in production
+      console.error('[middleware] Failed to check kyc_tier for onboarding guard');
     }
   }
 

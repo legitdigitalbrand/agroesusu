@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
 
 // GET /api/me — returns the authenticated customer's profile, wallet, and account summaries
 // This is the bootstrap endpoint for the customer app — every screen starts here.
@@ -61,6 +62,15 @@ export async function GET() {
     if (!customer) {
       return NextResponse.json({ error: 'Customer profile not found', needsBootstrap: true }, { status: 404 });
     }
+
+    // Ensure profiles row exists (trigger may not have created it if
+    // the user signed up after migration 00002 dropped the trigger)
+    await ensureProfileRow({
+      userId: user.id,
+      fullName: customer.full_name,
+      email: customer.email,
+      phone: customer.phone,
+    });
 
     // Query profiles table for extended KYC fields
     const { data: profile } = await supabase

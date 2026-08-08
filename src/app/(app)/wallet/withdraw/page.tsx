@@ -45,7 +45,7 @@ export default function WithdrawPage() {
   const [withdrawalResult, setWithdrawalResult] = useState<WithdrawalResult | null>(null);
   const [error, setError] = useState("");
 
-  // Nigerian banks list (common ones — Safe Haven supports all Nigerian banks)
+  // Nigerian banks list
   const banks = [
     { code: "044", name: "Access Bank" },
     { code: "035", name: "ALAT by Wema" },
@@ -57,7 +57,7 @@ export default function WithdrawPage() {
     { code: "232", name: "Sterling Bank" },
     { code: "057", name: "Stanbic IBTC" },
     { code: "311", name: "Cowrywise" },
-    { code: "999", name: "Safe Haven MFB" },
+    { code: "999", name: "Agriqcap MFB" },
     { code: "030", name: "Heritage Bank" },
     { code: "082", name: "Keystone Bank" },
     { code: "221", name: "Stanbic IBTC Bank" },
@@ -403,7 +403,7 @@ export default function WithdrawPage() {
           </div>
 
           <p className="text-[11px] text-ink-soft text-center">
-            Funds will be reserved and the transfer will be submitted to Safe Haven. You'll be notified when it completes.
+            Funds will be reserved and the transfer will be submitted for processing. You'll be notified when it completes.
           </p>
 
           <div className="flex gap-3">
@@ -428,7 +428,7 @@ export default function WithdrawPage() {
           <div className="text-center">
             <h3 className="font-display font-semibold text-[18px] text-ink">Processing Withdrawal</h3>
             <p className="text-xs text-ink-soft mt-1">
-              Reserving funds and submitting transfer to Safe Haven…
+              Reserving funds and submitting transfer…
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
 
 // PATCH /api/profile/update
 // Allows customers to update their extended profile fields (Tier 2 & 3 data)
@@ -50,6 +51,13 @@ export async function PATCH(request: NextRequest) {
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 });
     }
+
+    // Ensure profiles row exists (may be missing if trigger was dropped)
+    await ensureProfileRow({
+      userId: user.id,
+      fullName: (user.user_metadata as { full_name?: string })?.full_name || 'New User',
+      email: user.email,
+    });
 
     // Update profiles table
     const { error: updateError } = await supabase

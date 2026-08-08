@@ -3,6 +3,7 @@ import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getBankingProvider } from '@/modules/integrations';
+import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
 
 // POST /api/provisioning/identity
 // Initiates BVN or NIN verification with Safe Haven.
@@ -59,9 +60,20 @@ export async function POST(request: NextRequest) {
 
       if (kycTier === 'tier_0') {
         // ── AUTO-REPAIR ──
-        // The BVN/NIN was verified previously but kyc_tier didn't persist
-        // (due to the old validate route Path 1 bug). Repair it now.
+        // The BVN/NIN was verified previously but kyc_tier didn't persist.
+        // This can happen because:
+        //   (a) the old validate route Path 1 bug skipped kyc_tier update, OR
+        //   (b) the profiles row doesn't exist at all (trigger was dropped)
+        // We handle both cases: ensure the row exists, then set kyc_tier.
         const serviceClient = createServiceClient();
+        await ensureProfileRow({
+          userId: user.id,
+          fullName: customer.full_name,
+          email: customer.email,
+          phone: customer.phone,
+          kycTier: 'tier_1',
+        });
+        // Now safe to update — row is guaranteed to exist
         await serviceClient
           .from('profiles')
           .update({ kyc_tier: 'tier_1' })

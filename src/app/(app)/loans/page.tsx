@@ -460,7 +460,7 @@ export default function LoansPage() {
       {/* ═══ TRUST FOOTER ═══ */}
       <div className="flex items-center justify-center gap-2 pt-2">
         <ShieldCheck className="w-4 h-4 text-ink-soft" strokeWidth={1.5} />
-        <p className="text-xs text-ink-soft">Powered by Safe Haven MFB — CBN-licensed &amp; NDIC-insured</p>
+        <p className="text-xs text-ink-soft">Secured by CBN-licensed &amp; NDIC-insured banking partner</p>
       </div>
     </div>
   );

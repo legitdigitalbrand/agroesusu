@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   ShieldCheck, Check, Loader2, ArrowRight, ChevronRight,
 } from "lucide-react";
+import { StatusBadge } from "@/components/yield";
 import { Card, Button } from "@/components/yield";
 import { useMe } from "@/hooks/use-me";
 import { useQueryClient } from "@tanstack/react-query";
@@ -117,10 +118,24 @@ export default function OnboardingPage() {
       updateData.kyc_tier = "tier_3";
     }
 
+    // Use upsert to handle both cases: profiles row exists (update) or
+    // doesn't exist (insert). The trigger that should auto-create profiles
+    // was dropped in migration 00002 and may not have been recreated yet.
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, phone")
+      .eq("id", user.id)
+      .maybeSingle();
+
     const { error: updateError } = await supabase
       .from("profiles")
-      .update(updateData)
-      .eq("id", user.id);
+      .upsert({
+        id: user.id,
+        full_name: existingProfile?.full_name || (user.user_metadata as { full_name?: string })?.full_name || "New User",
+        email: existingProfile?.email || user.email || null,
+        phone: existingProfile?.phone || "",
+        ...updateData,
+      }, { onConflict: "id" });
 
     if (updateError) {
       setError(updateError.message);
@@ -195,7 +210,7 @@ export default function OnboardingPage() {
         {currentTier < 1 && (
           <Card className="mb-4">
             <h2 className="font-display text-lg text-ink mb-1">Tier 1 — Identity Verification</h2>
-            <p className="text-xs text-ink-soft mb-4">Required for deposits above &#8358;50,000. Verified through Safe Haven MFB.</p>
+            <p className="text-xs text-ink-soft mb-4">Required for deposits above &#8358;50,000. Verified through our CBN-licensed banking partner.</p>
 
             {otpStep === "enter" && (
               <div className="space-y-3">
@@ -286,7 +301,7 @@ export default function OnboardingPage() {
                   }}
                   disabled={saving || (bvn.length !== 11 && nin.length !== 11)}
                 >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify with Safe Haven"}
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Identity"}
                 </Button>
                 {otpRequestTimedOut && (
                   <p className="text-xs text-clay bg-clay/5 rounded-lg px-3 py-2">
@@ -294,7 +309,7 @@ export default function OnboardingPage() {
                   </p>
                 )}
                 <p className="text-[11px] text-ink-soft leading-relaxed">
-                  Safe Haven will send a one-time password (OTP) to the phone number registered with your BVN/NIN. This verifies your identity with a CBN-licensed institution.
+                  You will receive a one-time password (OTP) at the phone number registered with your BVN/NIN to verify your identity.
                 </p>
               </div>
             )}
@@ -450,9 +465,27 @@ export default function OnboardingPage() {
             {otpStep === "verified" && (
               <div className="flex items-center gap-3 py-2">
                 <Check className="h-5 w-5 text-loam" />
-                <p className="text-sm text-loam font-medium">Identity verified! Your Safe Haven account is being set up. Redirecting...</p>
+                <p className="text-sm text-loam font-medium">Identity verified! Your funding account is being set up. Redirecting...</p>
               </div>
             )}
+          </Card>
+        )}
+
+        {/* Tier 1 Completed Summary */}
+        {currentTier >= 1 && (
+          <Card className="mb-4 bg-loam/5 border-loam/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-loam/15 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-loam" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-ink text-sm">Identity Verified</h3>
+                  <p className="text-xs text-ink-soft">BVN{me?.profile?.nin ? " & NIN" : ""} confirmed. Tier 1 complete.</p>
+                </div>
+              </div>
+              <StatusBadge status="active" size="sm">Verified</StatusBadge>
+            </div>
           </Card>
         )}
 
@@ -486,6 +519,24 @@ export default function OnboardingPage() {
               <Button onClick={() => handleSave(2)} disabled={saving || !address || !state || !occupation}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save & continue"}
               </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Tier 2 Completed Summary */}
+        {currentTier >= 2 && (
+          <Card className="mb-4 bg-loam/5 border-loam/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-loam/15 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-loam" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-ink text-sm">Address & Occupation Verified</h3>
+                  <p className="text-xs text-ink-soft">Tier 2 complete. You can now apply for loans.</p>
+                </div>
+              </div>
+              <StatusBadge status="active" size="sm">Verified</StatusBadge>
             </div>
           </Card>
         )}

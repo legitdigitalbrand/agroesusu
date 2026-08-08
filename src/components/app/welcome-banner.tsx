@@ -40,7 +40,7 @@ export function WelcomeBanner() {
           Agriqcap is your digital financial companion for farming and small business.
           Save money in flexible or fixed accounts, build credit through consistent savings,
           and borrow against your savings balance when you need funds for inputs, equipment, or expansion.
-          Every naira in your wallet is held securely with Safe Haven MFB, CBN-licensed and NDIC-insured.
+          Every naira in your wallet is held securely with our CBN-licensed, NDIC-insured banking partner.
         </p>
       </div>
     </div>

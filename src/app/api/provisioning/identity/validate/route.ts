@@ -3,6 +3,7 @@ import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getBankingProvider } from '@/modules/integrations';
+import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
 
 // POST /api/provisioning/identity/validate
 // Validates the OTP from Safe Haven identity verification.
@@ -80,9 +81,17 @@ export async function POST(request: NextRequest) {
       .update({ status: 'verified', verified_at: new Date().toISOString() })
       .eq('identity_id', identityId);
 
-    // ── ALWAYS update kyc_tier to tier_1 on successful verification ──
-    // This was the root cause of the stuck-tier bug: the old "existing account"
-    // path skipped this update entirely.
+    // ── ALWAYS set kyc_tier to tier_1 on successful verification ──
+    // Ensure the profiles row exists first (trigger may not have created it
+    // if the user signed up after migration 00002 dropped the trigger).
+    await ensureProfileRow({
+      userId: user.id,
+      fullName: customer.full_name,
+      email: customer.email,
+      phone: customer.phone,
+      kycTier: 'tier_1',
+    });
+    // Now safe to update — row is guaranteed to exist
     await serviceClient
       .from('profiles')
       .update({ kyc_tier: 'tier_1' })

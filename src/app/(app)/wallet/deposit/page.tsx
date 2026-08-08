@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Copy, Check, Share2, RefreshCw, AlertCircle, Info, ArrowLeft } from "lucide-react";
 
 // ── Wallet Funding Page ─────────────────────────────────────
-// Shows customer's Safe Haven DVA account details for bank transfer.
+// Shows customer funding account details for bank transfer.
 // Uses Agriqcap design tokens (no hardcoded colors).
 
 interface FundingAccount {
