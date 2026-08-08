@@ -683,7 +683,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-ink-soft mt-1 leading-relaxed">
                       Complete KYC verification to unlock all features including loans and higher limits.
                     </p>
-                    <Link href="/settings" className="mt-2 inline-block">
+                    <Link href="/onboarding" className="mt-2 inline-block">
                       <span className="text-xs font-semibold text-indigo hover:text-indigo-deep transition">
                         Verify now →
                       </span>

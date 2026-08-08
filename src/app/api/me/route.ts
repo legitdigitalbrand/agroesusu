@@ -164,6 +164,13 @@ export async function GET() {
       'tier_3': 3,
     };
 
+    // FIX: Derive kyc_status from kyc_tier (the actual verification state),
+    // NOT from customer.status. Previously this used customer.status === 'active'
+    // which could be 'registered', 'identity_verified', etc. — causing verified
+    // users to see "Unverified" badges across the app.
+    const kycLevel = kycLevelMap[kycTier] || 0;
+    const kycStatus = kycLevel >= 1 ? 'verified' : 'unverified';
+
     return NextResponse.json({
       type: 'customer',
       profile: {
@@ -173,8 +180,8 @@ export async function GET() {
         phone: customer.phone,
         bvn: customer.bvn,
         nin: customer.nin,
-        kyc_level: kycLevelMap[kycTier] || 0,
-        kyc_status: customer.status === 'active' ? 'verified' : 'unverified',
+        kyc_level: kycLevel,
+        kyc_status: kycStatus,
         residential_address: (profile as { residential_address?: string } | null)?.residential_address || null,
         state: (profile as { state?: string } | null)?.state || null,
         lga: (profile as { lga?: string } | null)?.lga || null,

@@ -97,19 +97,16 @@ export default function OnboardingPage() {
 
     const updateData: Record<string, unknown> = {};
 
-    if (tier >= 1) {
-      updateData.bvn = bvn || null;
-      updateData.nin = nin || null;
-      updateData.kyc_tier = "tier_1";
-      updateData.kyc_level = 1;
-    }
+    // FIX: Only update kyc_tier (the column that actually exists on profiles).
+    // The old code also set kyc_level (which doesn't exist on the table) —
+    // Supabase silently ignored it, so tier advancement never persisted for
+    // Tier 2 and Tier 3 saves.
     if (tier >= 2) {
       updateData.residential_address = address;
       updateData.state = state;
       updateData.lga = lga;
       updateData.occupation = occupation;
       updateData.kyc_tier = "tier_2";
-      updateData.kyc_level = 2;
     }
     if (tier >= 3) {
       updateData.farm_type = farmType;
@@ -118,7 +115,6 @@ export default function OnboardingPage() {
       updateData.nok_phone = nokPhone;
       updateData.nok_relationship = nokRelationship;
       updateData.kyc_tier = "tier_3";
-      updateData.kyc_level = 3;
     }
 
     const { error: updateError } = await supabase
@@ -558,7 +554,7 @@ export default function OnboardingPage() {
             Skip for now <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-      </div>
     </div>
+  </div>
   );
 }

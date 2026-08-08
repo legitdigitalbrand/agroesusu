@@ -378,7 +378,7 @@ export default function WalletPage() {
                     </span>
                   </div>
                 </div>
-              ) : fundingDetails?.message && (fundingDetails.kyc_level === "tier_1" || fundingDetails.kyc_level === "tier_2") ? (
+              ) : fundingDetails?.message && (fundingDetails.kyc_level === "tier_1" || fundingDetails.kyc_level === "tier_2" || fundingDetails.kyc_level === "tier_3") ? (
                 /* Pending Provisioning State with Timeline */
                 <div className="space-y-4 py-2">
                   <div className="bg-ochre-light/50 border border-ochre/30 rounded-2xl p-4 space-y-3">
@@ -438,11 +438,17 @@ export default function WalletPage() {
                     </p>
                   </div>
                   <div className="pt-1">
-                    <Link href="/profile">
-                      <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                        Verify Identity / Profile
+                    {fundingDetails?.kyc_level && fundingDetails.kyc_level !== "tier_0" ? (
+                      <Button variant="outline" size="sm" leftIcon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => refetchFunding()}>
+                        Check Status
                       </Button>
-                    </Link>
+                    ) : (
+                      <Link href="/onboarding">
+                        <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                          Verify Identity
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               )}

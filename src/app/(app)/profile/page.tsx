@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useMe } from "@/hooks/use-me";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardHeader,
@@ -24,10 +26,22 @@ import {
   Lock,
   CheckCircle2,
   Users,
+  Edit3,
+  Save,
+  X,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDate, initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+const NIGERIAN_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe",
+  "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
+  "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
+  "Taraba", "Yobe", "Zamfara",
+];
 
 const kycLevelLabels: Record<number, string> = {
   0: "Unverified",
@@ -46,6 +60,13 @@ function maskNumber(val?: string | null): string {
 export default function ProfilePage() {
   const { data: me, isLoading, error, refetch } = useMe();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Edit form state
+  const [formData, setFormData] = useState<Record<string, string>>({});
 
   if (isLoading) return <LoadingState message="Loading profile…" />;
   if (error || !me) return <ErrorState message="Couldn't load profile" onRetry={() => refetch()} />;
@@ -60,12 +81,89 @@ export default function ProfilePage() {
     router.refresh();
   };
 
+  const startEditing = () => {
+    setFormData({
+      occupation: profile.occupation || "",
+      residential_address: profile.residential_address || "",
+      state: profile.state || "",
+      lga: profile.lga || "",
+      farm_type: profile.farm_type || "",
+      primary_produce: profile.primary_produce || "",
+      nok_name: profile.nok_name || "",
+      nok_phone: profile.nok_phone || "",
+      nok_relationship: profile.nok_relationship || "",
+    });
+    setSaveError(null);
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+    setSaveError(null);
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/profile/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(data.error || "Failed to update profile");
+        setSaving(false);
+        return;
+      }
+      // Invalidate queries so all screens refetch updated profile
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-funding-details"] });
+      setEditing(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      if (msg.includes("Failed to fetch") || msg.includes("ERR_")) {
+        setSaveError("Unable to connect. Check your internet and try again.");
+      } else {
+        setSaveError(msg);
+      }
+    }
+    setSaving(false);
+  };
+
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
       <ScreenHeader
         title="Profile & Account"
         subtitle="Manage your personal details, verification, and security settings"
+        action={
+          !editing ? (
+            <Button variant="outline" size="sm" leftIcon={<Edit3 className="h-4 w-4" />} onClick={startEditing}>
+              Edit Profile
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" leftIcon={<X className="h-4 w-4" />} onClick={cancelEditing} disabled={saving}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="sm" leftIcon={saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} onClick={saveProfile} disabled={saving}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          )
+        }
       />
+
+      {saveError && (
+        <div className="text-sm text-clay bg-clay/5 rounded-lg px-4 py-3">
+          {saveError}
+        </div>
+      )}
 
       {/* 1. Profile Header Card */}
       <Card variant="dark" className="relative overflow-hidden text-center p-6 sm:p-8">
@@ -84,7 +182,7 @@ export default function ProfilePage() {
           </p>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <StatusBadge status={profile.kyc_status || "pending"} />
+            <StatusBadge status={profile.kyc_status || "unverified"} />
             <span className="text-xs text-parchment/80 font-medium bg-indigo-deep/60 px-3 py-1 rounded-full border border-indigo-light/20">
               Member since {formatDate(profile.created_at)}
             </span>
@@ -92,7 +190,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* 2. Personal Information */}
+      {/* 2. Personal Information (read-only: name, email, phone, BVN, NIN) */}
       <Card>
         <CardHeader className="flex flex-row items-center gap-2.5 pb-2 border-b border-line/60">
           <div className="p-2 rounded-lg bg-indigo/10 text-indigo">
@@ -110,9 +208,31 @@ export default function ProfilePage() {
             <InfoField label="Phone Number" value={profile.phone} />
             <InfoField label="BVN" value={maskNumber(profile.bvn)} />
             <InfoField label="NIN" value={maskNumber(profile.nin)} />
-            <InfoField label="Occupation" value={profile.occupation} />
-            <InfoField label="Farm Type" value={profile.farm_type} />
-            <InfoField label="Primary Produce" value={profile.primary_produce} />
+            {/* Occupation is editable */}
+            {editing ? (
+              <EditableField label="Occupation" value={formData.occupation || ""} onChange={(v) => updateField("occupation", v)} placeholder="Farmer, Trader, etc." />
+            ) : (
+              <InfoField label="Occupation" value={profile.occupation} />
+            )}
+            {editing ? (
+              <EditableSelectField label="Farm Type" value={formData.farm_type || ""} onChange={(v) => updateField("farm_type", v)} options={[
+                { value: "", label: "Select type" },
+                { value: "crop_farming", label: "Crop Farming" },
+                { value: "livestock", label: "Livestock" },
+                { value: "poultry", label: "Poultry" },
+                { value: "fishery", label: "Fishery" },
+                { value: "agro_processing", label: "Agro-Processing" },
+                { value: "agro_trading", label: "Agro-Trading" },
+                { value: "other", label: "Other" },
+              ]} />
+            ) : (
+              <InfoField label="Farm Type" value={profile.farm_type} />
+            )}
+            {editing ? (
+              <EditableField label="Primary Produce" value={formData.primary_produce || ""} onChange={(v) => updateField("primary_produce", v)} placeholder="Rice, Maize, Cassava, etc." />
+            ) : (
+              <InfoField label="Primary Produce" value={profile.primary_produce} />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -130,9 +250,24 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <InfoField label="Residential Address" value={profile.residential_address} fullWidth />
-            <InfoField label="State" value={profile.state} />
-            <InfoField label="LGA" value={profile.lga} />
+            {editing ? (
+              <EditableField label="Residential Address" value={formData.residential_address || ""} onChange={(v) => updateField("residential_address", v)} placeholder="123 Farm Road, Oyo" fullWidth />
+            ) : (
+              <InfoField label="Residential Address" value={profile.residential_address} fullWidth />
+            )}
+            {editing ? (
+              <EditableSelectField label="State" value={formData.state || ""} onChange={(v) => updateField("state", v)} options={[
+                { value: "", label: "Select state" },
+                ...NIGERIAN_STATES.map(s => ({ value: s, label: s })),
+              ]} />
+            ) : (
+              <InfoField label="State" value={profile.state} />
+            )}
+            {editing ? (
+              <EditableField label="LGA" value={formData.lga || ""} onChange={(v) => updateField("lga", v)} placeholder="LGA" />
+            ) : (
+              <InfoField label="LGA" value={profile.lga} />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -150,9 +285,28 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <InfoField label="NOK Name" value={profile.nok_name} />
-            <InfoField label="NOK Phone" value={profile.nok_phone} />
-            <InfoField label="NOK Relationship" value={profile.nok_relationship} fullWidth />
+            {editing ? (
+              <EditableField label="NOK Name" value={formData.nok_name || ""} onChange={(v) => updateField("nok_name", v)} placeholder="Next of kin name" />
+            ) : (
+              <InfoField label="NOK Name" value={profile.nok_name} />
+            )}
+            {editing ? (
+              <EditableField label="NOK Phone" value={formData.nok_phone || ""} onChange={(v) => updateField("nok_phone", v)} placeholder="08012345678" />
+            ) : (
+              <InfoField label="NOK Phone" value={profile.nok_phone} />
+            )}
+            {editing ? (
+              <EditableSelectField label="NOK Relationship" value={formData.nok_relationship || ""} onChange={(v) => updateField("nok_relationship", v)} options={[
+                { value: "", label: "Select" },
+                { value: "spouse", label: "Spouse" },
+                { value: "parent", label: "Parent" },
+                { value: "sibling", label: "Sibling" },
+                { value: "child", label: "Child" },
+                { value: "other", label: "Other" },
+              ]} fullWidth />
+            ) : (
+              <InfoField label="NOK Relationship" value={profile.nok_relationship} fullWidth />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -169,7 +323,7 @@ export default function ProfilePage() {
               <CardDescription>Identity verification level and compliance</CardDescription>
             </div>
           </div>
-          <StatusBadge status={profile.kyc_status || "pending"} />
+          <StatusBadge status={profile.kyc_status || "unverified"} />
         </CardHeader>
         <CardContent className="pt-5 space-y-5">
           <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl bg-parchment/40 border border-line/60">
@@ -273,6 +427,8 @@ export default function ProfilePage() {
   );
 }
 
+// ─── Sub-components ───
+
 function InfoField({
   label,
   value,
@@ -293,6 +449,66 @@ function InfoField({
       <span className={cn("text-sm font-semibold break-words block", isProvided ? "text-ink" : "text-ink-soft/60 italic font-normal")}>
         {displayValue}
       </span>
+    </div>
+  );
+}
+
+function EditableField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  fullWidth = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div className={cn("flex flex-col justify-center", fullWidth && "sm:col-span-2")}>
+      <label className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft mb-1 block">
+        {label}
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="ys-input"
+      />
+    </div>
+  );
+}
+
+function EditableSelectField({
+  label,
+  value,
+  onChange,
+  options,
+  fullWidth = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  fullWidth?: boolean;
+}) {
+  return (
+    <div className={cn("flex flex-col justify-center", fullWidth && "sm:col-span-2")}>
+      <label className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft mb-1 block">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="ys-input"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
     </div>
   );
 }
