@@ -17,49 +17,54 @@ export async function GET() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Check if this is a staff user — staff don't have customer records
+    // Check if this is a staff user (for /dev access)
     const { data: isStaff } = await supabase.rpc('is_staff');
-
-    if (isStaff) {
-      // Return staff profile instead
-      const { data: staff } = await supabase
-        .from('staff_users')
-        .select('id, staff_number, full_name, email, phone, department, employment_status, is_active')
-        .eq('auth_id', user.id)
-        .maybeSingle();
-
-      if (!staff) return NextResponse.json({ error: 'Staff profile not found' }, { status: 404 });
-
-      // Get role assignments
-      const { data: roles } = await supabase
-        .from('staff_role_assignments')
-        .select('roles(id, name)')
-        .eq('staff_id', staff.id)
-        .eq('status', 'active')
-        .order('assigned_at', { ascending: false });
-
-      const roleNames = ((roles || []) as unknown[]).map((r) => {
-        const roleData = (r as { roles: { name: string }[] }).roles;
-        return Array.isArray(roleData) ? roleData[0]?.name : (roleData as { name: string })?.name;
-      }).filter(Boolean);
-
-      return NextResponse.json({
-        type: 'staff',
-        profile: staff,
-        roles: roleNames,
-      });
-    }
 
     // ─── Customer profile ───
     // Query customers table for domain fields
+    // Check for customer record FIRST — a user can be BOTH staff AND customer
+    // (e.g., Chinedu is super_admin but also has a customer account).
+    // If a customer record exists, return customer data with staff info as
+    // an additional field so both the customer app and /dev panel work.
     const { data: customer } = await supabase
       .from('customers')
       .select('id, customer_number, full_name, email, phone, status, bvn, nin, created_at')
       .eq('auth_id', user.id)
       .maybeSingle();
 
-    // If no customer record exists yet, the user needs to be bootstrapped
+    // If no customer record exists, check if they're staff-only
     if (!customer) {
+      if (isStaff) {
+        // Staff-only user (no customer record) — return staff profile
+        const { data: staff } = await supabase
+          .from('staff_users')
+          .select('id, staff_number, full_name, email, phone, department, employment_status, is_active')
+          .eq('auth_id', user.id)
+          .maybeSingle();
+
+        if (!staff) return NextResponse.json({ error: 'Staff profile not found' }, { status: 404 });
+
+        // Get role assignments
+        const { data: roles } = await supabase
+          .from('staff_role_assignments')
+          .select('roles(id, name)')
+          .eq('staff_id', staff.id)
+          .eq('status', 'active')
+          .order('assigned_at', { ascending: false });
+
+        const roleNames = ((roles || []) as unknown[]).map((r) => {
+          const roleData = (r as { roles: { name: string }[] }).roles;
+          return Array.isArray(roleData) ? roleData[0]?.name : (roleData as { name: string })?.name;
+        }).filter(Boolean);
+
+        return NextResponse.json({
+          type: 'staff',
+          profile: staff,
+          roles: roleNames,
+        });
+      }
+
+      // Not staff and not a customer — needs bootstrap
       return NextResponse.json({ error: 'Customer profile not found', needsBootstrap: true }, { status: 404 });
     }
 
@@ -181,8 +186,35 @@ export async function GET() {
     const kycLevel = kycLevelMap[kycTier] || 0;
     const kycStatus = kycLevel >= 1 ? 'verified' : 'unverified';
 
+    // If user is also staff, include staff info for /dev access
+    let staffInfo: { staff_number: string; department: string } | null = null;
+    let staffRoles: string[] = [];
+    if (isStaff) {
+      const { data: staff } = await supabase
+        .from('staff_users')
+        .select('id, staff_number, department')
+        .eq('auth_id', user.id)
+        .maybeSingle();
+      if (staff) {
+        staffInfo = { staff_number: staff.staff_number, department: staff.department };
+        const { data: roles } = await supabase
+          .from('staff_role_assignments')
+          .select('roles(id, name)')
+          .eq('staff_id', staff.id)
+          .eq('status', 'active')
+          .order('assigned_at', { ascending: false });
+        staffRoles = ((roles || []) as unknown[]).map((r) => {
+          const roleData = (r as { roles: { name: string }[] }).roles;
+          return Array.isArray(roleData) ? roleData[0]?.name : (roleData as { name: string })?.name;
+        }).filter(Boolean);
+      }
+    }
+
     return NextResponse.json({
       type: 'customer',
+      is_staff: isStaff || false,
+      staff_info: staffInfo,
+      roles: staffRoles,
       profile: {
         id: customer.id,
         full_name: customer.full_name,
