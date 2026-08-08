@@ -31,29 +31,37 @@ export function formatNumber(amount: number, decimals = 2): string {
   }).format(amount);
 }
 
-export function formatDate(date: string | Date, opts?: Intl.DateTimeFormatOptions): string {
+export function formatDate(date: string | Date | null | undefined, opts?: Intl.DateTimeFormatOptions): string {
+  if (!date) return "—";
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime())) return "—";
   return new Intl.DateTimeFormat("en-NG", {
     year: "numeric",
     month: "short",
     day: "numeric",
     ...opts,
-  }).format(new Date(date));
+  }).format(parsed);
 }
 
-export function formatDateTime(date: string | Date): string {
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return "—";
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime())) return "—";
   return new Intl.DateTimeFormat("en-NG", {
     year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(date));
+  }).format(parsed);
 }
 
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date | null | undefined): string {
+  if (!date) return "—";
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime())) return "—";
   const now = new Date();
-  const past = new Date(date);
-  const diffMs = now.getTime() - past.getTime();
+  const diffMs = now.getTime() - parsed.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
