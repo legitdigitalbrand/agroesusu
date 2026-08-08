@@ -100,15 +100,21 @@ export async function POST(request: NextRequest) {
     // Check if customer already has a Safe Haven sub-account
     const { data: existingAccount } = await serviceClient
       .from('safe_haven_accounts')
-      .select('id, account_number')
+      .select('id, account_number, account_name, bank_name, bank_code, created_at')
       .eq('customer_id', customer.id)
       .maybeSingle();
 
     if (existingAccount) {
-      // Already has a sub-account — update wallet with account number
+      // Already has a sub-account — update wallet with full DVA details
       await serviceClient
         .from('wallets')
-        .update({ account_number: existingAccount.account_number })
+        .update({
+          account_number: existingAccount.account_number,
+          account_name: existingAccount.account_name,
+          bank_name: existingAccount.bank_name,
+          bank_code: existingAccount.bank_code,
+          dva_provisioned_at: existingAccount.created_at || new Date().toISOString(),
+        })
         .eq('customer_id', customer.id)
         .eq('wallet_type', 'primary');
 
@@ -152,7 +158,13 @@ export async function POST(request: NextRequest) {
 
       await serviceClient
         .from('wallets')
-        .update({ account_number: subAccount.accountNumber })
+        .update({
+          account_number: subAccount.accountNumber,
+          account_name: subAccount.accountName,
+          bank_name: subAccount.bankName,
+          bank_code: subAccount.bankCode,
+          dva_provisioned_at: new Date().toISOString(),
+        })
         .eq('customer_id', customer.id)
         .eq('wallet_type', 'primary');
 
