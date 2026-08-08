@@ -6,14 +6,14 @@ import { getBankingProvider } from '@/modules/integrations';
 
 // POST /api/provisioning/identity/validate
 // Validates the OTP from Safe Haven identity verification.
-// On success, stores the verified BVN/NIN and creates a Safe Haven sub-account (DVA).
+// On success, stores the verified BVN/NIN, updates kyc_tier, and creates
+// (or links) a Safe Haven sub-account (DVA).
 //
-// Request body:
-//   { identityId: string, otp: string, type: "BVN" | "NIN", number: string }
-//
-// Response:
-//   { verified: true, accountNumber: string, accountName: string, bankName: string }
-//   or { error: string } on failure
+// BUG FIX: The previous "existing account" path (Path 1) updated the wallet
+// and customer.status but NEVER updated profiles.kyc_tier. This caused users
+// who already had a safe_haven_accounts record to stay at tier_0 forever.
+// Now ALL paths update kyc_tier to tier_1.
+
 export async function POST(request: NextRequest) {
   const limited = applyRateLimit(request, "/api/provisioning/validate", RATE_LIMITS.PROVISIONING);
   if (limited) return limited;
@@ -25,8 +25,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    // TEMPORARY: log raw body for 400 diagnosis (remove after fix confirmed)
-    console.log('[API:provisioning-validate] Raw body:', JSON.stringify(body));
     const { identityId, otp, type, number } = body;
 
     const missing: string[] = [];
@@ -35,14 +33,12 @@ export async function POST(request: NextRequest) {
     if (!type) missing.push('type');
     if (!number) missing.push('number');
     if (missing.length > 0) {
-      console.log('[API:provisioning-validate] Missing fields:', missing.join(', '));
       return NextResponse.json({ 
         error: `Missing required fields: ${missing.join(', ')}`,
         missing 
       }, { status: 400 });
     }
 
-    // Get customer
     const { data: customer } = await supabase
       .from('customers')
       .select('id, full_name, email, phone, bvn, nin')
@@ -55,7 +51,6 @@ export async function POST(request: NextRequest) {
 
     const provider = getBankingProvider();
 
-    // Validate the identity verification
     const validationResult = await provider.validateIdentityVerification({
       identityId,
       otp,
@@ -84,6 +79,14 @@ export async function POST(request: NextRequest) {
       .from('safe_haven_identity_verifications')
       .update({ status: 'verified', verified_at: new Date().toISOString() })
       .eq('identity_id', identityId);
+
+    // ── ALWAYS update kyc_tier to tier_1 on successful verification ──
+    // This was the root cause of the stuck-tier bug: the old "existing account"
+    // path skipped this update entirely.
+    await serviceClient
+      .from('profiles')
+      .update({ kyc_tier: 'tier_1' })
+      .eq('id', user.id);
 
     // Check if customer already has a Safe Haven sub-account
     const { data: existingAccount } = await serviceClient
@@ -127,7 +130,6 @@ export async function POST(request: NextRequest) {
         customerName: customer.full_name || `${firstName} ${lastName}`,
       });
 
-      // Store the Safe Haven account
       await serviceClient.from('safe_haven_accounts').insert({
         customer_id: customer.id,
         safe_haven_account_id: subAccount.accountId,
@@ -139,24 +141,16 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       });
 
-      // Update wallet with the Safe Haven account number
       await serviceClient
         .from('wallets')
         .update({ account_number: subAccount.accountNumber })
         .eq('customer_id', customer.id)
         .eq('wallet_type', 'primary');
 
-      // Update customer status
       await serviceClient
         .from('customers')
         .update({ status: 'active' })
         .eq('id', customer.id);
-
-      // Update KYC tier
-      await serviceClient
-        .from('profiles')
-        .update({ kyc_tier: 'tier_1' })
-        .eq('id', user.id);
 
       return NextResponse.json({
         verified: true,
@@ -168,14 +162,7 @@ export async function POST(request: NextRequest) {
 
     } catch (subAccountError) {
       // Identity verification succeeded but sub-account creation failed
-      // This is retryable — customer can retry later
       console.error('[API:provisioning-validate] Sub-account creation failed:', subAccountError);
-
-      // Still mark identity as verified, just no sub-account yet
-      await serviceClient
-        .from('profiles')
-        .update({ kyc_tier: 'tier_1' })
-        .eq('id', user.id);
 
       return NextResponse.json({
         verified: true,

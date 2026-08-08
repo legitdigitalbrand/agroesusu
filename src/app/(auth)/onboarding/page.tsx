@@ -253,6 +253,21 @@ export default function OnboardingPage() {
                         setSaving(false);
                         return;
                       }
+                      // Handle auto-repair: BVN/NIN was already verified but
+                      // kyc_tier was stuck at tier_0. The API fixed it — refresh
+                      // and redirect to dashboard so the user sees the updated state.
+                      if (data.status === "already_verified_repaired" || data.repaired) {
+                        setSuccess(true);
+                        queryClient.invalidateQueries({ queryKey: ["me"] });
+                        queryClient.invalidateQueries({ queryKey: ["wallet-funding-details"] });
+                        queryClient.invalidateQueries({ queryKey: ["verification-tier"] });
+                        queryClient.invalidateQueries({ queryKey: ["loan-eligibility"] });
+                        setTimeout(() => {
+                          router.push("/dashboard");
+                          router.refresh();
+                        }, 1500);
+                        return;
+                      }
                       setIdentityId(data.identityId);
                       setVerifyType(type);
                       setOtpMessage(data.message || `OTP sent to the phone number registered with your ${type}`);
