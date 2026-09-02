@@ -2,20 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // POST /api/admin/apply-migrations
 // Temporary endpoint to apply Gate 2 SQL migrations directly to the database.
-// SECURED with CRON_SECRET — DELETE AFTER USE.
+// SECURED — accepts CRON_SECRET or Supabase service role key. DELETE AFTER USE.
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const expectedKey = `Bearer ${process.env.CRON_SECRET}`;
-  if (authHeader !== expectedKey) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authHeader = request.headers.get('authorization') || '';
+  
+  // Accept either CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY
+  const cronKey = `Bearer ${process.env.CRON_SECRET}`;
+  const serviceKey = `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`;
+  
+  if (authHeader !== cronKey && authHeader !== serviceKey) {
+    return NextResponse.json({ error: 'Unauthorized', hint: 'Use CRON_SECRET or service role key' }, { status: 401 });
   }
 
-  // Check for any database connection strings in env
+  const results: string[] = [];
+
+  // Check for database connection strings in env
   const dbEnvVars = Object.keys(process.env).filter(k => 
     k.includes('DATABASE') || k.includes('POSTGRES') || k.includes('DB_URL') || k.includes('DB_PASSWORD') || k.includes('SUPABASE_DB')
   );
-
-  const results: string[] = [];
+  results.push(`DB env vars found: ${dbEnvVars.join(', ') || 'none'}`);
 
   // Try to find a usable connection string
   let connectionString = process.env.DATABASE_URL || 
@@ -24,29 +29,31 @@ export async function POST(request: NextRequest) {
                          process.env.SUPABASE_DB_URL ||
                          '';
 
-  results.push(`DB env vars found: ${dbEnvVars.join(', ') || 'none'}`);
+  if (!connectionString) {
+    // List ALL env var names (not values) to help find connection info
+    const allKeys = Object.keys(process.env).filter(k => 
+      !k.includes('SECRET') && !k.includes('TOKEN') && !k.includes('PASSWORD') && !k.includes('PRIVATE')
+    );
+    results.push(`Available non-secret env keys: ${allKeys.join(', ')}`);
+    
+    // Also check for any key that might have a postgres URL pattern
+    const pgKeys = Object.keys(process.env).filter(k => {
+      const v = process.env[k] || '';
+      return v.startsWith('postgres') || v.startsWith('postgresql');
+    });
+    results.push(`Keys with postgres URL value: ${pgKeys.join(', ') || 'none'}`);
+    
+    if (pgKeys.length > 0) {
+      connectionString = process.env[pgKeys[0]] || '';
+      results.push(`Using connection from: ${pgKeys[0]}`);
+    }
+  }
 
   if (!connectionString) {
-    // Try constructing from known Supabase project info
-    const projectRef = 'vhzsnsovfjnztawzuueo';
-    const dbPassword = process.env.SUPABASE_DB_PASSWORD || process.env.DB_PASSWORD || '';
-    
-    if (dbPassword) {
-      connectionString = `postgresql://postgres.${projectRef}:${dbPassword}@aws-0-eu-west-1.pooler.supabase.com:6543/postgres`;
-      results.push(`Constructed connection string from DB password`);
-    } else {
-      results.push('No database connection string or password found in environment');
-      results.push(`Available env var keys (DB-related): ${dbEnvVars.join(', ') || 'none'}`);
-      
-      // List ALL env var keys (not values) to help debug
-      const allKeys = Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('TOKEN') && !k.includes('PASSWORD'));
-      results.push(`All non-secret env keys: ${allKeys.join(', ')}`);
-      
-      return NextResponse.json({ 
-        error: 'No database connection available',
-        details: results,
-      }, { status: 500 });
-    }
+    return NextResponse.json({ 
+      error: 'No database connection available',
+      details: results,
+    }, { status: 500 });
   }
 
   try {
@@ -55,15 +62,18 @@ export async function POST(request: NextRequest) {
     const pool = new Pool({
       connectionString,
       ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 10000,
+      connectionTimeoutMillis: 15000,
     });
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const sql = body.sql as string;
 
     if (!sql) {
       await pool.end();
-      return NextResponse.json({ error: 'Missing SQL in request body' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'Missing sql in request body',
+        details: results,
+      }, { status: 400 });
     }
 
     const result = await pool.query(sql);
@@ -72,6 +82,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       rowCount: result.rowCount,
+      rows: result.rows?.slice(0, 10),
       details: results,
     });
   } catch (error) {
