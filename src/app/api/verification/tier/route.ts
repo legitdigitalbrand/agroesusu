@@ -12,12 +12,12 @@ import { createServiceClient } from '@/lib/supabase/service';
 //   { tier: 1|2|3, data: { bvn?, nin?, address?, state?, lga?, occupation?, farm_type?, ... } }
 //
 // Tier 0: Account created (automatic)
-// Tier 1: BVN + NIN provided (local; Safe Haven verification via /api/provisioning/identity)
+// Tier 1: BVN + NIN verified via Safe Haven OTP — NOT through this route
 // Tier 2: Address + occupation + LGA (enhanced KYC)
 // Tier 3: Farm/business details + next of kin (full KYC)
 
 const TIER_FIELDS: Record<number, string[]> = {
-  1: ['bvn', 'nin'],
+  1: [], // BVN/NIN handled by Safe Haven OTP verification only
   2: ['residential_address', 'state', 'lga', 'occupation'],
   3: ['farm_type', 'primary_produce', 'nok_name', 'nok_phone', 'nok_relationship'],
 };
@@ -122,10 +122,10 @@ export async function POST(request: NextRequest) {
     const profileUpdate: Record<string, unknown> = {
       kyc_tier: TIER_LABELS[tier],
     };
-    if (tier >= 1) {
-      profileUpdate.bvn = kycData.bvn || null;
-      profileUpdate.nin = kycData.nin || null;
-    }
+    // SECURITY: BVN/NIN must ONLY be set via Safe Haven OTP verification
+    // (/api/provisioning/identity + /api/provisioning/identity/validate).
+    // This route handles Tier 2 (address) and Tier 3 (farm details) only.
+    // Tier 1 is achieved automatically after successful Safe Haven identity verification.
     if (tier >= 2) {
       profileUpdate.residential_address = kycData.residential_address;
       profileUpdate.state = kycData.state;

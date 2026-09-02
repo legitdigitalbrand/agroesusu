@@ -106,7 +106,7 @@ export class SafeHavenClient {
       });
 
       if (!response.ok) {
-        throw new Error(`Safe Haven auth failed: ${response.status} ${JSON.stringify(responseBody)}`);
+        throw new Error(`Safe Haven authentication failed (HTTP ${response.status}). Please check credentials.`);
       }
 
       const expiresIn = responseBody.expires_in || 3600;
@@ -260,7 +260,7 @@ export class SafeHavenClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Safe Haven API error: ${response.status} ${JSON.stringify(responseData)}`);
+      throw new Error(`Safe Haven API request failed (HTTP ${response.status}). Please try again.`);
     }
 
     return { status: response.status, data: responseData };
@@ -282,6 +282,31 @@ export class SafeHavenClient {
     return sanitized;
   }
 
+  /**
+   * Scrub sensitive PII (BVN, NIN) from request/response bodies before logging.
+   * Prevents identity numbers from being stored in the safe_haven_api_calls audit table.
+   */
+  private sanitizeLogBody(body: unknown): unknown {
+    if (!body || typeof body !== 'object') return body;
+    try {
+      const sanitized = JSON.parse(JSON.stringify(body));
+      const sensitiveKeys = ['bvn', 'nin', 'number', 'identityNumber', 'identity_number'];
+      const scrub = (obj: Record<string, unknown>) => {
+        for (const key of Object.keys(obj)) {
+          if (sensitiveKeys.includes(key.toLowerCase()) && typeof obj[key] === 'string') {
+            obj[key] = '[REDACTED]';
+          } else if (obj[key] && typeof obj[key] === 'object') {
+            scrub(obj[key] as Record<string, unknown>);
+          }
+        }
+      };
+      scrub(sanitized as Record<string, unknown>);
+      return sanitized;
+    } catch {
+      return '[UNPARSEABLE]';
+    }
+  }
+
   private async logApiCall(entry: {
     callType: string;
     request: LoggedRequest;
@@ -297,9 +322,9 @@ export class SafeHavenClient {
         request_method: entry.request.method,
         request_url: entry.request.url,
         request_headers: entry.request.headers,
-        request_body: entry.request.body,
+        request_body: this.sanitizeLogBody(entry.request.body),
         response_status: entry.response.status,
-        response_body: entry.response.body,
+        response_body: this.sanitizeLogBody(entry.response.body),
         response_headers: entry.response.headers,
         status: entry.status,
         error_message: entry.errorMessage,
