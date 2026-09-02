@@ -13,31 +13,32 @@ export interface SafeHavenConfig {
 /**
  * Factory: returns the appropriate banking provider based on environment.
  * 
- * - SAFE_HAVEN_ENV=mock (or no credentials) → MockBankingProvider
- * - SAFE_HAVEN_ENV=sandbox + credentials → SafeHavenAdapter (sandbox URL)
- * - SAFE_HAVEN_ENV=production + credentials → SafeHavenAdapter (production URL)
+ * Uses the SAME env var names as auth.ts (SAFEHAVEN_* without underscore):
+ * - SAFEHAVEN_CLIENT_ID — OAuth client ID
+ * - SAFEHAVEN_PRIVATE_KEY — RSA private key for JWT signing
+ * - SAFEHAVEN_API_URL — base API URL (production or sandbox)
+ * - SAFEHAVEN_IBS_CLIENT_ID — IBS client ID (optional, also returned from auth)
+ * - SAFE_HAVEN_WEBHOOK_SECRET — webhook verification secret
+ * 
+ * Falls back to MockBankingProvider if SAFEHAVEN_CLIENT_ID is not set.
  */
 export function getBankingProvider(): IBankingProvider {
-  const env = process.env.SAFE_HAVEN_ENV || 'mock';
-  const hasCredentials = process.env.SAFE_HAVEN_API_KEY && process.env.SAFE_HAVEN_SECRET_KEY;
+  const clientId = process.env.SAFEHAVEN_CLIENT_ID;
+  const privateKey = process.env.SAFEHAVEN_PRIVATE_KEY;
+  const apiUrl = process.env.SAFEHAVEN_API_URL || 'https://api.sandbox.safehavenmfb.com';
 
-  if (env === 'mock' || !hasCredentials) {
+  if (!clientId || !privateKey) {
     console.warn(
-      `[Integrations] Using mock banking provider. Set SAFE_HAVEN_ENV=sandbox and SAFE_HAVEN_API_KEY/SECRET_KEY for live mode.`
+      '[Integrations] Using mock banking provider. Set SAFEHAVEN_CLIENT_ID and SAFEHAVEN_PRIVATE_KEY for live mode.'
     );
     return new MockBankingProvider();
   }
 
-  const baseUrl =
-    env === 'sandbox'
-      ? 'https://api.sandbox.safehavenmfb.com'
-      : 'https://api.safehavenmfb.com';
-
   return new SafeHavenAdapter({
-    baseUrl,
-    clientId: process.env.SAFE_HAVEN_API_KEY!,
-    clientSecret: process.env.SAFE_HAVEN_SECRET_KEY!,
+    baseUrl: apiUrl,
+    clientId,
+    clientSecret: privateKey,
     webhookSecret: process.env.SAFE_HAVEN_WEBHOOK_SECRET || '',
-    ibsClientId: process.env.SAFE_HAVEN_IBS_CLIENT_ID,
+    ibsClientId: process.env.SAFEHAVEN_IBS_CLIENT_ID,
   });
 }
