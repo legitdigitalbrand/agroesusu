@@ -83,7 +83,7 @@ export async function PATCH(
   } catch (error) {
     console.error('[API:savings-pot-update] Error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'An error occurred. Please try again or contact support.' },
       { status: 500 }
     );
   }
@@ -170,7 +170,7 @@ export async function DELETE(
   } catch (error) {
     console.error('[API:savings-pot-delete] Error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'An error occurred. Please try again or contact support.' },
       { status: 500 }
     );
   }

@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
       );
     }
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Identity verification failed' },
+      { error: 'Identity verification failed. Please try again or contact support.' },
       { status: 500 }
     );
   }

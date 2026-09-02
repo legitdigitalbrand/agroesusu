@@ -146,6 +146,8 @@ function mapEventType(shEventType: string): string {
     'verification': 'verification_completed',
     'transfer.received': 'transfer_received',
     'account.credit': 'account_credit',
+    'account.debit': 'account_debit',
+    'virtualaccount.transfer': 'virtual_account_transfer',
   };
   return map[shEventType.toLowerCase()] || 'unknown';
 }
@@ -380,6 +382,17 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', eventRecord.id);
       }
+    } else if (eventType === 'account_debit') {
+      // ── OUTBOUND DEBIT (informational) ─────────────────────
+      // Debit events are informational — outbound transfers are already
+      // reconciled via transfer_completed/transfer_failed events.
+      // We log the debit for audit trail completeness and mark as processed.
+      const debitData = (payload.data || payload) as Record<string, unknown>;
+      console.log(`[Webhook] Outbound debit: ₦${debitData.amount || 0} from ${debitData.accountNumber || 'unknown'}`);
+      await supabase
+        .from('inbound_events')
+        .update({ processing_status: 'processed', processed_at: new Date().toISOString() })
+        .eq('id', eventRecord.id);
     } else {
       // ── NON-FINANCIAL EVENTS ────────────────────────────────
       await supabase

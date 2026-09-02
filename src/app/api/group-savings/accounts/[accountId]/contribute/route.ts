@@ -19,6 +19,6 @@ export async function POST(
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 400 });
     return NextResponse.json({ success: true, transaction_reference: result.transaction_reference }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'An error occurred. Please try again or contact support.' }, { status: 500 });
   }
 }

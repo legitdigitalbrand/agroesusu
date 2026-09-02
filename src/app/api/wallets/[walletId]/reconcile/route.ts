@@ -42,7 +42,7 @@ export async function POST(
       { 
         wallet_id: context.params.walletId,
         status: 'error',
-        error: error instanceof Error ? error.message : 'Internal server error',
+        error: 'An error occurred. Please try again or contact support.',
       },
       { status: 500 }
     );

@@ -36,6 +36,6 @@ export async function POST(
     );
     return NextResponse.json({ vote }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 400 });
+    return NextResponse.json({ error: 'An error occurred. Please try again or contact support.' }, { status: 400 });
   }
 }

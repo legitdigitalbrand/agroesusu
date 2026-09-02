@@ -25,6 +25,6 @@ export async function POST(
     const membership = await joinGroupSavings(context.params.accountId, customer.id, coopMembership?.id);
     return NextResponse.json({ membership }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 400 });
+    return NextResponse.json({ error: 'An error occurred. Please try again or contact support.' }, { status: 400 });
   }
 }

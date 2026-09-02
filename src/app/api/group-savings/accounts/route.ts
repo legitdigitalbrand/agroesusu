@@ -15,6 +15,6 @@ export async function POST(request: NextRequest) {
     const account = await createGroupSavingsAccount(product_id, name, cooperative_id, description);
     return NextResponse.json({ account }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 400 });
+    return NextResponse.json({ error: 'An error occurred. Please try again or contact support.' }, { status: 400 });
   }
 }

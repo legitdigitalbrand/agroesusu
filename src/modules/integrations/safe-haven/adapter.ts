@@ -369,7 +369,8 @@ export class SafeHavenAdapter implements IBankingProvider {
   private getSupabase(): any {
     if (!this.supabase) {
       const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!key) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required — anon key fallback removed for security');
       
       if (!url || !key) {
         throw new IntegrationError(

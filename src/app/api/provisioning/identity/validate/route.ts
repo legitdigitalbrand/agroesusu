@@ -4,16 +4,12 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getBankingProvider } from '@/modules/integrations';
 import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
+import { PII_ENCRYPTION_KEY } from '@/lib/config/pii-key';
 
 // POST /api/provisioning/identity/validate
 // Validates the OTP from Safe Haven identity verification.
-// On success, stores the verified BVN/NIN, updates kyc_tier, and creates
-// (or links) a Safe Haven sub-account (DVA).
-//
-// BUG FIX: The previous "existing account" path (Path 1) updated the wallet
-// and customer.status but NEVER updated profiles.kyc_tier. This caused users
-// who already had a safe_haven_accounts record to stay at tier_0 forever.
-// Now ALL paths update kyc_tier to tier_1.
+// On success, stores the verified BVN/NIN (both plaintext for backward compat
+// AND encrypted via pgcrypto), updates kyc_tier, and creates/links a DVA.
 
 export async function POST(request: NextRequest) {
   const limited = applyRateLimit(request, "/api/provisioning/validate", RATE_LIMITS.PROVISIONING);
@@ -66,9 +62,30 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceClient();
 
     // Update customer with verified BVN/NIN
+    // Store in BOTH plaintext (backward compat) AND encrypted columns
     const updateData: Record<string, unknown> = {};
-    if (type === 'BVN') updateData.bvn = number;
-    if (type === 'NIN') updateData.nin = number;
+    if (type === 'BVN') {
+      updateData.bvn = number;
+      // Also encrypt and store in bvn_encrypted via RPC
+      if (PII_ENCRYPTION_KEY) {
+        const { data: encryptedBvn } = await serviceClient.rpc('encrypt_pii', {
+          plaintext: number,
+          key: PII_ENCRYPTION_KEY,
+        });
+        if (encryptedBvn) updateData.bvn_encrypted = encryptedBvn;
+      }
+    }
+    if (type === 'NIN') {
+      updateData.nin = number;
+      // Also encrypt and store in nin_encrypted via RPC
+      if (PII_ENCRYPTION_KEY) {
+        const { data: encryptedNin } = await serviceClient.rpc('encrypt_pii', {
+          plaintext: number,
+          key: PII_ENCRYPTION_KEY,
+        });
+        if (encryptedNin) updateData.nin_encrypted = encryptedNin;
+      }
+    }
 
     await serviceClient
       .from('customers')
@@ -82,8 +99,6 @@ export async function POST(request: NextRequest) {
       .eq('identity_id', identityId);
 
     // ── ALWAYS set kyc_tier to tier_1 on successful verification ──
-    // Ensure the profiles row exists first (trigger may not have created it
-    // if the user signed up after migration 00002 dropped the trigger).
     await ensureProfileRow({
       userId: user.id,
       fullName: customer.full_name,
@@ -91,7 +106,6 @@ export async function POST(request: NextRequest) {
       phone: customer.phone,
       kycTier: 'tier_1',
     });
-    // Now safe to update — row is guaranteed to exist
     await serviceClient
       .from('profiles')
       .update({ kyc_tier: 'tier_1' })
@@ -105,7 +119,6 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingAccount) {
-      // Already has a sub-account — update wallet with full DVA details
       await serviceClient
         .from('wallets')
         .update({
@@ -118,7 +131,6 @@ export async function POST(request: NextRequest) {
         .eq('customer_id', customer.id)
         .eq('wallet_type', 'primary');
 
-      // Update customer status to active
       await serviceClient
         .from('customers')
         .update({ status: 'active' })
@@ -182,9 +194,7 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (subAccountError) {
-      // Identity verification succeeded but sub-account creation failed
       console.error('[API:provisioning-validate] Sub-account creation failed:', subAccountError);
-
       return NextResponse.json({
         verified: true,
         accountNumber: null,
@@ -208,8 +218,9 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
+    // Gate 3: Return generic error message, never leak internal details
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Validation failed' },
+      { error: 'Identity verification failed. Please try again or contact support.' },
       { status: 500 }
     );
   }

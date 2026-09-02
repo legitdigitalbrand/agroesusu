@@ -62,7 +62,7 @@ export async function POST(
     return NextResponse.json({ success: true, message: 'Vote cast successfully' });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'An error occurred. Please try again or contact support.' },
       { status: 400 }
     );
   }

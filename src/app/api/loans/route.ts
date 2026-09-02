@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: result.eligibility_decision === 'denied' ? 422 : 201 });
   } catch (error) {
     console.error('[API:loans-apply] Error:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'An error occurred. Please try again or contact support.' }, { status: 500 });
   }
 }
 
