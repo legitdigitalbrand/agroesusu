@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { ensureCustomerDva } from '@/modules/wallet/dva';
 
 // GET /api/wallets/funding-details
 // Returns the customer's Safe Haven DVA account details for wallet funding.
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const { data: customer } = await supabase
       .from('customers')
-      .select('id, status')
+      .select('id, status, full_name, email, phone, bvn')
       .eq('auth_id', user.id)
       .maybeSingle();
 
@@ -44,34 +45,64 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
     const kycTier = (profile as { kyc_tier?: string } | null)?.kyc_tier || 'tier_0';
 
-    // Check for Safe Haven DVA account
+    // Check for an ACTIVE Safe Haven DVA account (inactive/invalid rows are
+    // never displayed as fundable banking details)
     const { data: safeHavenAccount } = await serviceClient
       .from('safe_haven_accounts')
       .select('account_number, account_name, bank_name, bank_code, status')
       .eq('customer_id', customer.id)
+      .eq('status', 'active')
       .maybeSingle();
 
     if (!safeHavenAccount) {
-      // No DVA provisioned — check KYC status to give specific guidance
-      let message = 'You need to complete identity verification to get a funding account.';
+      // No ACTIVE DVA. For identity-verified customers, provision one now —
+      // idempotently (existing active DVA is reused; races resolve via the
+      // UNIQUE(customer_id) constraint; provider failures fail-safe).
       if (kycTier === 'tier_1' || kycTier === 'tier_2' || kycTier === 'tier_3') {
-        message = 'Your identity is verified but your funding account is being created. This usually takes a few moments. Please retry or contact support if it persists.';
-      }
+        const provisioned = await ensureCustomerDva({
+          id: customer.id,
+          full_name: customer.full_name,
+          email: customer.email,
+          phone: customer.phone,
+          bvn: customer.bvn,
+        });
 
-      return NextResponse.json({
-        provisioned: false,
-        sandbox_mode: isSandboxMode(),
-        message,
-        kyc_level: kycTier,
-      }, { status: 200 });
+        if (provisioned.status === 'error') {
+          // Accurate failure state — never fabricated account details
+          return NextResponse.json({
+            provisioned: false,
+            sandbox_mode: isSandboxMode(),
+            message: provisioned.message,
+            kyc_level: kycTier,
+          }, { status: 200 });
+        }
+      } else {
+        // Unverified — accurate setup state with the existing verification action
+        return NextResponse.json({
+          provisioned: false,
+          sandbox_mode: isSandboxMode(),
+          message: 'You need to complete identity verification to get a funding account.',
+          kyc_level: kycTier,
+        }, { status: 200 });
+      }
     }
 
-    if (safeHavenAccount.status !== 'active') {
+    // (Re-)read the authoritative ACTIVE DVA — either the one found above or
+    // the one just provisioned.
+    const { data: activeDva } = await serviceClient
+      .from('safe_haven_accounts')
+      .select('account_number, account_name, bank_name, bank_code, status')
+      .eq('customer_id', customer.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!activeDva) {
+      // Provisioning did not yield an active record — accurate state, no fake data
       return NextResponse.json({
         provisioned: false,
         sandbox_mode: isSandboxMode(),
-        message: `Your funding account is ${safeHavenAccount.status}. Please contact support to resolve this.`,
-        account: safeHavenAccount,
+        message: 'Your funding account could not be created. Please retry or contact support.',
+        kyc_level: kycTier,
       }, { status: 200 });
     }
 
@@ -101,7 +132,7 @@ export async function GET(request: NextRequest) {
       .insert({
         customer_id: customer.id,
         wallet_id: wallet.id,
-        safe_haven_account_number: safeHavenAccount.account_number,
+        safe_haven_account_number: activeDva.account_number,
         status: 'pending',
         ip_address: ip || null,
         user_agent: userAgent || null,
@@ -111,10 +142,10 @@ export async function GET(request: NextRequest) {
       provisioned: true,
         sandbox_mode: isSandboxMode(),
       account: {
-        account_name: safeHavenAccount.account_name,
-        account_number: safeHavenAccount.account_number,
-        bank_name: safeHavenAccount.bank_name,
-        bank_code: safeHavenAccount.bank_code,
+        account_name: activeDva.account_name,
+        account_number: activeDva.account_number,
+        bank_name: activeDva.bank_name,
+        bank_code: activeDva.bank_code,
       },
       wallet_id: wallet.id,
       instructions: 'Transfer money to the account above. Your wallet will be credited automatically once the transfer is confirmed by Safe Haven.',

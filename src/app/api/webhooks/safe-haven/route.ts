@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { reconcileWithdrawal } from '@/modules/withdrawal';
 import { reconcileTransfer } from '@/modules/transfers';
 import { processIncomingCredit } from '@/modules/wallet/incoming-credit';
+import { verifyWebhookToken } from '@/lib/webhook-security';
 import { getSafeHavenAuthService } from '@/modules/integrations/safe-haven/auth';
 
 // ============================================================================
@@ -44,26 +45,6 @@ function getServiceClient() {
  *
  * This function checks that the `token` query parameter matches the env var.
  */
-function verifyWebhookToken(request: NextRequest): boolean {
-  const webhookSecret = process.env.SAFE_HAVEN_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.warn('[Webhook] No SAFE_HAVEN_WEBHOOK_SECRET — accepting all (dev mode ONLY)');
-    return true; // Dev mode — do NOT block when secret is not configured
-  }
-  const token = request.nextUrl.searchParams.get('token');
-  if (!token) return false;
-  // Use timing-safe comparison to prevent timing attacks
-  try {
-    const crypto = require('crypto');
-    const a = Buffer.from(token);
-    const b = Buffer.from(webhookSecret);
-    if (a.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Verification outcome (Gate 4 P0 #5):
  *   'verified'     — Safe Haven confirmed the transaction; safe to credit.

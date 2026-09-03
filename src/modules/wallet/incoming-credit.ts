@@ -64,6 +64,25 @@ export async function processIncomingCredit(
   const supabase = getServiceClient();
 
   try {
+    // ── 0. AMOUNT VALIDATION (Gate 4 funding fix) ─────────────
+    // A deposit must be a positive, finite amount. A zero/negative/NaN
+    // amount can never produce a financial credit (and a negative
+    // "deposit" must never post a debit through this path).
+    if (!Number.isFinite(credit.amount) || credit.amount <= 0) {
+      await supabase
+        .from('inbound_events')
+        .update({
+          processing_status: 'failed',
+          error_message: `Invalid deposit amount: ${credit.amount}`,
+        })
+        .eq('id', inboundEventId);
+      return {
+        status: 'failed',
+        message: `Invalid deposit amount: ${credit.amount}`,
+        inbound_event_id: inboundEventId,
+      };
+    }
+
     // ── 1. IDEMPOTENCY CHECK ──────────────────────────────────
     // Check if we've already processed this Safe Haven reference
     const { data: existingFT } = await supabase

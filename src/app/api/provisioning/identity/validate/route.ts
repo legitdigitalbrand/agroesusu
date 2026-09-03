@@ -111,11 +111,13 @@ export async function POST(request: NextRequest) {
       .update({ kyc_tier: 'tier_1' })
       .eq('id', user.id);
 
-    // Check if customer already has a Safe Haven sub-account
+    // Check if customer already has an ACTIVE Safe Haven sub-account —
+    // non-active rows (e.g. purged mock records) are never linked as real
     const { data: existingAccount } = await serviceClient
       .from('safe_haven_accounts')
       .select('id, account_number, account_name, bank_name, bank_code, created_at')
       .eq('customer_id', customer.id)
+      .eq('status', 'active')
       .maybeSingle();
 
     if (existingAccount) {

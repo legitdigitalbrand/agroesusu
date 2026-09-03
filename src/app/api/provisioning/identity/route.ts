@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { ensureCustomerDva } from '@/modules/wallet/dva';
 import { getBankingProvider } from '@/modules/integrations';
 import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
 
@@ -79,11 +80,13 @@ export async function POST(request: NextRequest) {
           .update({ kyc_tier: 'tier_1' })
           .eq('id', user.id);
 
-        // Check if a Safe Haven account (DVA) exists
+        // Check if an ACTIVE Safe Haven account (DVA) exists — non-active rows
+        // (e.g. purged mock records) are never treated as real accounts
         const { data: existingAccount } = await serviceClient
           .from('safe_haven_accounts')
           .select('id, account_number, account_name, bank_name, bank_code')
           .eq('customer_id', customer.id)
+          .eq('status', 'active')
           .maybeSingle();
 
         if (existingAccount) {
@@ -99,43 +102,27 @@ export async function POST(request: NextRequest) {
             .update({ status: 'active' })
             .eq('id', customer.id);
         } else {
-          // No DVA — create one using the banking provider (mock mode creates
-          // a mock account; sandbox mode calls Safe Haven API)
-          const provider = getBankingProvider();
+          // No ACTIVE DVA — provision one via the shared idempotent path.
+          // The factory is fail-closed (no silent mock), existing active DVAs
+          // are reused, races resolve via UNIQUE(customer_id), and provider
+          // failures are reported rather than faked.
           try {
-            const firstName = customer.full_name?.split(' ')[0] || '';
-            const lastName = customer.full_name?.split(' ').slice(1).join(' ') || '';
-            const subAccount = await provider.createSubAccount({
-              identityVerificationId: 'repair-' + Date.now(),
-              firstName,
-              lastName,
-              email: customer.email || undefined,
-              phoneNumber: customer.phone || undefined,
-              bvn: customer.bvn || undefined,
-              customerName: customer.full_name || `${firstName} ${lastName}`,
+            const dvaResult = await ensureCustomerDva({
+              id: customer.id,
+              full_name: customer.full_name,
+              email: customer.email,
+              phone: customer.phone,
+              bvn: customer.bvn,
             });
-
-            await serviceClient.from('safe_haven_accounts').insert({
-              customer_id: customer.id,
-              safe_haven_account_id: subAccount.accountId,
-              account_number: subAccount.accountNumber,
-              account_name: subAccount.accountName,
-              bank_name: subAccount.bankName,
-              bank_code: subAccount.bankCode,
-              status: 'active',
-              created_at: new Date().toISOString(),
-            });
-
-            await serviceClient
-              .from('wallets')
-              .update({ account_number: subAccount.accountNumber })
-              .eq('customer_id', customer.id)
-              .eq('wallet_type', 'primary');
-
-            await serviceClient
-              .from('customers')
-              .update({ status: 'active' })
-              .eq('id', customer.id);
+            if (dvaResult.status === 'error') {
+              console.error('[API:provisioning-identity] Auto-repair DVA creation failed:', dvaResult.message);
+              // DVA creation failed but kyc_tier was still repaired — not fatal
+            } else {
+              await serviceClient
+                .from('customers')
+                .update({ status: 'active' })
+                .eq('id', customer.id);
+            }
           } catch (dvaError) {
             console.error('[API:provisioning-identity] Auto-repair DVA creation failed:', dvaError);
             // DVA creation failed but kyc_tier was still repaired — not fatal
