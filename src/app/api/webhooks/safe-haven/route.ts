@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@supabase/supabase-js';
 import { reconcileWithdrawal } from '@/modules/withdrawal';
+import { reconcileTransfer } from '@/modules/transfers';
 import { processIncomingCredit } from '@/modules/wallet/incoming-credit';
 import { getSafeHavenAuthService } from '@/modules/integrations/safe-haven/auth';
 
@@ -340,6 +341,30 @@ export async function POST(request: NextRequest) {
             .from('inbound_events')
             .update({ processing_status: 'processed', processed_at: new Date().toISOString() })
             .eq('id', eventRecord.id);
+        }
+
+        // ── OUTBOUND TRANSFER (two-phase transfers table, Gate 4 P1) ──
+        // The same event settles/reverses a matching `transfers` row. The
+        // reconciliation is race-safe vs the cron: both use the same
+        // claim-based optimistic locking and deterministic FTO idempotency
+        // keys, so a single financial effect is guaranteed.
+        const { data: transferRow } = await supabase
+          .from('transfers')
+          .select('id, status')
+          .eq('payment_reference', paymentReference)
+          .in('status', ['initiated', 'reserved', 'settling', 'reversing', 'pending', 'pending_settlement'])
+          .maybeSingle();
+
+        if (transferRow) {
+          console.log(`[Webhook] Triggering transfer reconciliation for ${transferRow.id}`);
+          try {
+            const result = await reconcileTransfer(transferRow.id, 'webhook');
+            console.log(`[Webhook] Transfer reconciliation: ${result.status} - ${result.message}`);
+          } catch (transferReconError) {
+            // Cron will retry — log and keep the event processed (the
+            // reconciliation audit trail records the failure)
+            console.error('[Webhook] Transfer reconciliation failed:', transferReconError);
+          }
         }
       }
     } else if (['account_credit', 'transfer_received'].includes(eventType)) {

@@ -144,6 +144,7 @@ export class MockBankingProvider implements IBankingProvider {
     return {
       reference,
       status: 'success',
+      rawStatus: 'success',
       message: 'Transfer completed (mock)',
     };
   }

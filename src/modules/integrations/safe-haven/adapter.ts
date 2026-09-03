@@ -244,6 +244,7 @@ export class SafeHavenAdapter implements IBankingProvider {
       reference,
       status: data.status === 'success' ? 'success' : data.status === 'pending' ? 'pending' : 'failed',
       message: data.message as string | undefined,
+      rawStatus: typeof data.status === 'string' ? data.status : undefined,
     };
   }
 

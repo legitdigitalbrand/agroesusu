@@ -90,6 +90,14 @@ export interface TransferResult {
   reference: string;
   status: 'success' | 'pending' | 'failed';
   message?: string;
+  /**
+   * Raw provider status string (e.g. 'success', 'pending', 'failed',
+   * 'reversed', 'REVERSED'), when the provider response exposes one.
+   * Used by reconciliation to distinguish a REVERSAL (funds returned by the
+   * provider) from a plain failure — both release our escrow, but they are
+   * different auditable outcomes.
+   */
+  rawStatus?: string;
 }
 
 
