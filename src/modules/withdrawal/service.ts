@@ -17,6 +17,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { getBankingProvider } from '@/modules/integrations';
 import { initiate, reverse } from '@/modules/orchestrator';
+import {
+  candidateKeysFor,
+  deriveIdempotencyKey,
+  deriveReference,
+} from '@/lib/financial-idempotency';
+import { reserveWalletHold, releaseWalletHold } from '@/modules/wallet/holds';
 import type {
   NameEnquiryRequest,
   NameEnquiryResult,
@@ -72,6 +78,7 @@ export async function initiateWithdrawal(
   }
 ): Promise<WithdrawalResult> {
   const supabase = getServiceClient();
+  let activeHoldKey: string | null = null;
 
   try {
     // ── 1. VALIDATE ──────────────────────────────────────────────
@@ -88,19 +95,26 @@ export async function initiateWithdrawal(
       };
     }
 
-    // ── 2. IDEMPOTENCY ────────────────────────────────────────────
-    const idempotencyKey = `withdrawal:${req.customer_id}:${req.wallet_id}:${req.amount}:${req.beneficiary_account_number}:${Date.now()}`;
-    const paymentReference = `WDL-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    // ── 2. IDEMPOTENCY (deterministic, Gate 4 P0 #1) ─────────────
+    // Server-derived key: same parameters within the dedup window (or the
+    // same client_reference, forever) produce the same key, so retries
+    // collapse instead of executing a second withdrawal.
+    const idemParams = {
+      customer_id: req.customer_id,
+      wallet_id: req.wallet_id,
+      amount: req.amount,
+      destination: req.beneficiary_account_number,
+    };
+    const idempotencyKey = deriveIdempotencyKey('withdrawal', idemParams);
+    const paymentReference = deriveReference('WDL', idempotencyKey);
 
-    // Check for existing withdrawal with same parameters
+    // Check for existing withdrawal by deterministic key candidates
+    // (current + previous time bucket, to catch boundary-crossing retries)
     const { data: existing } = await supabase
       .from('withdrawal_requests')
       .select('id, status, payment_reference')
-      .eq('customer_id', req.customer_id)
-      .eq('wallet_id', req.wallet_id)
-      .eq('amount', req.amount)
-      .eq('beneficiary_account_number', req.beneficiary_account_number)
-      .in('status', ['initiated', 'name_enquiry_completed', 'authorized', 'reserved', 'transfer_submitted', 'pending'])
+      .in('idempotency_key', candidateKeysFor('withdrawal', idemParams))
+      .neq('status', 'failed')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -112,9 +126,48 @@ export async function initiateWithdrawal(
         payment_reference: existing.payment_reference,
         amount: req.amount,
         fee: 0,
+        message: existing.status === 'completed'
+          ? 'This withdrawal was already completed.'
+          : 'A withdrawal with these parameters is already in progress',
+      };
+    }
+
+    // ── 2b. CONCURRENCY GUARD (Gate 4 P0 #3) ─────────────────────
+    // Atomic DB-level hold: concurrent requests cannot both pass the room
+    // check, regardless of stale app-side balance reads. Released after the
+    // FTO reservation posts (funds then escrowed), or on failure paths.
+    const hold = await reserveWalletHold(req.wallet_id, `hold:${idempotencyKey}`, req.amount);
+    if (hold.status === 'duplicate') {
+      return {
+        id: '',
+        status: 'failed',
+        payment_reference: paymentReference,
+        amount: req.amount,
+        fee: 0,
         message: 'A withdrawal with these parameters is already in progress',
       };
     }
+    if (hold.status === 'insufficient') {
+      return {
+        id: '',
+        status: 'failed',
+        payment_reference: paymentReference,
+        amount: req.amount,
+        fee: 0,
+        message: `Insufficient balance. Your wallet has ₦${Number(hold.available_balance).toLocaleString()}`,
+      };
+    }
+    if (hold.status === 'error') {
+      return {
+        id: '',
+        status: 'failed',
+        payment_reference: paymentReference,
+        amount: req.amount,
+        fee: 0,
+        message: 'We could not complete this withdrawal right now. Please try again later.',
+      };
+    }
+    activeHoldKey = `hold:${idempotencyKey}`;
 
     // ── 3. CREATE WITHDRAWAL REQUEST ─────────────────────────────
     const { data: withdrawal, error: wError } = await supabase
@@ -146,6 +199,7 @@ export async function initiateWithdrawal(
       .single();
 
     if (wError || !withdrawal) {
+      if (activeHoldKey) { await releaseWalletHold(activeHoldKey); activeHoldKey = null; }
       throw new Error(`Failed to create withdrawal request: ${wError?.message}`);
     }
 
@@ -170,6 +224,7 @@ export async function initiateWithdrawal(
     });
 
     if (reservationResult.status === 'failed') {
+      if (activeHoldKey) { await releaseWalletHold(activeHoldKey); activeHoldKey = null; }
       // Update withdrawal status to failed
       await supabase.from('withdrawal_requests').update({
         status: 'failed',
@@ -192,6 +247,10 @@ export async function initiateWithdrawal(
       status: 'reserved',
       financial_transaction_id: reservationResult.id,
     }).eq('id', withdrawalId);
+
+    // Reservation posted — funds are now escrowed via the confirmed debit in
+    // the read model. Release the hold so reserved_balance does not double-count.
+    if (activeHoldKey) { await releaseWalletHold(activeHoldKey); activeHoldKey = null; }
 
     // ── 5. SUBMIT TRANSFER TO SAFE HAVEN ─────────────────────────
     // Get the customer's Safe Haven account number (the debit account)
@@ -319,6 +378,10 @@ export async function initiateWithdrawal(
     };
 
   } catch (error) {
+    if (activeHoldKey) {
+      await releaseWalletHold(activeHoldKey).catch(() => {});
+      activeHoldKey = null;
+    }
     console.error('[Withdrawal] Initiate failed:', error);
     return {
       id: '',

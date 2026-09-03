@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { initiate } from '@/modules/orchestrator';
 import { dispatchNotification } from '@/modules/communications';
+import { candidateKeysFor, deriveIdempotencyKey, findExistingTransaction } from '@/lib/financial-idempotency';
 
 // ── Self-healing: ensure wallet has a ledger account ──
 // The trigger trg_wallet_create_ledger_account should fire on wallet creation,
@@ -89,7 +90,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { amount, description, source } = body;
+    const { amount, description, source, clientReference } = body;
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 });
@@ -137,6 +138,29 @@ export async function POST(
     // Self-healing: ensure wallet has a ledger account before processing
     await ensureWalletLedgerAccount(context.params.walletId);
 
+    // IDEMPOTENCY (Gate 4 P0 #1): deterministic server-derived key — a retried
+    // request collapses into the existing deposit instead of executing twice.
+    const idemParams = {
+      customer_id: customer?.id || user.id,
+      wallet_id: context.params.walletId,
+      amount: Number(amount),
+      client_reference: clientReference || undefined,
+    };
+    const idempotencyKey = deriveIdempotencyKey('wallet_deposit', idemParams);
+
+    const existingFt = await findExistingTransaction(candidateKeysFor('wallet_deposit', idemParams));
+    if (existingFt) {
+      const inFlight = ['initiated', 'validated', 'posting', 'posted'].includes(existingFt.status);
+      return NextResponse.json({
+        success: existingFt.status === 'completed',
+        duplicate: true,
+        transaction_reference: existingFt.transaction_reference,
+        message: inFlight
+          ? 'This deposit is already being processed.'
+          : 'This deposit was already completed.',
+      }, { status: 200 });
+    }
+
     // Process the deposit through the Orchestrator
     const result = await initiate({
       transaction_type: 'wallet_deposit',
@@ -145,7 +169,7 @@ export async function POST(
       amount: Number(amount),
       currency: 'NGN',
       description: description || `Wallet funding (${source || 'manual'})`,
-      idempotency_key: `wallet_deposit:${context.params.walletId}:${Date.now()}`,
+      idempotency_key: idempotencyKey,
       wallet_id: context.params.walletId,
       metadata: {
         source: source || 'manual',

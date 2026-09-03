@@ -23,6 +23,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ReconciliationResult } from './types';
 import { getBankingProvider } from '../integrations';
+import { getAccountBalance, getWalletAccountId } from '../ledger';
+import { sweepStaleWalletHolds } from './holds';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -68,14 +70,18 @@ export async function reconcileWallet(walletId: string): Promise<ReconciliationR
     };
   }
 
-  // 2. Compute our balance from confirmed transactions
-  const { data: txSum, error: sumError } = await supabase
-    .rpc('get_wallet_confirmed_balance', { p_wallet_id: walletId })
-    .single();
-
-  // If the RPC doesn't exist, compute manually
+  // 2. Compute our balance from the LEDGER — the declared source of financial
+  //    record (migration 00015). The double-entry ledger is authoritative;
+  //    the wallet_transactions read model is a derived projection.
   let ourBalance: number;
-  if (sumError || !txSum) {
+  const ledgerAccountId = await getWalletAccountId(walletId).catch(() => null);
+
+  if (ledgerAccountId) {
+    // Ledger-derived balance (account-type aware: liability = credits - debits)
+    ourBalance = await getAccountBalance(ledgerAccountId);
+  } else {
+    // Fallback: wallet has no ledger account (pre-ledger wallet) — use the
+    // confirmed read-model sum as before
     const { data: transactions } = await supabase
       .from('wallet_transactions')
       .select('direction, amount')
@@ -85,8 +91,6 @@ export async function reconcileWallet(walletId: string): Promise<ReconciliationR
     ourBalance = (transactions || []).reduce((sum, tx) => {
       return sum + (tx.direction === 'credit' ? tx.amount : -tx.amount);
     }, 0);
-  } else {
-    ourBalance = txSum as number;
   }
 
   // 3. Internal consistency check: cached_balance vs computed sum
@@ -124,9 +128,14 @@ export async function reconcileWallet(walletId: string): Promise<ReconciliationR
   // 4. External consistency check (only if Safe Haven credentials available)
   let shBalance: number | null = null;
   const provider = getBankingProvider();
-  const hasCredentials = process.env.SAFE_HAVEN_ENV && 
-    process.env.SAFE_HAVEN_ENV !== 'mock' &&
-    process.env.SAFE_HAVEN_API_KEY;
+  // Gate on REAL credential presence — the same condition the provider
+  // factory uses to select the real adapter. A mis-set SAFE_HAVEN_ENV flag
+  // can no longer silently disable external reconciliation, and mock mode
+  // can no longer silently enable it.
+  const hasCredentials = Boolean(
+    process.env.SAFEHAVEN_CLIENT_ID &&
+    process.env.SAFEHAVEN_PRIVATE_KEY
+  );
 
   if (hasCredentials && wallet.safe_haven_account_id) {
     try {
@@ -191,6 +200,15 @@ export async function reconcileWallet(walletId: string): Promise<ReconciliationR
  */
 export async function reconcileAllWallets(): Promise<ReconciliationResult[]> {
   const supabase = getServiceClient();
+
+  // Gate 4 P0 #3: crash recovery — release wallet holds abandoned by dead
+  // processes (funds locked in reserved_balance would never be released).
+  try {
+    const swept = await sweepStaleWalletHolds(15);
+    if (swept > 0) console.warn(`[Reconciliation] Swept ${swept} stale wallet hold(s)`);
+  } catch (sweepErr) {
+    console.error('[Reconciliation] Stale hold sweep failed:', sweepErr);
+  }
 
   // Get all active wallets with DVAs
   const { data: wallets, error } = await supabase

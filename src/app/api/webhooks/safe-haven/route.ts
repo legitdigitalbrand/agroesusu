@@ -64,6 +64,23 @@ function verifyWebhookToken(request: NextRequest): boolean {
 }
 
 /**
+ * Verification outcome (Gate 4 P0 #5):
+ *   'verified'     — Safe Haven confirmed the transaction; safe to credit.
+ *   'unverified'   — Safe Haven definitively refuted it (not found / failed
+ *                    status / mismatch); reject.
+ *   'indeterminate'— the verification API itself failed (network, 5xx, auth).
+ *                    QUARANTINE: mark the event processing_failed and do NOT
+ *                    credit. Approved business decision (webhook quarantine
+ *                    policy): a credit is never posted on an unconfirmed
+ *                    transaction; the event stays in inbound_events for retry
+ *                    (dedup prevents double-processing when retried).
+ */
+type CreditVerification =
+  | 'verified'
+  | 'unverified'
+  | 'indeterminate';
+
+/**
  * Re-verify an incoming credit by calling Safe Haven's API.
  * This is defense-in-depth: even if someone knows the webhook token, the
  * transaction must actually exist in Safe Haven's system before we credit.
@@ -75,7 +92,7 @@ async function verifyIncomingCreditWithSafeHaven(
   paymentReference: string,
   accountNumber: string,
   amount: number
-): Promise<boolean> {
+): Promise<CreditVerification> {
   try {
     const authService = getSafeHavenAuthService();
     const accessToken = await authService.getAccessToken();
@@ -96,7 +113,9 @@ async function verifyIncomingCreditWithSafeHaven(
 
     if (!response.ok) {
       console.error(`[Webhook] Safe Haven verification API returned ${response.status}`);
-      return false;
+      // API-level failure (5xx/4xx from the verification service itself):
+      // indeterminate — quarantine, never credit on an unconfirmed transaction.
+      return 'indeterminate';
     }
 
     const data = await response.json();
@@ -114,25 +133,27 @@ async function verifyIncomingCreditWithSafeHaven(
 
     if (!statusOk) {
       console.error(`[Webhook] Safe Haven verification: status=${status} (not success)`);
-      return false;
+      return 'unverified';
     }
     if (!amountOk) {
       console.error(`[Webhook] Safe Haven verification: amount mismatch (expected=${amount}, got=${verifiedAmount})`);
-      return false;
+      return 'unverified';
     }
     if (!accountOk) {
       console.error(`[Webhook] Safe Haven verification: account mismatch (expected=${accountNumber}, got=${verifiedAccount})`);
-      return false;
+      return 'unverified';
     }
 
     console.log(`[Webhook] Safe Haven verification PASSED for ref=${paymentReference}`);
-    return true;
+    return 'verified';
   } catch (error) {
     console.error('[Webhook] Safe Haven verification error:', error);
-    // Fail safe: if the verification API is down, don't block the credit
-    // but log it for manual reconciliation. The idempotency layer still protects us.
-    console.warn('[Webhook] Verification API unavailable — accepting with manual review flag');
-    return true;
+    // QUARANTINE (approved decision): the verification API is unavailable, so
+    // the transaction is UNCONFIRMED. Do not credit. The event is marked
+    // processing_failed and remains in inbound_events for retry — the
+    // (source, external_event_id) uniqueness prevents double-processing.
+    console.warn('[Webhook] Verification API unavailable — quarantining event for retry (no credit posted)');
+    return 'indeterminate';
   }
 }
 
@@ -330,13 +351,13 @@ export async function POST(request: NextRequest) {
 
         // API RE-VERIFICATION: Verify the transaction with Safe Haven before crediting
         const verificationRef = creditDetails.payment_reference || creditDetails.safe_haven_reference;
-        const isVerified = await verifyIncomingCreditWithSafeHaven(
+        const verification = await verifyIncomingCreditWithSafeHaven(
           verificationRef,
           creditDetails.account_number,
           creditDetails.amount
         );
 
-        if (!isVerified) {
+        if (verification === 'unverified') {
           console.error(`[Webhook] Safe Haven verification FAILED for ref=${verificationRef}`);
           await supabase
             .from('inbound_events')
@@ -347,6 +368,22 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', eventRecord.id);
           return NextResponse.json({ status: 'rejected', message: 'Transaction verification failed' }, { status: 200 });
+        }
+
+        if (verification === 'indeterminate') {
+          // QUARANTINE (Gate 4 P0 #5 — approved webhook quarantine policy):
+          // verification API unavailable = transaction unconfirmed = no credit.
+          // Event stays in inbound_events for retry; dedup guarantees a single
+          // financial effect when it is eventually reprocessed.
+          console.error(`[Webhook] Safe Haven verification UNAVAILABLE for ref=${verificationRef} — quarantining`);
+          await supabase
+            .from('inbound_events')
+            .update({
+              processing_status: 'processing_failed',
+              error_message: 'Verification API unavailable — quarantined for retry, no credit posted',
+            })
+            .eq('id', eventRecord.id);
+          return NextResponse.json({ status: 'quarantined', message: 'Verification unavailable — event quarantined for retry' }, { status: 200 });
         }
 
         try {
