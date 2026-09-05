@@ -103,23 +103,36 @@ export class SafeHavenAdapter implements IBankingProvider {
         otp: params.otp,
       });
 
-      const data = response.data as Record<string, unknown>;
+      const body = (response.data as Record<string, unknown>) || {};
+      const data = (body.data as Record<string, unknown>) || {};
 
-      // Check if verification was successful
-      // Safe Haven returns the verified identity details on success
-      if (response.status === 200 && data) {
-        return {
-          verified: true,
-          firstName: data.firstName as string | undefined,
-          lastName: data.lastName as string | undefined,
-          middleName: data.middleName as string | undefined,
-          phoneNumber: data.phoneNumber as string | undefined,
-          dateOfBirth: data.dateOfBirth as string | undefined,
-          gender: data.gender as string | undefined,
-        };
+      // Success is determined by the provider's own fields — NOT by the HTTP
+      // status code. Safe Haven returns the identity record with
+      // data.otpVerified=true / data.status="SUCCESS" on success; a 200 with
+      // otpVerified=false (wrong OTP) is a FAILURE.
+      const otpVerified = data.otpVerified === true;
+      const statusSuccess = data.status === 'SUCCESS';
+      const verified = otpVerified || statusSuccess;
+
+      if (!verified) {
+        return { verified: false };
       }
 
-      return { verified: false };
+      // Verified identity details live under data.providerResponse
+      const provider = (data.providerResponse as Record<string, unknown>) || {};
+
+      return {
+        verified: true,
+        // data._id is the validated identity record — required downstream
+        // for sub-account creation.
+        identityValidationId: (data._id as string) || params.identityId,
+        firstName: provider.firstName as string | undefined,
+        lastName: provider.lastName as string | undefined,
+        middleName: provider.middleName as string | undefined,
+        phoneNumber: (provider.phoneNumber1 as string) || (provider.phoneNumber2 as string) || undefined,
+        dateOfBirth: provider.dateOfBirth as string | undefined,
+        gender: provider.gender as string | undefined,
+      };
     });
   }
 
@@ -128,28 +141,52 @@ export class SafeHavenAdapter implements IBankingProvider {
   // ===========================================================================
 
   async createSubAccount(params: CreateSubAccountParams): Promise<CreateSubAccountResult> {
-    const idempotencyKey = this.generateIdempotencyKey('create_sub_account', params.identityVerificationId, params);
+    const idempotencyKey = this.generateIdempotencyKey('create_sub_account', params.identityId, params);
 
     return this.withIdempotency(idempotencyKey, async () => {
-      const response = await this.client.post('/accounts/v2/subaccount', {
-        firstName: params.firstName,
-        lastName: params.lastName,
-        email: params.email,
+      // Safe Haven Create Sub Account (Individual) — POST /accounts/v2/subaccount
+      // Required: phoneNumber (+234 format), emailAddress, externalReference,
+      // identityType, identityNumber, identityId (the _id from the Identity
+      // Verification endpoint). `otp` is accepted when creation happens
+      // inline with the verification flow (BVN/NIN).
+      // The ClientID header is set by SafeHavenClient.request() from the
+      // ibs_client_id returned at token exchange.
+      const requestBody: Record<string, unknown> = {
         phoneNumber: params.phoneNumber,
-        bvn: params.bvn,
-      });
+        emailAddress: params.emailAddress,
+        externalReference: params.externalReference,
+        identityType: params.identityType,
+        identityNumber: params.identityNumber,
+        identityId: params.identityId,
+        autoSweep: false,
+      };
+      if (params.otp) {
+        requestBody.otp = params.otp;
+      }
+
+      const response = await this.client.post('/accounts/v2/subaccount', requestBody);
 
       const data = response.data as Record<string, unknown>;
-      
+
       // Safe Haven returns account details on success
       const accountData = (data.account || data.data || data) as Record<string, unknown>;
 
+      const accountNumber = accountData.accountNumber as string | undefined;
+      if (!accountNumber) {
+        // Never fabricate account details — if the provider did not return a
+        // real account number, provisioning failed.
+        throw new Error(
+          'Safe Haven did not return an account number for the new funding account. ' +
+          `Provider response: ${JSON.stringify(data).slice(0, 300)}`
+        );
+      }
+
       return {
-        accountId: accountData._id as string || accountData.id as string,
-        accountNumber: accountData.accountNumber as string,
-        accountName: accountData.accountName as string || params.customerName,
+        accountId: (accountData._id as string) || (accountData.id as string) || '',
+        accountNumber,
+        accountName: (accountData.accountName as string) || params.customerName || '',
         bankName: 'Safe Haven MFB',
-        bankCode: '999240',
+        bankCode: (accountData.bankCode as string) || '999240',
       };
     });
   }

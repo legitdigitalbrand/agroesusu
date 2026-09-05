@@ -35,6 +35,7 @@ export interface DvaCustomerInput {
   email?: string | null;
   phone?: string | null;
   bvn?: string | null;
+  nin?: string | null;
 }
 
 export interface DvaAccountRecord {
@@ -47,7 +48,20 @@ export interface DvaAccountRecord {
 export type EnsureDvaResult =
   | { status: 'existing'; account: DvaAccountRecord }
   | { status: 'provisioned'; account: DvaAccountRecord }
+  | { status: 'verification_required'; message: string }
   | { status: 'error'; message: string; retryable: boolean };
+
+
+/** Normalize a Nigerian phone number to the +234 format Safe Haven requires. */
+export function toInternationalPhone(phone: string | null | undefined): string {
+  if (!phone) return '';
+  let p = phone.replace(/[^\d+]/g, '');
+  if (p.startsWith('+234')) return p;
+  if (p.startsWith('234')) return '+' + p;
+  if (p.startsWith('0')) return '+234' + p.slice(1);
+  if (p.length === 10) return '+234' + p;
+  return p.startsWith('+') ? p : '+' + p;
+}
 
 /** Read the customer's ACTIVE DVA record from the authoritative DB. */
 export async function getActiveDva(
@@ -105,21 +119,69 @@ export async function ensureCustomerDva(
     };
   }
 
-  const firstName = customer.full_name?.split(' ')[0] || '';
-  const lastName = customer.full_name?.split(' ').slice(1).join(' ') || '';
+  // ── Require a REAL, provider-validated identity before provisioning ──
+  // Safe Haven's Create Sub Account requires the `_id` from their Identity
+  // Verification endpoint. Fabricating one ("customer-<id>") produces a
+  // provider rejection; mock-era verification rows are excluded.
+  const { data: verifiedIdentity } = await supabase
+    .from('safe_haven_identity_verifications')
+    .select('identity_id, type')
+    .eq('customer_id', customer.id)
+    .eq('status', 'verified')
+    .neq('identity_id', '') // no empty ids
+    .order('verified_at', { ascending: false, nullsFirst: false })
+    .limit(25);
+
+  const realIdentity = (verifiedIdentity || []).find(
+    (row) =>
+      row.identity_id &&
+      !row.identity_id.startsWith('mock-') &&
+      row.identity_id !== `customer-${customer.id}`
+  );
+
+  if (!realIdentity) {
+    return {
+      status: 'verification_required',
+      message:
+        'Identity verification with Safe Haven is required before we can create your funding account. Please complete BVN verification, then return to your wallet.',
+    };
+  }
+
+  const identityType = (realIdentity.type as 'BVN' | 'NIN') || 'BVN';
+  const identityNumber =
+    (identityType === 'NIN' ? customer.nin : customer.bvn) || '';
+
+  if (!identityNumber) {
+    return {
+      status: 'verification_required',
+      message:
+        'Your verified identity details are incomplete. Please re-run BVN verification, then return to your wallet.',
+    };
+  }
+
+  const phoneNumber = toInternationalPhone(customer.phone);
+  const emailAddress = customer.email || '';
+  if (!phoneNumber || !emailAddress) {
+    return {
+      status: 'error',
+      message:
+        'Your profile needs a phone number and email address before a funding account can be created. Please update your profile.',
+      retryable: false,
+    };
+  }
 
   let subAccount;
   try {
     subAccount = await provider.createSubAccount({
+      identityType,
+      identityNumber,
+      identityId: realIdentity.identity_id,
+      phoneNumber,
+      emailAddress,
       // Deterministic per customer → the adapter's idempotency layer and the
       // provider-side request are stable across retries/page loads.
-      identityVerificationId: `customer-${customer.id}`,
-      firstName,
-      lastName,
-      email: customer.email || '',
-      phoneNumber: customer.phone || '',
-      bvn: customer.bvn || '',
-      customerName: customer.full_name || `${firstName} ${lastName}`.trim(),
+      externalReference: `agriqcap-wallet-${customer.id}`,
+      customerName: customer.full_name || undefined,
     });
   } catch (providerError) {
     return {

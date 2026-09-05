@@ -6,6 +6,7 @@ import {
   LAST_ACTIVITY_COOKIE_OPTIONS,
   OTP_VERIFIED_COOKIE_NAME,
 } from '@/lib/auth/device';
+import { PIN_COOKIE_NAME, verifyPinCookie } from '@/lib/auth/login-pin';
 
 // ════════════════════════════════════════════════════════════
 // Agriqcap — Authentication Middleware
@@ -17,7 +18,8 @@ import {
 //  5. Redirect unauthenticated → /login (for protected routes)
 //  6. Redirect authenticated from /login & /signup → /dashboard
 //  7. Admin-only access for /dev/* (staff check)
-//  8. Onboarding guard: force /onboarding if KYC not completed
+//  8. Login PIN gate: protected pages require PIN verification when the user
+//     has configured one (signed cookie, server-verified)
 // ════════════════════════════════════════════════════════════
 
 const PUBLIC_ROUTES = [
@@ -222,7 +224,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(verifyUrl);
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages — but NOT the PIN
+  // pages: a user with an unverified PIN must be able to open them.
   if (pathname === '/login' || pathname === '/signup' || pathname === '/verify-login') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
@@ -239,27 +242,36 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Onboarding guard: if user is on /dashboard but hasn't completed onboarding
-  // (kyc_tier is tier_0), redirect to /onboarding to force BVN verification first.
-  // NOTE: The column is kyc_tier (string enum), NOT kyc_level (number).
-  // The old code queried kyc_level which doesn't exist — Postgres errored,
-  // the catch block swallowed it, and the guard was dead code.
-  if (pathname === '/dashboard') {
+  // ── Login PIN gate ──
+  // Users who configured a login PIN must verify it after password sign-in
+  // before any protected page loads. The gate cookie is HMAC-signed and
+  // verified server-side — it cannot be forged by setting a cookie by hand.
+  // PIN entry pages themselves stay accessible.
+  const PIN_PAGES = ['/login/pin', '/login/pin/setup'];
+  if (!PIN_PAGES.some((r) => pathname === r || pathname.startsWith(r + '/'))) {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('kyc_tier')
+        .select('has_login_pin')
         .eq('id', session.user.id)
         .maybeSingle();
 
-      // If profile row doesn't exist OR kyc_tier is tier_0, redirect to onboarding
-      if (!profile || (profile as { kyc_tier?: string })?.kyc_tier === 'tier_0' || !(profile as { kyc_tier?: string })?.kyc_tier) {
-        return NextResponse.redirect(new URL('/onboarding', request.url));
+      const hasPin = (profile as { has_login_pin?: boolean } | null)?.has_login_pin === true;
+      if (hasPin) {
+        const pinCookie = request.cookies.get(PIN_COOKIE_NAME)?.value;
+        const pinValid = await verifyPinCookie(pinCookie, session.user.id);
+        if (!pinValid) {
+          const pinUrl = new URL('/login/pin', request.url);
+          if (pathname !== '/dashboard') {
+            pinUrl.searchParams.set('redirect', pathname);
+          }
+          return NextResponse.redirect(pinUrl);
+        }
       }
-    } catch {
-      // If we can't check (table missing, etc.), allow proceeding
-      // but log it — this should not happen in production
-      console.error('[middleware] Failed to check kyc_tier for onboarding guard');
+    } catch (err) {
+      // Fail-safe: if the check errors, fall through (no redirect loop risk —
+      // the PIN routes are excluded above). Log for observability.
+      console.error('[middleware] Login PIN gate check failed:', err instanceof Error ? err.message : err);
     }
   }
 

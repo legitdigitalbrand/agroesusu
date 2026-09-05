@@ -6,6 +6,7 @@ import {
   LAST_ACTIVITY_COOKIE_NAME,
   DEVICE_COOKIE_NAME,
 } from '@/lib/auth/device';
+import { PIN_COOKIE_NAME } from '@/lib/auth/login-pin';
 
 // ════════════════════════════════════════════════════════════
 // POST /api/auth/sign-out
@@ -35,6 +36,8 @@ export async function POST(_request: NextRequest) {
   res.cookies.delete(OTP_PENDING_COOKIE_NAME);
   res.cookies.delete(LAST_ACTIVITY_COOKIE_NAME);
   res.cookies.delete(DEVICE_COOKIE_NAME);
+  // PIN gate cookie dies with the session — PIN must be re-entered after sign-in.
+  res.cookies.delete(PIN_COOKIE_NAME);
 
   return res;
 }

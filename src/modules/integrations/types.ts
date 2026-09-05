@@ -23,6 +23,9 @@ export interface ValidateVerificationParams {
 
 export interface ValidateVerificationResult {
   verified: boolean;
+  // The provider's validated identity record id (data._id from the validate
+  // response). Required for downstream sub-account creation.
+  identityValidationId?: string;
   firstName?: string;
   lastName?: string;
   middleName?: string;
@@ -33,13 +36,29 @@ export interface ValidateVerificationResult {
 
 // Sub Account (DVA) Creation
 export interface CreateSubAccountParams {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;  // +234 format
-  bvn: string;
-  identityVerificationId: string;  // From the validation step
-  customerName: string;  // Account name
+  /** BVN or NIN — determines identityType/identityNumber sent to Safe Haven. */
+  identityType: 'BVN' | 'NIN';
+  /** The BVN/NIN number itself. */
+  identityNumber: string;
+  /**
+   * The `_id` from the Safe Haven Identity Verification endpoint (required
+   * when identityType is BVN or NIN).
+   */
+  identityId: string;
+  /** Account holder phone number in +234 format (required). */
+  phoneNumber: string;
+  /** Account holder email address (required). */
+  emailAddress: string;
+  /** Deterministic external reference attached to the account object (required). */
+  externalReference: string;
+  /**
+   * The OTP sent to the customer during identity initiation. Only available
+   * when creation happens inline with the verification flow; Safe Haven
+   * accepts it for BVN/NIN.
+   */
+  otp?: string;
+  /** Fallback display name for accountName when the provider omits it. */
+  customerName?: string;
 }
 
 export interface CreateSubAccountResult {

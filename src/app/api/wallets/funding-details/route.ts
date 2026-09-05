@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const { data: customer } = await supabase
       .from('customers')
-      .select('id, status, full_name, email, phone, bvn')
+      .select('id, status, full_name, email, phone, bvn, nin')
       .eq('auth_id', user.id)
       .maybeSingle();
 
@@ -65,7 +65,21 @@ export async function GET(request: NextRequest) {
           email: customer.email,
           phone: customer.phone,
           bvn: customer.bvn,
+          nin: customer.nin,
         });
+
+        if (provisioned.status === 'verification_required') {
+          // Accurate state: real provider-validated identity is required
+          // before a funding account can exist. Drives the contextual
+          // verification CTA on the wallet page.
+          return NextResponse.json({
+            provisioned: false,
+            sandbox_mode: isSandboxMode(),
+            verification_required: true,
+            message: provisioned.message,
+            kyc_level: kycTier,
+          }, { status: 200 });
+        }
 
         if (provisioned.status === 'error') {
           // Accurate failure state — never fabricated account details

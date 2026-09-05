@@ -71,6 +71,7 @@ interface FundingDetails {
   kyc_level?: string;
   wallet_id?: string;
   instructions?: string;
+  verification_required?: boolean;
 }
 
 const fmtNGN = (v: number) => {
@@ -438,12 +439,18 @@ export default function WalletPage() {
                     </p>
                   </div>
                   <div className="pt-1">
-                    {fundingDetails?.kyc_level && fundingDetails.kyc_level !== "tier_0" ? (
+                    {fundingDetails?.verification_required ? (
+                      <Link href="/verify">
+                        <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                          Verify Identity
+                        </Button>
+                      </Link>
+                    ) : fundingDetails?.kyc_level && fundingDetails.kyc_level !== "tier_0" ? (
                       <Button variant="outline" size="sm" leftIcon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => refetchFunding()}>
                         Check Status
                       </Button>
                     ) : (
-                      <Link href="/onboarding">
+                      <Link href="/verify">
                         <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
                           Verify Identity
                         </Button>

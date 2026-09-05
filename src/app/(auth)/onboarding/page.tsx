@@ -92,63 +92,49 @@ export default function OnboardingPage() {
     setSaving(true);
     setError(null);
 
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const updateData: Record<string, unknown> = {};
-
-    // FIX: Only update kyc_tier (the column that actually exists on profiles).
-    // The old code also set kyc_level (which doesn't exist on the table) —
-    // Supabase silently ignored it, so tier advancement never persisted for
-    // Tier 2 and Tier 3 saves.
+    // All tier-2/3 profile data + KYC tier advancement is handled by the
+    // server route (service role). Client-side kyc_tier writes are blocked
+    // by the protect_sensitive_profile_columns trigger — by design.
+    const body: Record<string, string> = {};
     if (tier >= 2) {
-      updateData.residential_address = address;
-      updateData.state = state;
-      updateData.lga = lga;
-      updateData.occupation = occupation;
-      updateData.kyc_tier = "tier_2";
+      body.residential_address = address;
+      body.state = state;
+      body.lga = lga;
+      body.occupation = occupation;
     }
     if (tier >= 3) {
-      updateData.farm_type = farmType;
-      updateData.primary_produce = primaryProduce;
-      updateData.nok_name = nokName;
-      updateData.nok_phone = nokPhone;
-      updateData.nok_relationship = nokRelationship;
-      updateData.kyc_tier = "tier_3";
+      body.farm_type = farmType;
+      body.primary_produce = primaryProduce;
+      body.nok_name = nokName;
+      body.nok_phone = nokPhone;
+      body.nok_relationship = nokRelationship;
     }
 
-    // Use upsert to handle both cases: profiles row exists (update) or
-    // doesn't exist (insert). The trigger that should auto-create profiles
-    // was dropped in migration 00002 and may not have been recreated yet.
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, phone")
-      .eq("id", user.id)
-      .maybeSingle();
+    try {
+      const res = await fetch("/api/profile/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Could not save your details. Please try again.");
+        setSaving(false);
+        return;
+      }
 
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .upsert({
-        id: user.id,
-        full_name: existingProfile?.full_name || (user.user_metadata as { full_name?: string })?.full_name || "New User",
-        email: existingProfile?.email || user.email || null,
-        phone: existingProfile?.phone || "",
-        ...updateData,
-      }, { onConflict: "id" });
-
-    if (updateError) {
-      setError(updateError.message);
+      // Activate the customer record server-side via own-row update.
+      const supabase = createClient();
+      if (tier >= 2) {
+        await supabase
+          .from("customers")
+          .update({ status: "active" })
+          .eq("auth_id", (await supabase.auth.getUser()).data.user?.id || "");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
       setSaving(false);
       return;
-    }
-
-    // Also update customer status if moving to tier 2+
-    if (tier >= 2) {
-      await supabase
-        .from("customers")
-        .update({ status: "active" })
-        .eq("auth_id", user.id);
     }
 
     setSaving(false);

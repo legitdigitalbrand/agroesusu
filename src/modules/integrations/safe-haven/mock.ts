@@ -73,7 +73,7 @@ export class MockBankingProvider implements IBankingProvider {
     return {
       accountId: 'mock-account-' + Date.now(),
       accountNumber,
-      accountName: params.customerName,
+      accountName: params.customerName || 'Mock Customer',
       bankName: 'Safe Haven MFB',
       bankCode: '999240',
     };

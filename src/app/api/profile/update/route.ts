@@ -14,6 +14,8 @@ import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
 // BVN and NIN are NOT updatable here — those require Safe Haven OTP verification.
 // Full name, email, and phone are managed through auth/customers tables separately.
 
+import { createServiceClient } from '@/lib/supabase/service';
+
 const ALLOWED_FIELDS = [
   'residential_address',
   'state',
@@ -82,17 +84,26 @@ export async function PATCH(request: NextRequest) {
       const tierLevel = currentTier === 'tier_3' ? 3 : currentTier === 'tier_2' ? 2 : currentTier === 'tier_1' ? 1 : 0;
       const p = profile as Record<string, string | null>;
 
-      // Auto-advance to tier_2 if all Tier 2 fields are filled
-      if (tierLevel < 2 && p.residential_address && p.state && p.occupation) {
-        await supabase
+      // Tier writes go through the SERVICE client: the
+      // protect_sensitive_profile_columns trigger silently reverts any
+      // user-role attempt to change kyc_tier, so this must never use the
+      // user-scoped supabase client.
+      const serviceClient = createServiceClient();
+
+      // Auto-advance to tier_2 if all Tier 2 fields are filled.
+      // Guard: tier_2 requires prior identity verification (tier_1) — an
+      // unverified user cannot leap straight to tier_2 by filling a form.
+      if (tierLevel === 1 && p.residential_address && p.state && p.occupation) {
+        await serviceClient
           .from('profiles')
           .update({ kyc_tier: 'tier_2' })
           .eq('id', user.id);
       }
 
-      // Auto-advance to tier_3 if all Tier 3 fields are filled
-      if (tierLevel < 3 && p.farm_type && p.primary_produce && p.nok_name && p.nok_phone && p.nok_relationship) {
-        await supabase
+      // Auto-advance to tier_3 if all Tier 3 fields are filled (requires
+      // tier_2's address fields too — checked implicitly by tierLevel).
+      if (tierLevel === 2 && p.farm_type && p.primary_produce && p.nok_name && p.nok_phone && p.nok_relationship) {
+        await serviceClient
           .from('profiles')
           .update({ kyc_tier: 'tier_3' })
           .eq('id', user.id);

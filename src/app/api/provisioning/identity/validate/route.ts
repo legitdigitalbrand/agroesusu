@@ -92,24 +92,61 @@ export async function POST(request: NextRequest) {
       .update(updateData)
       .eq('id', customer.id);
 
-    // Update identity verification record
+    // Update identity verification record — retain the FULL verification
+    // result including the provider's validated record id (identityValidationId),
+    // which downstream DVA provisioning depends on.
     await serviceClient
       .from('safe_haven_identity_verifications')
-      .update({ status: 'verified', verified_at: new Date().toISOString() })
+      .update({
+        status: 'verified',
+        verified_at: new Date().toISOString(),
+        verified_data: {
+          identityValidationId: validationResult.identityValidationId || identityId,
+          firstName: validationResult.firstName || null,
+          lastName: validationResult.lastName || null,
+          middleName: validationResult.middleName || null,
+          dateOfBirth: validationResult.dateOfBirth || null,
+          gender: validationResult.gender || null,
+          type,
+          number,
+        },
+      })
       .eq('identity_id', identityId);
 
-    // ── ALWAYS set kyc_tier to tier_1 on successful verification ──
-    await ensureProfileRow({
-      userId: user.id,
-      fullName: customer.full_name,
-      email: customer.email,
-      phone: customer.phone,
-      kycTier: 'tier_1',
-    });
+    // Surface the verification on the customer record (single lookup point
+    // for status pages and DVA provisioning).
     await serviceClient
+      .from('customers')
+      .update({
+        identity_verification_id: validationResult.identityValidationId || identityId,
+        identity_verification_status: 'verified',
+        identity_type: type,
+        identity_verified_at: new Date().toISOString(),
+      })
+      .eq('id', customer.id);
+
+    // ── Successful verification upgrades tier_0 users to tier_1 only ──
+    // It must NEVER downgrade a customer already at tier_2 or tier_3.
+    const { data: currentProfile } = await serviceClient
       .from('profiles')
-      .update({ kyc_tier: 'tier_1' })
-      .eq('id', user.id);
+      .select('kyc_tier')
+      .eq('id', user.id)
+      .maybeSingle();
+    const currentTier = (currentProfile as { kyc_tier?: string } | null)?.kyc_tier || 'tier_0';
+
+    if (currentTier === 'tier_0') {
+      await ensureProfileRow({
+        userId: user.id,
+        fullName: customer.full_name,
+        email: customer.email,
+        phone: customer.phone,
+        kycTier: 'tier_1',
+      });
+      await serviceClient
+        .from('profiles')
+        .update({ kyc_tier: 'tier_1' })
+        .eq('id', user.id);
+    }
 
     // Check if customer already has an ACTIVE Safe Haven sub-account —
     // non-active rows (e.g. purged mock records) are never linked as real
@@ -149,13 +186,31 @@ export async function POST(request: NextRequest) {
       const firstName = (validationResult.firstName || customer.full_name?.split(' ')[0] || '') as string;
       const lastName = (validationResult.lastName || customer.full_name?.split(' ').slice(1).join(' ') || '') as string;
 
+      // Phone number must be +234 format; email is required by the provider.
+      const rawPhone = customer.phone || '';
+      let phoneNumber = rawPhone.replace(/[^\d+]/g, '');
+      if (phoneNumber.startsWith('0')) phoneNumber = '+234' + phoneNumber.slice(1);
+      else if (phoneNumber.startsWith('234')) phoneNumber = '+' + phoneNumber;
+      else if (!phoneNumber.startsWith('+')) phoneNumber = '+' + phoneNumber;
+
+      if (!phoneNumber || !customer.email) {
+        return NextResponse.json({
+          verified: true,
+          accountNumber: null,
+          message: 'Identity verified. Add a phone number and email to your profile, then retry funding account creation from your wallet.',
+          retryable: true,
+        });
+      }
+
       const subAccount = await provider.createSubAccount({
-        identityVerificationId: identityId,
-        firstName,
-        lastName,
-        email: customer.email || undefined,
-        phoneNumber: customer.phone || undefined,
-        bvn: type === 'BVN' ? number : customer.bvn || undefined,
+        identityType: type,
+        identityNumber: type === 'BVN' ? number : (customer.nin || number),
+        identityId: validationResult.identityValidationId || identityId,
+        phoneNumber,
+        emailAddress: customer.email,
+        // Deterministic per customer — idempotent across retries.
+        externalReference: `agriqcap-wallet-${customer.id}`,
+        otp,
         customerName: customer.full_name || `${firstName} ${lastName}`,
       });
 

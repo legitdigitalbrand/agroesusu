@@ -24,6 +24,12 @@ interface TokenCache {
   expiresAt: number;  // Unix timestamp (ms)
 }
 
+/**
+ * Internal marker: the provider rejected our bearer token (HTTP 401/403).
+ * request() retries once with a fresh token before giving up.
+ */
+class SafeHavenAuthRejectedError extends Error {}
+
 interface LoggedRequest {
   method: string;
   url: string;
@@ -109,10 +115,24 @@ export class SafeHavenClient {
         throw new Error(`Safe Haven authentication failed (HTTP ${response.status}). Please check credentials.`);
       }
 
-      const expiresIn = responseBody.expires_in || 3600;
+      // FAIL-CLOSED: Safe Haven returns 2xx (even HTTP 201) for OAuth errors
+      // such as {"error":"invalid_request","error_description":"Invalid
+      // client_assertion..."}. A response without an access_token is a
+      // failure, never a success — otherwise an undefined token gets cached
+      // and every subsequent API call fails with 403 "Expired token".
+      const accessToken = responseBody.access_token as string | undefined;
+      if (!accessToken) {
+        const oauthError = (responseBody.error as string) || 'invalid_request';
+        const oauthDesc = (responseBody.error_description as string) || 'No access token in response';
+        throw new Error(
+          `Safe Haven authentication failed: ${oauthError} — ${oauthDesc}`
+        );
+      }
+
+      const expiresIn = Number(responseBody.expires_in) || 1800;
       this.tokenCache = {
-        accessToken: responseBody.access_token,
-        ibsClientId: responseBody.ibs_client_id || '',
+        accessToken,
+        ibsClientId: (responseBody.ibs_client_id as string) || '',
         expiresAt: Date.now() + expiresIn * 1000,
       };
 
@@ -146,12 +166,20 @@ export class SafeHavenClient {
    */
   private generateClientAssertion(): string {
     const now = Math.floor(Date.now() / 1000);
-    const tokenUrl = `${this.config.baseUrl}/oauth2/token`;
     
+    // Safe Haven requires `aud` to be the environment base URL
+    // (https://api.safehavenmfb.com for production,
+    //  https://api.sandbox.safehavenmfb.com for sandbox) — NOT the token
+    // endpoint. Sending the token URL here returns
+    // {"error":"invalid_request","error_description":"Invalid client_assertion.
+    // jwt audience invalid. expected: https://api.safehavenmfb.com"} (observed
+    // in production logs 2026-09-05).
+    // `iss` per Safe Haven docs is the Company URL; falls back to clientId
+    // when SAFEHAVEN_COMPANY_URL is not configured.
     const payload = {
-      iss: this.config.clientId,
+      iss: process.env.SAFEHAVEN_COMPANY_URL || this.config.clientId,
       sub: this.config.clientId,
-      aud: tokenUrl,
+      aud: this.config.baseUrl,
       iat: now,
       exp: now + 3600,
       jti: crypto.randomUUID(),
@@ -191,9 +219,29 @@ export class SafeHavenClient {
   }
 
   /**
-   * Core request method with auth, logging, and error handling.
+   * Core request method with auth, logging, error handling, and a single
+   * retry with a fresh token on auth rejection (401/403).
    */
   private async request(
+    method: string,
+    path: string,
+    body?: unknown,
+    queryParams?: Record<string, string>
+  ): Promise<{ status: number; data: unknown }> {
+    try {
+      return await this.requestOnce(method, path, body, queryParams);
+    } catch (error) {
+      if (error instanceof SafeHavenAuthRejectedError) {
+        // Token rejected by the provider (expired/invalid for their clock) —
+        // drop the cache and retry exactly once with a freshly minted token.
+        this.tokenCache = null;
+        return await this.requestOnce(method, path, body, queryParams);
+      }
+      throw error;
+    }
+  }
+
+  private async requestOnce(
     method: string,
     path: string,
     body?: unknown,
@@ -260,7 +308,24 @@ export class SafeHavenClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Safe Haven API request failed (HTTP ${response.status}). Please try again.`);
+      // Auth rejections (expired/invalid bearer token) are retried once with
+      // a fresh token by request(); every other error is surfaced with the
+      // provider's own message so failures are diagnosable from logs/APIs.
+      const providerMessage =
+        (responseData &&
+          typeof responseData === 'object' &&
+          ((responseData as Record<string, unknown>).message as string)) ||
+        (typeof responseData === 'string' ? responseData.slice(0, 200) : '');
+
+      if (response.status === 401 || response.status === 403) {
+        throw new SafeHavenAuthRejectedError(
+          `Safe Haven API request failed (HTTP ${response.status}): ${providerMessage || 'Access denied'}`
+        );
+      }
+
+      throw new Error(
+        `Safe Haven API request failed (HTTP ${response.status}): ${providerMessage || 'Please try again.'}`
+      );
     }
 
     return { status: response.status, data: responseData };

@@ -38,7 +38,6 @@ import {
   Skeleton,
   CardSkeleton,
 } from "@/components/yield";
-import { OnboardingChecklist } from "@/components/app/onboarding-checklist";
 import { WelcomeBanner } from "@/components/app/welcome-banner";
 import { formatRelativeTime, initials, formatDate } from "@/lib/format";
 
@@ -281,7 +280,6 @@ export default function DashboardPage() {
       {/* Banners (unchanged — just spaced better) */}
       <div className="space-y-4">
         <WelcomeBanner />
-        <OnboardingChecklist />
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -681,9 +679,9 @@ export default function DashboardPage() {
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-ink">Verify your identity</p>
                     <p className="text-xs text-ink-soft mt-1 leading-relaxed">
-                      Complete KYC verification to unlock all features including loans and higher limits.
+                      Verify your BVN with Safe Haven to unlock your funding account, loans and higher limits.
                     </p>
-                    <Link href="/onboarding" className="mt-2 inline-block">
+                    <Link href="/verify" className="mt-2 inline-block">
                       <span className="text-xs font-semibold text-indigo hover:text-indigo-deep transition">
                         Verify now →
                       </span>

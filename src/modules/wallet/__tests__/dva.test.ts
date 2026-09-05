@@ -39,6 +39,7 @@ const NEW_SUBACCOUNT = {
 function makeFake(opts: {
   dvaQueryResults: Array<Row | null>;
   insertError?: { code: string; message: string } | null;
+  identityRows?: Array<{ identity_id: string; type: string }>;
 }) {
   const state = {
     inserts: [] as Array<{ table: string; row: Row }>,
@@ -64,6 +65,29 @@ function makeFake(opts: {
           state.inserts.push({ table, row });
           return { error: opts.insertError ?? null };
         },
+      };
+    }
+    if (table === 'safe_haven_identity_verifications') {
+      // Identity gate read: return a REAL verified identity by default so
+      // provisioning proceeds. Tests can pass opts.identityRows = [] to
+      // simulate verification_required.
+      return {
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              neq: () => ({
+                order: () => ({
+                  limit: async () => ({
+                    data: opts.identityRows ?? [
+                      { identity_id: 'sh-id-xyz', type: 'BVN' },
+                    ],
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
       };
     }
     if (table === 'wallets') {
@@ -137,9 +161,10 @@ describe('ensureCustomerDva', () => {
     const result = await ensureCustomerDva(CUSTOMER);
 
     expect(provider.createSubAccount).toHaveBeenCalledTimes(1);
-    // deterministic per-customer identity verification reference (idempotent retries)
+    // Provisioning MUST use the REAL provider-verified identity id from
+    // safe_haven_identity_verifications — never a fabricated reference.
     expect(provider.createSubAccount).toHaveBeenCalledWith(
-      expect.objectContaining({ identityVerificationId: 'customer-cust-123' })
+      expect.objectContaining({ identityId: 'sh-id-xyz' })
     );
     expect(fake.state.inserts).toHaveLength(1);
     expect(fake.state.inserts[0].row).toMatchObject({
