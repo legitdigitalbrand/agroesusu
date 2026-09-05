@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     for (const withdrawal of pendingWithdrawals) {
       try {
-        const result = await reconcileWithdrawal(withdrawal.payment_reference);
+        const result = await reconcileWithdrawal(withdrawal.id);
         if (result.status === 'completed') {
           completed++;
         } else if (result.status === 'failed') {
