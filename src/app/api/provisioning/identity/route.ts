@@ -177,6 +177,26 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[API:provisioning-identity] Error:', error);
+
+    // Safe Haven could not create a verification session because the
+    // verification fee could not be charged (merchant purse funding).
+    // Surface a clear, user-safe operational error — no provider
+    // credentials or internal account details.
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === 'VERIFICATION_FEE_DEBIT_FAILED'
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Identity verification is temporarily unavailable. Our team has been notified — please try again shortly.',
+          code: 'verification_fee_debit_failed',
+        },
+        { status: 503 }
+      );
+    }
+
     const errMsg = error instanceof Error ? error.message : String(error);
     const isNetworkError = errMsg.includes('ERR_NAME_NOT_RESOLVED') ||
       errMsg.includes('ERR_INTERNET_DISCONNECTED') ||

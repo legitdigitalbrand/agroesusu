@@ -77,18 +77,51 @@ export class SafeHavenAdapter implements IBankingProvider {
         async: false,
       });
 
-      const data = response.data as Record<string, unknown>;
-      const identityId = data._id as string || data.identityId as string;
+      // Actual provider shape (evidenced in safe_haven_api_calls production
+      // logs): HTTP 201 with { statusCode, message, data: { _id, status,
+      // otpId?, otpVerified, debitMessage, debitResponsCode, ... } }.
+      // HTTP success does NOT mean the verification was initiated — the fee
+      // debit can fail (data.status = "FAILED") and no OTP is ever sent.
+      const body = response.data as Record<string, unknown>;
+      const record =
+        body.data && typeof body.data === 'object'
+          ? (body.data as Record<string, unknown>)
+          : body;
 
+      const identityId = (record._id as string) || (body.identityId as string) || '';
+      const providerStatus = typeof record.status === 'string' ? record.status.toUpperCase() : '';
+      const hasOtp = typeof record.otpId === 'string' && (record.otpId as string).length > 0;
+      const debitApproved =
+        record.debitResponsCode === 200 ||
+        /approved|success/i.test(String(record.debitMessage ?? ''));
+
+      // 1. The provider created no identity record at all.
       if (!identityId) {
         throw new IntegrationError(
-          'Safe Haven did not return an identity ID',
+          'Safe Haven did not return an identity verification session',
           'VERIFICATION_INITIATE_FAILED',
           true, // retryable
           response.status
         );
       }
 
+      // 2. The provider explicitly reports the verification did not succeed
+      //    (e.g. the verification fee could not be debited). Never report
+      //    OTP sent, never persist a session in this state.
+      if (providerStatus === 'FAILED' || (!hasOtp && !debitApproved)) {
+        const feeDebitFailed = !debitApproved;
+        throw new IntegrationError(
+          feeDebitFailed
+            ? 'Identity verification could not be initiated because the verification fee could not be charged. Please try again later or contact support.'
+            : 'Identity verification could not be initiated. Please try again or contact support.',
+          feeDebitFailed ? 'VERIFICATION_FEE_DEBIT_FAILED' : 'VERIFICATION_INITIATE_FAILED',
+          true, // retryable (fund the purse / retry)
+          response.status
+        );
+      }
+
+      // 3. Session created and OTP dispatched — only now it is safe to report
+      //    success and persist the identity ID.
       return { identityId, status: 'otp_sent' as const };
     });
   }
