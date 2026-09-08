@@ -276,7 +276,14 @@ export async function POST(request: NextRequest) {
         event_type: eventType,
         raw_payload: payload,
         raw_headers: headers,
-        processing_status: 'received',
+        // Insert as 'processing' (NOT 'received'): this event is processed
+        // inline by this request. The /api/cron/process-events batch only
+        // picks up 'received' events — if the cron fired during the inline
+        // processing window it would re-process the same deposit with a
+        // different idempotency key and without Safe Haven re-verification
+        // (double-credit race). 'processing' means the webhook owns this
+        // event exclusively; failures land in 'processing_failed' for retry.
+        processing_status: 'processing',
       })
       .select('id')
       .single();
