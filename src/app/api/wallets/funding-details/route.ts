@@ -82,11 +82,17 @@ export async function GET(request: NextRequest) {
         }
 
         if (provisioned.status === 'error') {
-          // Accurate failure state — never fabricated account details
+          // Accurate failure state — never fabricated account details.
+          // Safe Haven's OTP is one-time and must be presented at subaccount
+          // creation; a customer whose OTP was consumed (verified under the
+          // old flow) can only get a DVA via a FRESH verification session.
+          // Flag it so the wallet shows the re-verification CTA instead of
+          // an eternal "setting up" spinner.
           return NextResponse.json({
             provisioned: false,
             sandbox_mode: isSandboxMode(),
-            message: provisioned.message,
+            reverification_required: true,
+            message: 'We could not set up your funding account automatically. Re-run identity verification to complete setup.',
             kyc_level: kycTier,
           }, { status: 200 });
         }

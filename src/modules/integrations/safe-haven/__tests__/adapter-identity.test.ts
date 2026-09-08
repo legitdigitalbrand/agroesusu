@@ -321,7 +321,7 @@ describe('SafeHavenAdapter.createSubAccount', () => {
     inject(adapter, jest.fn().mockResolvedValue(realBare400Response));
 
     await expect(adapter.createSubAccount(subParams)).rejects.toThrow(
-      /rejected by the provider.*statusCode 400/s
+      /rejected by the provider[\s\S]*statusCode 400/
     );
   });
 

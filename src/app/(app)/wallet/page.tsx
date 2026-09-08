@@ -41,6 +41,7 @@ import {
   Info,
   RefreshCw,
   ShieldCheck,
+  ShieldAlert,
   ArrowRight,
   Clock,
   AlertCircle,
@@ -72,6 +73,7 @@ interface FundingDetails {
   wallet_id?: string;
   instructions?: string;
   verification_required?: boolean;
+  reverification_required?: boolean;
 }
 
 const fmtNGN = (v: number) => {
@@ -378,6 +380,27 @@ export default function WalletPage() {
                       Transfers to this dedicated Virtual Account are processed automatically 24/7.
                     </span>
                   </div>
+                </div>
+              ) : fundingDetails?.reverification_required ? (
+                /* Verified but DVA provisioning was rejected by the provider —
+                   a fresh verification session (new OTP) is the only path to a
+                   DVA. Offer it clearly instead of a spinner that can never resolve. */
+                <div className="bg-parchment/60 border border-line rounded-2xl p-5 text-center space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-ochre-light flex items-center justify-center mx-auto text-indigo-deep">
+                    <ShieldAlert className="w-5 h-5 text-ochre-dim" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold text-ink">One more step to finish setup</h4>
+                    <p className="text-xs text-ink-soft max-w-md mx-auto">
+                      {fundingDetails?.message ||
+                        "Re-run identity verification to complete your funding account setup."}
+                    </p>
+                  </div>
+                  <Link href="/verify">
+                    <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                      Verify BVN / NIN
+                    </Button>
+                  </Link>
                 </div>
               ) : fundingDetails?.message && (fundingDetails.kyc_level === "tier_1" || fundingDetails.kyc_level === "tier_2" || fundingDetails.kyc_level === "tier_3") ? (
                 /* Pending Provisioning State with Timeline */

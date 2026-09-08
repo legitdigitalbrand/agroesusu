@@ -248,6 +248,13 @@ function VerifyContent() {
             <Button variant="primary" className="w-full" onClick={() => { router.push(redirectTo); router.refresh(); }}>
               Continue
             </Button>
+            <button
+              type="button"
+              className="text-xs text-ink-soft underline underline-offset-4 hover:text-ink"
+              onClick={() => { setStep("enter"); setIdentityId(""); setOtp(""); }}
+            >
+              Use a different BVN or NIN
+            </button>
           </div>
         )}
       </Card>
