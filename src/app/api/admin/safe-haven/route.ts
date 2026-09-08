@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { getSafeHavenAuthService } from '@/modules/integrations/safe-haven/auth';
 
 export async function GET(request: NextRequest) {
   const limited = applyRateLimit(request, '/api/admin/safe-haven', RATE_LIMITS.ADMIN);
@@ -71,6 +72,63 @@ export async function GET(request: NextRequest) {
 
       result.verifications = enrichedVerifications;
       result.verifications_total = verCount || 0;
+    }
+
+    if (viewType === 'purse') {
+      // Live purse (fee/settlement debit account) balance from the provider.
+      // Staff-only (auth checked above). Never returns tokens or credentials.
+      const authService = getSafeHavenAuthService();
+      const apiUrl = process.env.SAFEHAVEN_API_URL || 'https://api.sandbox.safehavenmfb.com';
+      const debitAccount = process.env.SAFE_HAVEN_DEBIT_ACCOUNT || '';
+      const accessToken = await authService.getAccessToken();
+      const ibsClientId = authService.getIbsClientId();
+
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      };
+      if (ibsClientId) headers['ClientID'] = ibsClientId;
+
+      const response = await fetch(`${apiUrl}/accounts`, {
+        method: 'GET',
+        headers,
+        signal: AbortSignal.timeout(15000),
+      });
+
+      const body = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+      const accounts = (Array.isArray(body?.data) ? body!.data : []) as Record<string, unknown>[];
+
+      const purse = accounts.find(
+        (a) => String(a.accountNumber ?? '') === debitAccount || String(a.accountNumber ?? '') === debitAccount.replace(/\D/g, '')
+      );
+
+      if (!response.ok) {
+        return NextResponse.json(
+          { error: `Safe Haven GET /accounts returned HTTP ${response.status}` },
+          { status: 502 }
+        );
+      }
+
+      if (!purse) {
+        return NextResponse.json({
+          purse: null,
+          debit_account_number: debitAccount,
+          account_count: accounts.length,
+          message: 'Debit account not found in the provider account list',
+        });
+      }
+
+      result.purse = {
+        account_id: purse._id ?? null,
+        account_number: purse.accountNumber ?? debitAccount,
+        account_name: purse.name ?? purse.accountName ?? null,
+        currency: purse.currency ?? 'NGN',
+        balance: Number(purse.balance ?? 0),
+        available_balance: Number(purse.availableBalance ?? purse.balance ?? 0),
+        ledger_balance: Number(purse.ledgerBalance ?? purse.balance ?? 0),
+        retrieved_at: new Date().toISOString(),
+      };
     }
 
     if (viewType === 'all' || viewType === 'api_calls') {
