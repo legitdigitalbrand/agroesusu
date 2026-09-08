@@ -41,6 +41,9 @@ export default function OnboardingPage() {
   // Form state
   const [bvn, setBvn] = useState("");
   const [nin, setNin] = useState("");
+  // Which identity the user is verifying this session — one identity per OTP
+  // session (provider constraint), chosen explicitly instead of inferred
+  const [idType, setIdType] = useState<"BVN" | "NIN">("BVN");
   const [address, setAddress] = useState("");
 
   // Safe Haven OTP verification state
@@ -200,23 +203,34 @@ export default function OnboardingPage() {
 
             {otpStep === "enter" && (
               <div className="space-y-3">
-                <div>
-                  <label className="ys-label">BVN (11 digits)</label>
-                  <input
-                    type="text"
-                    value={bvn}
-                    onChange={(e) => setBvn(e.target.value.replace(/\D/g, ""))}
-                    maxLength={11}
-                    className="ys-input"
-                    placeholder="00000000000"
-                  />
+                {/* Identity Verification (BVN / NIN) — its own dedicated section,
+                    separate from profile/personal details above. One identity
+                    per verification session. */}
+                <div className="flex gap-2" role="group" aria-label="Choose identity type">
+                  {(["BVN", "NIN"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setIdType(t)}
+                      className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition ${
+                        idType === t
+                          ? "border-indigo bg-indigo/10 text-indigo"
+                          : "border-line bg-paper text-ink-soft hover:text-ink"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
                 <div>
-                  <label className="ys-label">NIN (11 digits) — optional</label>
+                  <label className="ys-label">{idType} (11 digits)</label>
                   <input
                     type="text"
-                    value={nin}
-                    onChange={(e) => setNin(e.target.value.replace(/\D/g, ""))}
+                    inputMode="numeric"
+                    value={idType === "BVN" ? bvn : nin}
+                    onChange={(e) =>
+                      (idType === "BVN" ? setBvn : setNin)(e.target.value.replace(/\D/g, ""))
+                    }
                     maxLength={11}
                     className="ys-input"
                     placeholder="00000000000"
@@ -229,9 +243,10 @@ export default function OnboardingPage() {
                     setError(null);
                     setOtpRequestError(null);
                     setOtpRequestTimedOut(false);
-                    const type = bvn.length === 11 ? "BVN" : nin.length === 11 ? "NIN" : null;
-                    if (!type) {
-                      setError("Enter a valid 11-digit BVN or NIN");
+                    const type = idType;
+                    const number = idType === "BVN" ? bvn : nin;
+                    if (number.length !== 11) {
+                      setError(`Enter a valid 11-digit ${idType}`);
                       setSaving(false);
                       return;
                     }
@@ -245,7 +260,7 @@ export default function OnboardingPage() {
                       const res = await fetch("/api/provisioning/identity", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ type, number: type === "BVN" ? bvn : nin }),
+                        body: JSON.stringify({ type, number }),
                       });
                       if (otpTimeoutRef.current) clearTimeout(otpTimeoutRef.current);
                       const data = await res.json();
@@ -285,9 +300,9 @@ export default function OnboardingPage() {
                     }
                     setSaving(false);
                   }}
-                  disabled={saving || (bvn.length !== 11 && nin.length !== 11)}
+                  disabled={saving || (idType === "BVN" ? bvn : nin).length !== 11}
                 >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Identity"}
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Verify ${idType}`}
                 </Button>
                 {otpRequestTimedOut && (
                   <p className="text-xs text-clay bg-clay/5 rounded-lg px-3 py-2">

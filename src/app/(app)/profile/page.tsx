@@ -198,7 +198,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Your registered account and identity details</CardDescription>
+            <CardDescription>Your registered account details</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="pt-4">
@@ -206,8 +206,6 @@ export default function ProfilePage() {
             <InfoField label="Full Name" value={profile.full_name} />
             <InfoField label="Email Address" value={profile.email} />
             <InfoField label="Phone Number" value={profile.phone} />
-            <InfoField label="BVN" value={maskNumber(profile.bvn)} />
-            <InfoField label="NIN" value={maskNumber(profile.nin)} />
             {/* Occupation is editable */}
             {editing ? (
               <EditableField label="Occupation" value={formData.occupation || ""} onChange={(v) => updateField("occupation", v)} placeholder="Farmer, Trader, etc." />
@@ -346,6 +344,36 @@ export default function ProfilePage() {
                   ? "Your account is fully verified. You have unlocked all transaction limits and premium features."
                   : "Complete your identity verification to increase transfer limits and access loans and investments."}
               </p>
+            </div>
+          </div>
+
+          {/* Identity Verification (BVN / NIN) — dedicated section, separate from
+              personal information. One action: run /verify (Safe Haven OTP flow). */}
+          <div className="p-4 rounded-xl border border-line/60 bg-paper">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-indigo" />
+                  <span className="text-sm font-semibold text-ink">Identity Verification (BVN / NIN)</span>
+                </div>
+                <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-soft">
+                  <span>BVN: <span className="font-mono">{profile.bvn ? maskNumber(profile.bvn) : "—"}</span></span>
+                  <span>NIN: <span className="font-mono">{profile.nin ? maskNumber(profile.nin) : "—"}</span></span>
+                </div>
+                <p className="text-xs text-ink-soft leading-relaxed">
+                  {kycLevel >= 1
+                    ? "Your identity is verified with our banking partner. You can re-run verification at any time to use a different BVN or NIN."
+                    : "Verify your BVN or NIN to unlock deposits and your funding account. A one-time password (OTP) will be sent to the phone number registered with it."}
+                </p>
+              </div>
+              <Button
+                variant={kycLevel >= 1 ? "secondary" : "primary"}
+                size="sm"
+                leftIcon={<ShieldCheck className="h-4 w-4" />}
+                onClick={() => router.push("/verify")}
+              >
+                {kycLevel >= 1 ? "Update BVN / NIN" : "Verify BVN / NIN"}
+              </Button>
             </div>
           </div>
 
