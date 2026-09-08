@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface MeResponse {
   type: "customer" | "staff";
+  is_staff?: boolean;
   profile: {
     id: string;
     full_name: string;

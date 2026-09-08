@@ -77,7 +77,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-paper flex items-center justify-center"><LoadingState message="Redirecting to login…" /></div>
   );
 
-  if (me.type !== "staff") {
+  // Dual-role users (customer + staff, e.g. the super_admin) get
+  // type: "customer" with is_staff: true from /api/me — honor the flag.
+  if (me.type !== "staff" && !me.is_staff) {
     return (
       <div className="min-h-screen bg-paper flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-paper border border-line rounded-2xl p-8 text-center">
