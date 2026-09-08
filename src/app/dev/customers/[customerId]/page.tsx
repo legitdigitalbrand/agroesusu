@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoadingState, ErrorState, StatusBadge } from "@/components/yield";
-import { ArrowLeft, Lock, Unlock, Flag, KeyRound, Ban, CheckCircle, AlertTriangle, X } from "lucide-react";
+import { ArrowLeft, Lock, Unlock, Flag, KeyRound, Ban, CheckCircle, AlertTriangle, X, ShieldOff, BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { formatNaira, formatDate, formatDateTime } from "@/lib/format";
 
@@ -75,6 +75,8 @@ export default function CustomerProfilePage({ params }: { params: { customerId: 
   const { customerId } = params;
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [actionModal, setActionModal] = useState<{ action: string; label: string } | null>(null);
+  const [identityType, setIdentityType] = useState<"BVN" | "NIN">("BVN");
+  const [identityNumber, setIdentityNumber] = useState("");
   const [reason, setReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -112,11 +114,21 @@ export default function CustomerProfilePage({ params }: { params: { customerId: 
     setActionLoading(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/admin/customers/${customerId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: actionModal?.action, reason }),
-      });
+      const isIdentityAction = (actionModal?.action || "").startsWith("identity_");
+      const identityBody =
+        actionModal?.action === "identity_reset"
+          ? { action: "reset", reason }
+          : { action: "update", type: identityType, number: identityNumber, reason };
+      const res = await fetch(
+        isIdentityAction
+          ? `/api/admin/customers/${customerId}/identity`
+          : `/api/admin/customers/${customerId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(isIdentityAction ? identityBody : { action: actionModal?.action, reason }),
+        }
+      );
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error || "Action failed");
@@ -125,6 +137,7 @@ export default function CustomerProfilePage({ params }: { params: { customerId: 
       await queryClient.invalidateQueries({ queryKey: ["admin-customer-timeline", customerId] });
       setActionModal(null);
       setReason("");
+      setIdentityNumber("");
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Action failed");
     } finally {
@@ -144,6 +157,8 @@ export default function CustomerProfilePage({ params }: { params: { customerId: 
     { action: "unfreeze_wallet", label: "Unfreeze Wallet", icon: Unlock, color: "text-loam" },
     { action: "reset_pin", label: "Reset PIN", icon: KeyRound, color: "text-ink" },
     { action: "flag_fraud", label: "Flag Fraud", icon: Flag, color: "text-clay" },
+    { action: "identity_reset", label: "Reset Verification", icon: ShieldOff, color: "text-clay" },
+    { action: "identity_update", label: "Update BVN/NIN", icon: BadgeCheck, color: "text-ink" },
   ];
 
   return (
@@ -209,8 +224,8 @@ export default function CustomerProfilePage({ params }: { params: { customerId: 
               <Detail label="Full Name" value={customer.full_name} />
               <Detail label="Email" value={customer.email || "—"} />
               <Detail label="Phone" value={customer.phone || "—"} />
-              <Detail label="BVN" value={customer.bvn || "—"} mono />
-              <Detail label="NIN" value={customer.nin || "—"} mono />
+              <Detail label="BVN" value={customer.bvn ? `*****${customer.bvn.slice(-4)}` : "—"} mono />
+              <Detail label="NIN" value={customer.nin ? `*****${customer.nin.slice(-4)}` : "—"} mono />
               <Detail label="Status" value={<StatusBadge status={customer.status} />} />
               <Detail label="Registration Date" value={customer.registration_date ? formatDate(customer.registration_date) : "—"} />
               <Detail label="Activation Date" value={customer.activation_date ? formatDate(customer.activation_date) : "—"} />
@@ -372,9 +387,34 @@ export default function CustomerProfilePage({ params }: { params: { customerId: 
               <h3 className="font-display font-semibold text-ink">{actionModal.label}</h3>
               <button onClick={() => setActionModal(null)} className="text-ink-soft hover:text-ink"><X className="h-5 w-5" /></button>
             </div>
-            <p className="text-sm text-ink-soft mb-3">
-              You are about to {actionModal.label.toLowerCase()} <span className="font-medium text-ink">{customer.full_name}</span>. This action will be logged to the audit trail.
-            </p>
+            {actionModal.action === "identity_reset" ? (
+              <p className="text-sm text-ink-soft mb-3">
+                This revokes <span className="font-medium text-ink">{customer.full_name}</span>&apos;s identity verification — cleared BVN/NIN, status reset, KYC tier dropped to tier_0. The customer re-runs verification from /verify. Refused if an active funding account or wallet balance exists. This action will be logged to the audit trail.
+              </p>
+            ) : (
+              <p className="text-sm text-ink-soft mb-3">
+                You are about to {actionModal.label.toLowerCase()} for <span className="font-medium text-ink">{customer.full_name}</span>. This changes the stored number only — not the verification status. This action will be logged to the audit trail.
+              </p>
+            )}
+            {actionModal.action === "identity_update" && (
+              <div className="flex gap-2 mb-3">
+                <select
+                  value={identityType}
+                  onChange={e => setIdentityType(e.target.value as "BVN" | "NIN")}
+                  className="px-3 py-2 rounded-lg border border-line bg-paper text-ink text-sm"
+                >
+                  <option value="BVN">BVN</option>
+                  <option value="NIN">NIN</option>
+                </select>
+                <input
+                  value={identityNumber}
+                  onChange={e => setIdentityNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                  placeholder="New 11-digit number"
+                  inputMode="numeric"
+                  className="flex-1 px-3 py-2 rounded-lg border border-line bg-paper text-ink text-sm placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-indigo/20"
+                />
+              </div>
+            )}
             <textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -393,7 +433,7 @@ export default function CustomerProfilePage({ params }: { params: { customerId: 
               </button>
               <button
                 onClick={handleAction}
-                disabled={!reason.trim() || actionLoading}
+                disabled={!reason.trim() || actionLoading || (actionModal.action === "identity_update" && identityNumber.length !== 11)}
                 className="flex-1 py-2.5 rounded-lg bg-indigo text-white text-sm font-medium hover:bg-indigo/90 disabled:opacity-50 transition"
               >
                 {actionLoading ? "Processing…" : `Confirm ${actionModal.label}`}
