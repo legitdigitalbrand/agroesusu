@@ -156,12 +156,16 @@ function mapEventType(shEventType: string): string {
 }
 
 function extractExternalEventId(payload: Record<string, unknown>): string | null {
+  const data = (payload.data && typeof payload.data === 'object' ? payload.data : {}) as Record<string, unknown>;
   return (
     (payload._id as string) ||
     (payload.transactionId as string) ||
     (payload.eventId as string) ||
     (payload.reference as string) ||
     (payload.paymentReference as string) ||
+    (data._id as string) ||
+    (data.sessionId as string) ||
+    (data.paymentReference as string) ||
     null
   );
 }
@@ -197,6 +201,7 @@ function extractIncomingCredit(payload: Record<string, unknown>): {
     '';
 
   const accountNumber =
+    (data.creditAccountNumber as string) ||
     (data.accountNumber as string) ||
     (data.creditAccount as string) ||
     (data.destinationAccountNumber as string) ||
@@ -212,10 +217,10 @@ function extractIncomingCredit(payload: Record<string, unknown>): {
   return {
     safe_haven_reference: ref,
     account_number: accountNumber,
-    account_name: data.accountName as string || data.account_name as string || undefined,
+    account_name: (data.creditAccountName as string) || (data.accountName as string) || (data.account_name as string) || undefined,
     amount,
-    sender_name: data.senderName as string || data.originatorName as string || data.sender_name as string || undefined,
-    sender_account_number: data.senderAccountNumber as string || data.originatorAccountNumber as string || undefined,
+    sender_name: (data.debitAccountName as string) || (data.senderName as string) || (data.originatorName as string) || (data.sender_name as string) || undefined,
+    sender_account_number: (data.debitAccountNumber as string) || (data.senderAccountNumber as string) || (data.originatorAccountNumber as string) || undefined,
     sender_bank_name: data.senderBankName as string || data.originatorBankName as string || undefined,
     narration: data.narration as string || data.description as string || data.paymentDescription as string || undefined,
     payment_reference: data.paymentReference as string || undefined,
