@@ -49,7 +49,28 @@ export async function POST(request: NextRequest) {
     const alreadyHasBvn = type === 'BVN' && customer.bvn;
     const alreadyHasNin = type === 'NIN' && customer.nin;
 
-    if (alreadyHasBvn || alreadyHasNin) {
+    // A stored BVN/NIN alone is NOT proof of verification — the mock-era flow
+    // wrote dummy values into customers without a real Safe Haven
+    // verification, dead-ending users (auto-repair says "already verified"
+    // while ensureCustomerDva correctly refuses non-provider identities).
+    // Only a REAL (non-mock, provider-backed) verified identity row counts.
+    const identityClient = createServiceClient();
+    const { data: verifiedIdentityRows } = await identityClient
+      .from('safe_haven_identity_verifications')
+      .select('identity_id')
+      .eq('customer_id', customer.id)
+      .eq('status', 'verified')
+      .neq('identity_id', '')
+      .limit(25);
+
+    const hasRealIdentity = (verifiedIdentityRows || []).some(
+      (row) =>
+        row.identity_id &&
+        !row.identity_id.startsWith('mock-') &&
+        row.identity_id !== `customer-${customer.id}`
+    );
+
+    if ((alreadyHasBvn || alreadyHasNin) && hasRealIdentity) {
       // BVN/NIN is already in the customers table. Check if kyc_tier is also set.
       const { data: profile } = await supabase
         .from('profiles')
