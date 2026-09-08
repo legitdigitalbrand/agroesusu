@@ -68,6 +68,7 @@ export async function validateWithdrawal(request: WithdrawalRequest): Promise<Wi
   }
 
   // 5. Check lock period (for active accounts — matured accounts can withdraw freely)
+  let isLocked = false;
   if (account.status === 'active' && terms.lock_period_days > 0) {
     const openedAt = account.opened_at ? new Date(account.opened_at) : null;
     if (openedAt) {
@@ -76,17 +77,23 @@ export async function validateWithdrawal(request: WithdrawalRequest): Promise<Wi
       const now = new Date();
 
       if (now < lockEnd) {
-        // Within lock period — check if early withdrawal is allowed
-        if (!terms.early_withdrawal_allowed) {
+        isLocked = true;
+
+        if (request.emergency) {
+          // ── EMERGENCY EARLY EXIT ──────────────────────────────
+          // Bypasses early_withdrawal_allowed entirely. The customer
+          // receives 100% of principal and forfeits all accrued interest.
+          // No penalty fee is charged.
+        } else if (!terms.early_withdrawal_allowed) {
           errors.push(`Withdrawal locked until ${lockEnd.toDateString()}. Early withdrawal is not allowed for this product.`);
           return { allowed: false, errors };
-        }
-
-        // Early withdrawal allowed but with penalty
-        const penaltyRate = terms.early_withdrawal_penalty_rate || 0;
-        if (penaltyRate > 0) {
-          penaltyAmount = (request.amount * penaltyRate) / 100;
-          netAmount = request.amount - penaltyAmount;
+        } else {
+          // Early withdrawal allowed but with penalty
+          const penaltyRate = terms.early_withdrawal_penalty_rate || 0;
+          if (penaltyRate > 0) {
+            penaltyAmount = (request.amount * penaltyRate) / 100;
+            netAmount = request.amount - penaltyAmount;
+          }
         }
       }
     }
@@ -97,6 +104,38 @@ export async function validateWithdrawal(request: WithdrawalRequest): Promise<Wi
   if (request.amount > balance) {
     errors.push(`Insufficient savings balance. Available: ₦${balance}, Requested: ₦${request.amount}`);
     return { allowed: false, errors };
+  }
+
+  // ── EMERGENCY EXIT: full-balance close, principal only ──────────────
+  if (request.emergency) {
+    if (!isLocked) {
+      errors.push('Emergency withdrawal is only available for locked accounts. Use a regular withdrawal instead.');
+      return { allowed: false, errors };
+    }
+    if (account.status !== 'active') {
+      errors.push(`Cannot emergency-withdraw from a ${account.status} account.`);
+      return { allowed: false, errors };
+    }
+    // Emergency exit closes the deposit: the full balance must be withdrawn.
+    if (request.amount < balance) {
+      errors.push('Emergency withdrawal closes the deposit — withdraw the full balance.');
+      return { allowed: false, errors };
+    }
+
+    // Principal only: interest already credited to the pot is forfeited.
+    // (Fixed deposits accrue at maturity, so this is normally 0 — but any
+    // accrued interest stays in the product account and is never paid out.)
+    const interestEarned = Number(account.total_interest_earned || 0);
+    const payout = Math.max(0, Math.round((balance - interestEarned) * 100) / 100);
+
+    return {
+      allowed: true,
+      errors: [],
+      penalty_amount: 0,
+      net_amount: payout,
+      payout_amount: payout,
+      interest_forfeited: Math.round((balance - payout) * 100) / 100,
+    };
   }
 
   // 7. Check minimum balance after withdrawal
@@ -135,6 +174,7 @@ export async function withdraw(request: WithdrawalRequest): Promise<{
   transaction_reference?: string;
   penalty_amount?: number;
   net_amount?: number;
+  interest_forfeited?: number;
   error?: string;
 }> {
   const supabase = getServiceClient();
@@ -163,25 +203,38 @@ export async function withdraw(request: WithdrawalRequest): Promise<{
       return { success: false, error: 'Savings ledger account not found' };
     }
 
-    // 4. Call the Orchestrator with the validated amount
-    // Note: if there's a penalty, the net amount goes to the wallet
-    // The penalty would be a separate fee_charge transaction (future enhancement)
-    // For now, the full amount is withdrawn and penalty is tracked for reporting
+    // 4. Call the Orchestrator with the validated amount.
+    // Emergency exits pay out the PRINCIPAL ONLY (validation.payout_amount);
+    // forfeited interest stays in the product account and is never paid out.
+    // No penalty fee is charged — the customer never loses principal.
+    const payoutAmount = request.emergency && validation.payout_amount !== undefined
+      ? validation.payout_amount
+      : request.amount;
+
+    if (payoutAmount <= 0) {
+      return { success: false, error: 'Nothing to withdraw: principal is zero.' };
+    }
+
     const result = await initiate({
       transaction_type: 'savings_withdrawal',
       source_module: 'savings',
       source_reference: request.savings_account_id,
-      amount: request.amount,
+      amount: payoutAmount,
       currency: 'NGN',
-      description: request.description || `Savings withdrawal from ${account.account_number}`,
+      description: request.description
+        || (request.emergency
+          ? `Emergency early exit from ${account.account_number} (interest forfeited)`
+          : `Savings withdrawal from ${account.account_number}`),
       idempotency_key: `savings_withdrawal:${request.savings_account_id}:${Date.now()}`,
       wallet_id: request.wallet_id,
       product_account_id: ledgerAccountId as string,
       metadata: {
         savings_account_id: request.savings_account_id,
         product_id: account.product_id,
+        emergency: request.emergency || false,
         penalty_amount: validation.penalty_amount || 0,
         net_amount: validation.net_amount,
+        interest_forfeited: validation.interest_forfeited || 0,
       },
     });
 
@@ -191,8 +244,10 @@ export async function withdraw(request: WithdrawalRequest): Promise<{
 
     // 5. Check if this is a full withdrawal (balance will be ~0)
     const remainingBalance = await getSavingsBalance(request.savings_account_id);
-    if (remainingBalance <= 1) { // Tolerance of ₦1
-      // Mark account as withdrawn
+    if (request.emergency || remainingBalance <= 1) { // Tolerance of ₦1
+      // Mark account as withdrawn. Emergency exits always close the deposit
+      // (any forfeited interest residue stays in the product account — it is
+      // never credited and accrual skips non-active accounts).
       await supabase
         .from('savings_accounts')
         .update({
@@ -207,6 +262,7 @@ export async function withdraw(request: WithdrawalRequest): Promise<{
       transaction_reference: result.transaction_reference,
       penalty_amount: validation.penalty_amount,
       net_amount: validation.net_amount,
+      interest_forfeited: validation.interest_forfeited,
     };
 
   } catch (error) {

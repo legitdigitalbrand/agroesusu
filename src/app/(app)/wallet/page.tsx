@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-me";
+import { useWalletRealtime } from "@/hooks/use-wallet-realtime";
 import { formatRelativeTime } from "@/lib/format";
 import {
   Card,
@@ -86,6 +87,9 @@ export default function WalletPage() {
   const [copied, setCopied] = useState(false);
 
   const { data: me, isLoading: meLoading, error: meError, refetch: refetchMe } = useMe();
+
+  // Live balance: refresh everything the instant a wallet transaction lands.
+  useWalletRealtime(me?.wallet?.id);
   const walletId = me?.wallet?.id;
 
   const {
@@ -152,11 +156,6 @@ export default function WalletPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  const hasSubStats =
-    (wallet.ledger_balance || 0) > 0 ||
-    (wallet.pending_balance || 0) > 0 ||
-    (wallet.reserved_balance || 0) > 0;
 
   return (
     <div className="space-y-6">
@@ -227,36 +226,6 @@ export default function WalletPage() {
                   )}
                 </div>
               </div>
-
-              {/* Sub-stats if non-zero */}
-              {hasSubStats && (
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 bg-indigo-deep/40 backdrop-blur-xs border border-white/15 rounded-xl p-4">
-                  <div>
-                    <p className="text-[11px] font-medium text-white/80 uppercase tracking-wider mb-1">
-                      Ledger
-                    </p>
-                    <p className="font-mono text-xs sm:text-sm font-semibold text-white tabular-nums">
-                      {balanceVisible ? fmtNGN(wallet.ledger_balance) : "••••"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-white/80 uppercase tracking-wider mb-1">
-                      Pending
-                    </p>
-                    <p className="font-mono text-xs sm:text-sm font-semibold text-white tabular-nums">
-                      {balanceVisible ? fmtNGN(wallet.pending_balance) : "••••"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-white/80 uppercase tracking-wider mb-1">
-                      Reserved
-                    </p>
-                    <p className="font-mono text-xs sm:text-sm font-semibold text-white tabular-nums">
-                      {balanceVisible ? fmtNGN(wallet.reserved_balance) : "••••"}
-                    </p>
-                  </div>
-                </div>
-              )}
 
               {/* Action Buttons: Fund / Transfer / Withdraw */}
               <div className="grid grid-cols-3 gap-1.5 sm:gap-3 pt-2">

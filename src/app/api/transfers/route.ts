@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
-import { createServiceClient } from '@/lib/supabase/service';
-import { getBankingProvider } from '@/modules/integrations';
-import { initiate, reverse } from '@/modules/orchestrator';
-import { refreshWalletBalanceCache } from '@/modules/ledger';
-import { reserveWalletHold, releaseWalletHold } from '@/modules/wallet/holds';
-import {
-  candidateKeysFor,
-  deriveIdempotencyKey,
-  deriveReference,
-  findExistingTransaction,
-  findExistingTransfer,
-} from '@/lib/financial-idempotency';
+import { initiateWithdrawal } from '@/modules/withdrawal';
+import { dispatchNotification } from '@/modules/communications';
 
 // POST /api/transfers — initiate a bank transfer from wallet
 //
@@ -83,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const { data: wallet } = await supabase
       .from('wallets')
-      .select('id, account_number, cached_available_balance, cached_balance, reserved_balance')
+      .select('id')
       .eq('customer_id', customer.id)
       .eq('status', 'active')
       .maybeSingle();
@@ -92,308 +82,82 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active wallet found' }, { status: 400 });
     }
 
-    // ── IDEMPOTENCY: deterministic key + existing-transaction check ────────
-    const idemParams = {
-      customer_id: customer.id,
+    // ── SINGLE PAYOUT ENGINE (consolidation, 2026-09-09) ─────────────────
+    // /api/transfers and /api/wallets/withdraw previously ran two parallel
+    // implementations of the same wallet→bank flow, each with its own escrow
+    // code, name-enquiry endpoint and bank list — they drifted apart and both
+    // broke independently. Both now funnel through the withdrawal module
+    // (initiateWithdrawal), which already provides: tier/limit validation,
+    // deterministic idempotency (Gate 4 P0 #1), atomic wallet holds (P0 #3),
+    // two-phase escrow (reservation → provider transfer → settle/reverse),
+    // webhook + cron + manual reconciliation, and full audit on
+    // withdrawal_requests. "Transfer" and "Withdraw" are one operation with
+    // two entry points.
+
+    // Audit IP/device for the withdrawal record
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0].trim() : undefined;
+    const deviceId = request.cookies.get('device_id')?.value || undefined;
+
+    const result = await initiateWithdrawal({
       wallet_id: wallet.id,
       amount: transferAmount,
-      destination: String(beneficiaryAccountNumber),
-      client_reference: clientReference || undefined,
+      beneficiary_bank_code: beneficiaryBankCode,
+      beneficiary_account_number: beneficiaryAccountNumber,
+      beneficiary_account_name: beneficiaryAccountName,
+      name_enquiry_session_id: nameEnquiryReference,
+      narration: narration || `Transfer to ${beneficiaryAccountName}`,
+      customer_id: customer.id,
+      auth_user_id: user.id,
+      ip_address: ip,
+      device_id: deviceId,
+    });
+
+    // Map the WithdrawalResult to the transfer-page response contract
+    // ({ status: success | pending | failed, message, reference }).
+    const statusMap: Record<string, string> = {
+      completed: 'success',
+      pending: 'pending',
+      failed: 'failed',
     };
-    const idempotencyKey = deriveIdempotencyKey('bank_transfer', idemParams);
+    const status = statusMap[result.status] || 'failed';
 
-    const [existingFt, existingTransfer] = await Promise.all([
-      findExistingTransaction(candidateKeysFor('bank_transfer', idemParams)),
-      findExistingTransfer([
-        deriveReference('TRF', idempotencyKey),
-      ]),
-    ]);
-
-    if (existingFt || existingTransfer) {
-      const ref = existingTransfer?.reference || existingFt?.transaction_reference || '';
-      const status = existingTransfer?.status ||
-        (existingFt?.status === 'completed' ? 'success' : 'pending');
-      const inFlight = ['initiated', 'validated', 'posting', 'posted'].includes(existingFt?.status || '');
-      return NextResponse.json({
-        reference: ref,
-        status,
-        duplicate: true,
-        message: inFlight
-          ? 'This transfer is already being processed. Please wait for it to complete.'
-          : 'This transfer was already completed.',
-      });
-    }
-
-    // Fast-path UX check (authoritative check is the DB-level hold below)
-    const available = Number(wallet.cached_balance) - Number(wallet.reserved_balance);
-    if (available < transferAmount) {
+    if (status === 'failed') {
       return NextResponse.json(
-        { error: `Insufficient balance. Your wallet has ₦${available.toLocaleString()}` },
+        { error: result.message || 'Transfer failed', reference: result.payment_reference, status },
         { status: 400 }
       );
     }
 
-    const paymentReference = deriveReference('TRF', idempotencyKey);
-    const serviceClient = createServiceClient();
+    // Dispatch notification (async, non-blocking) — mirrors the withdrawal flow
+    dispatchNotification({
+      event: status === 'success' ? 'withdrawal_completed' : 'withdrawal_initiated',
+      user_id: user.id,
+      variables: {
+        amount: transferAmount.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }),
+        bankName: beneficiaryBankName || beneficiaryBankCode,
+        accountNumber: beneficiaryAccountNumber,
+      },
+      metadata: { withdrawal_id: result.id, payment_reference: result.payment_reference, client_reference: clientReference || undefined },
+      related_entity_type: 'withdrawal',
+      related_entity_id: result.id,
+    }).catch(() => {});
 
-    // ── CONCURRENCY GUARD: atomic wallet hold (P0 #3) ──────────────────────
-    // The room check runs inside the DB against the LIVE row, so concurrent
-    // requests cannot both pass. Hold is released in the finally block after
-    // the FTO reservation posts (funds then escrowed via confirmed debit).
-    const hold = await reserveWalletHold(wallet.id, `hold:${idempotencyKey}`, transferAmount);
-    if (hold.status === 'duplicate') {
-      return NextResponse.json({
-        reference: paymentReference,
-        status: 'pending',
-        duplicate: true,
-        message: 'This transfer is already being processed. Please wait for it to complete.',
-      });
-    }
-    if (hold.status === 'insufficient') {
-      return NextResponse.json(
-        { error: `Insufficient balance. Your wallet has ₦${Number(hold.available_balance).toLocaleString()}` },
-        { status: 400 }
-      );
-    }
-    if (hold.status === 'error') {
-      return NextResponse.json(
-        { error: 'We could not complete this transaction right now. Please try again later.' },
-        { status: 503 }
-      );
-    }
-
-    // Record the transfer (deterministic reference; UNIQUE(reference) makes a
-    // concurrent duplicate insert fail at the DB level)
-    const { data: transferRow, error: transferInsertError } = await serviceClient
-      .from('transfers')
-      .insert({
-        customer_id: customer.id,
-        wallet_id: wallet.id,
-        reference: paymentReference,
-        debit_account_number: wallet.account_number,
-        beneficiary_bank_code: beneficiaryBankCode,
-        beneficiary_bank_name: beneficiaryBankName,
-        beneficiary_account_number: beneficiaryAccountNumber,
-        beneficiary_account_name: beneficiaryAccountName,
-        amount: transferAmount,
-        narration: narration || `Transfer to ${beneficiaryAccountName}`,
-        payment_reference: paymentReference,
-        status: 'initiated',
-        name_enquiry_session_id: nameEnquiryReference,
-        metadata: { idempotency_key: idempotencyKey },
-      })
-      .select('id')
-      .single();
-
-    if (transferInsertError || !transferRow) {
-      await releaseWalletHold(`hold:${idempotencyKey}`);
-      // Unique violation = concurrent duplicate of the same logical request
-      if (transferInsertError?.code === '23505') {
-        return NextResponse.json({
-          reference: paymentReference,
-          status: 'pending',
-          duplicate: true,
-          message: 'This transfer is already being processed. Please wait for it to complete.',
-        });
-      }
-      console.error('[API:transfers] Insert failed:', transferInsertError);
-      return NextResponse.json({ error: 'Transfer could not be initiated' }, { status: 500 });
-    }
-
-    const transferId = transferRow.id;
-
-    try {
-      // ── PHASE 1: RESERVE — D Customer Wallet, C Escrow (2004) ───────────
-      const reservationResult = await initiate({
-        transaction_type: 'wallet_withdrawal_reservation' as never,
-        source_module: 'wallet',
-        source_reference: transferId,
-        amount: transferAmount,
-        currency: 'NGN',
-        description: `Transfer reservation: ${paymentReference} to ${beneficiaryAccountName}`,
-        idempotency_key: `bank_transfer_reservation:${idempotencyKey}`,
-        wallet_id: wallet.id,
-        metadata: {
-          transfer_id: transferId,
-          payment_reference: paymentReference,
-          beneficiary: beneficiaryAccountName,
-        },
-      });
-
-      if (reservationResult.status === 'failed') {
-        await serviceClient.from('transfers').update({
-          status: 'failed',
-          provider_response: { error: reservationResult.error || 'Reservation failed' },
-        }).eq('id', transferId);
-
-        return NextResponse.json(
-          { error: 'We could not complete this transaction right now. Please try again later.' },
-          { status: 400 }
-        );
-      }
-
-      // Reservation posted — funds are now escrowed in the ledger/read model.
-      // Release the hold so reserved_balance does not double-count.
-      await releaseWalletHold(`hold:${idempotencyKey}`);
-
-      await serviceClient.from('transfers').update({
-        status: 'reserved',
-        metadata: { idempotency_key: idempotencyKey, reservation_ft_id: reservationResult.id },
-      }).eq('id', transferId);
-
-      // ── SUBMIT TRANSFER TO SAFE HAVEN ────────────────────────────────────
-      const provider = getBankingProvider();
-
-      let transferResult;
-      try {
-        transferResult = await provider.transfer({
-          nameEnquiryReference,
-          debitAccountNumber: wallet.account_number,
-          beneficiaryBankCode,
-          beneficiaryAccountNumber,
-          amount: transferAmount,
-          narration: narration || `Transfer ${paymentReference}`,
-          paymentReference,
-          saveBeneficiary: false,
-        });
-      } catch (transferError) {
-        // Provider API call failed — reverse the reservation (funds back to wallet)
-        await reverseReservation(reservationResult.id, wallet.id);
-        await serviceClient.from('transfers').update({
-          status: 'failed',
-          provider_response: {
-            error: transferError instanceof Error ? transferError.message : String(transferError),
-          },
-        }).eq('id', transferId);
-
-        return NextResponse.json(
-          { error: 'We could not complete this transaction right now. Please try again later.' },
-          { status: 502 }
-        );
-      }
-
-      // Persist the provider response
-      await serviceClient.from('transfers').update({
-        provider_response: transferResult,
-        status: transferResult.status === 'success' ? 'settling' : transferResult.status,
-      }).eq('id', transferId);
-
-      // ── PHASE 2: SETTLE or hold reserved ─────────────────────────────────
-      if (transferResult.status === 'success') {
-        // D Escrow (2004), C Safe Haven Settlement (1000)
-        const settlementResult = await initiate({
-          transaction_type: 'wallet_withdrawal_settlement' as never,
-          source_module: 'wallet',
-          source_reference: transferId,
-          amount: transferAmount,
-          currency: 'NGN',
-          description: `Transfer settlement: ${paymentReference}`,
-          idempotency_key: `bank_transfer_settlement:${idempotencyKey}`,
-          wallet_id: wallet.id,
-          metadata: {
-            transfer_id: transferId,
-            payment_reference: paymentReference,
-            safe_haven_reference: transferResult.reference,
-          },
-        });
-
-        if (settlementResult.status === 'failed') {
-          // Funds left Safe Haven but settlement posting failed — flag for
-          // reconciliation; do NOT mark success falsely
-          console.error('[API:transfers] Settlement posting failed:', settlementResult.error);
-          await serviceClient.from('transfers').update({
-            status: 'pending_settlement',
-            metadata: { idempotency_key: idempotencyKey, settlement_error: settlementResult.error },
-          }).eq('id', transferId);
-
-          return NextResponse.json({
-            reference: paymentReference,
-            status: 'pending',
-            message: 'Transfer submitted. It will be confirmed shortly.',
-          });
-        }
-
-        await serviceClient.from('transfers').update({
-          status: 'success',
-        }).eq('id', transferId);
-
-        return NextResponse.json({
-          reference: paymentReference,
-          status: 'success',
-          message: 'Transfer completed successfully',
-        });
-      }
-
-      if (transferResult.status === 'pending') {
-        // Funds remain reserved in escrow. Webhook / reconciliation cron will
-        // confirm the provider outcome and settle or reverse.
-        await serviceClient.from('transfers').update({
-          status: 'pending',
-        }).eq('id', transferId);
-
-        return NextResponse.json({
-          reference: paymentReference,
-          status: 'pending',
-          message: 'Transfer is being processed',
-        });
-      }
-
-      // Provider reported failure — reverse the reservation, funds returned
-      await reverseReservation(reservationResult.id, wallet.id);
-      await serviceClient.from('transfers').update({
-        status: 'failed',
-      }).eq('id', transferId);
-
-      return NextResponse.json(
-        { reference: paymentReference, status: 'failed', message: 'Transfer failed' },
-        { status: 400 }
-      );
-
-    } finally {
-      // Safety net: if we exit before the post-reservation release happened
-      // (crash-safe in-process), release the hold now. releaseWalletHold is
-      // idempotent (no-op when already released).
-      await releaseWalletHold(`hold:${idempotencyKey}`);
-      await refreshWalletBalanceCache(wallet.id).catch(() => {});
-    }
-
+    return NextResponse.json({
+      status,
+      message: result.message,
+      reference: result.payment_reference,
+      withdrawal_id: result.id,
+    });
   } catch (error) {
     console.error('[API:transfers] Error:', error);
-    const errMsg = error instanceof Error ? error.message : String(error);
-    const isNetworkError = errMsg.includes('ERR_NAME_NOT_RESOLVED') ||
-      errMsg.includes('fetch failed') ||
-      errMsg.includes('ECONNREFUSED');
-    if (isNetworkError) {
-      return NextResponse.json(
-        { error: 'Unable to connect to banking service. Check your connection and try again.', code: 'network_error' },
-        { status: 503 }
-      );
-    }
     return NextResponse.json(
-      { error: 'We could not complete this transaction right now. Please try again later.' },
+      { error: 'Transfer failed. Please try again.', status: 'failed' },
       { status: 500 }
     );
   }
 }
 
-/**
- * Reverse a reservation: funds return from escrow to the wallet.
- * Mirrors withdrawal/service.ts reverseReservation.
- */
-async function reverseReservation(reservationFtId: string, walletId: string, reason?: string) {
-  try {
-    await reverse({
-      original_transaction_id: reservationFtId,
-      reason: reason || 'Transfer failed — reservation reversed',
-      idempotency_key: `reversal:${reservationFtId}`,
-    });
-    await refreshWalletBalanceCache(walletId).catch(() => {});
-  } catch (revErr) {
-    console.error('[API:transfers] Reservation reversal failed:', revErr);
-  }
-}
-
-// GET /api/transfers — list user's transfers
 export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient();

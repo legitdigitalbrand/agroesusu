@@ -268,12 +268,20 @@ export class SafeHavenAdapter implements IBankingProvider {
 
   async listBanks(): Promise<Bank[]> {
     const response = await this.client.get('/transfers/banks');
-    const data = response.data as Array<Record<string, unknown>>;
-    return (data || []).map((bank) => ({
-      bankCode: bank.bankCode as string,
-      bankName: bank.bankName as string,
-      logoUrl: bank.logoUrl as string | undefined,
-    }));
+    const body = response.data as Record<string, unknown> | Array<Record<string, unknown>>;
+    // Actual provider shape (evidenced in safe_haven_api_calls production logs):
+    // { data: [{ name: "ACCESS BANK", bankCode: "000014", logoImage, ... }, ...] }
+    // — the array is nested under `data` and the display name field is `name`.
+    const list = Array.isArray(body)
+      ? body
+      : Array.isArray(body?.data)
+        ? (body.data as Array<Record<string, unknown>>)
+        : [];
+    return list.map((bank) => ({
+      bankCode: (bank.bankCode || bank.routingKey) as string,
+      bankName: (bank.bankName || bank.name) as string,
+      logoUrl: (bank.logoUrl || bank.logoImage) as string | undefined,
+    })).filter((b) => b.bankCode && b.bankName);
   }
 
   async nameEnquiry(params: NameEnquiryParams): Promise<NameEnquiryResult> {

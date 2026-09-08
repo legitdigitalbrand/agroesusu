@@ -85,6 +85,7 @@ export default function SavingsAccountDetailPage() {
   const queryClient = useQueryClient();
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showEditTargetModal, setShowEditTargetModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -198,6 +199,28 @@ export default function SavingsAccountDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
       queryClient.invalidateQueries({ queryKey: ["me"] });
       setShowDepositModal(false);
+    },
+  });
+
+  // Emergency early-exit mutation (locked fixed deposits): full principal back,
+  // accrued interest forfeited, deposit closed.
+  const emergencyWithdrawMutation = useMutation({
+    mutationFn: async () => {
+      if (!account?.current_balance) throw new Error("No balance to withdraw");
+      const res = await fetch(`/api/savings/accounts/${accountId}/withdraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: account?.current_balance ?? 0, wallet_id: me?.wallet?.id, emergency: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Emergency withdrawal failed");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      setShowEmergencyModal(false);
     },
   });
 
@@ -351,6 +374,19 @@ export default function SavingsAccountDetailPage() {
             {isMatured && (
               <p className="text-sm text-loam font-medium">🎉 Matured — ready to withdraw</p>
             )}
+            {!isMatured && account.status === "active" && daysRemaining > 0 && (
+              <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Need this money early? An emergency withdrawal returns your <span className="font-semibold">full principal</span> to your wallet immediately and closes the deposit — all accrued interest is forfeited.
+                </p>
+                <button
+                  onClick={() => setShowEmergencyModal(true)}
+                  className="text-xs font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-700"
+                >
+                  Emergency withdrawal →
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -430,6 +466,45 @@ export default function SavingsAccountDetailPage() {
           walletBalance={walletBalance}
           accountName={displayName}
         />
+      )}
+
+      {/* Emergency Withdrawal Confirm Modal */}
+      {showEmergencyModal && (
+        <Dialog open onOpenChange={(open) => !open && setShowEmergencyModal(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Emergency Withdrawal</DialogTitle>
+              <DialogDescription>
+                Close this fixed deposit early and move your principal to your wallet.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed">
+                You are withdrawing <span className="font-semibold">before maturity</span> ({daysRemaining} days remaining). Your <span className="font-semibold">full principal is returned</span> — no penalty fee — but <span className="font-semibold">all accrued interest is forfeited</span>. This closes the deposit and cannot be undone.
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-ink-soft">Principal returned to wallet</span>
+                <span className="font-semibold text-ink">{fmtNGN(balance)}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-ink-soft">Interest forfeited</span>
+                <span className="font-semibold text-ink">{fmtNGN(account.interest_earned || 0)}</span>
+              </div>
+              {emergencyWithdrawMutation.error && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{(emergencyWithdrawMutation.error as Error).message}</span>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowEmergencyModal(false)} disabled={emergencyWithdrawMutation.isPending}>Cancel</Button>
+                <Button variant="primary" onClick={() => emergencyWithdrawMutation.mutate()} isLoading={emergencyWithdrawMutation.isPending}>
+                  Confirm Emergency Withdrawal
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Withdraw Modal */}

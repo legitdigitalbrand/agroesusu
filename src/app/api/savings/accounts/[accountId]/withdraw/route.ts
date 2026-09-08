@@ -16,7 +16,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { amount, wallet_id, description } = body;
+    const { amount, wallet_id, description, emergency } = body;
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 });
@@ -66,6 +66,7 @@ export async function POST(
       wallet_id: walletId,
       amount,
       description,
+      emergency: emergency === true,
     });
 
     if (!result.success) {
@@ -86,6 +87,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
       transaction_reference: result.transaction_reference,
+      emergency: emergency === true,
+      interest_forfeited: result.interest_forfeited || 0,
     });
 
   } catch (error) {

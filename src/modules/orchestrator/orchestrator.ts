@@ -23,6 +23,39 @@ import type {
   ReversalRequest,
 } from './types';
 
+// ─── Wallet read-model mapping ────────────────────────────────────────────
+// The wallet_transactions.transaction_type column is a DB enum
+// (wallet_tx_type: deposit, transfer_in, transfer_out, withdrawal, fee,
+// interest, penalty, loan_disbursement, loan_repayment, reversal, adjustment,
+// unknown). Internal financial-transaction types are domain-specific strings
+// and MUST be mapped here — unmapped strings violate the enum and the insert
+// fails silently (the read model is non-fatal for the money movement, but a
+// failed insert means the customer never sees the transaction in History).
+const WALLET_TX_TYPE_MAP: Record<string, string> = {
+  wallet_deposit: 'deposit',
+  incoming_deposit: 'deposit',
+  savings_withdrawal: 'deposit',        // savings pot → wallet: money arrives in the wallet
+  group_payout: 'transfer_in',
+  investment_redemption: 'deposit',
+  investment_returns: 'deposit',
+  wallet_withdrawal: 'withdrawal',      // both reservation and settlement legs
+  savings_contribution: 'transfer_out',
+  group_contribution: 'transfer_out',
+  investment_subscription: 'transfer_out',
+  investment_reinvest: 'transfer_out',
+  loan_disbursement: 'loan_disbursement',
+  loan_repayment: 'loan_repayment',
+  loan_interest: 'interest',
+  loan_penalty: 'penalty',
+  savings_interest: 'interest',
+  fee_charge: 'fee',
+  reversal: 'reversal',
+};
+
+export function mapWalletTxType(internalType: string): string {
+  return WALLET_TX_TYPE_MAP[internalType] || 'unknown';
+}
+
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -196,13 +229,13 @@ export async function initiate(
       const walletCreditTypes = ['wallet_deposit', 'incoming_deposit', 'savings_withdrawal', 'loan_disbursement', 'group_payout', 'investment_redemption', 'investment_returns'];
       const direction = walletCreditTypes.includes(request.transaction_type) ? 'credit' : 'debit';
 
-      await supabase.from('wallet_transactions').insert({
+      const { error: wtxError } = await supabase.from('wallet_transactions').insert({
         wallet_id: request.wallet_id,
-        transaction_reference: `WTX-${ftRef}`,
+        transaction_reference: `WTX-${ftRef.replace(/^FT-/, '')}`, // chk_tx_ref_format: ^WTX-[0-9]{4}-[0-9]{8}$
         direction,
         amount: request.amount,
         currency: request.currency || 'NGN',
-        transaction_type: request.transaction_type.replace('wallet_', ''),
+        transaction_type: mapWalletTxType(request.transaction_type),
         narration: request.description,
         source: 'internal_operation',
         internal_reference: ftId,
@@ -210,6 +243,12 @@ export async function initiate(
         confirmed_at: new Date().toISOString(),
         metadata: { ...request.metadata, ft_id: ftId, je_id: jeId },
       });
+      // The read model is non-fatal for the money movement (the JE is already
+      // posted), but a failure means the customer never sees this transaction
+      // in History — so log it loudly for reconciliation.
+      if (wtxError) {
+        console.error(`[Orchestrator] wallet_transactions insert FAILED for FT ${ftRef} (${request.transaction_type}):`, wtxError.message);
+      }
     }
 
     // 9. REFRESH BALANCE CACHE
@@ -285,14 +324,17 @@ export async function reverse(request: ReversalRequest): Promise<FinancialTransa
 
       const reversalDirection = originalWtx?.direction === 'credit' ? 'debit' : 'credit';
 
-      await supabase.from('wallet_transactions').insert({
-        wallet_id: original.wallet_id, transaction_reference: `WTX-${revFt.transaction_reference}`,
+      const { error: revWtxError } = await supabase.from('wallet_transactions').insert({
+        wallet_id: original.wallet_id, transaction_reference: `WTX-${revFt.transaction_reference.replace(/^FT-/, '')}`,
         direction: reversalDirection, amount: Number(original.amount), currency: 'NGN',
         transaction_type: 'reversal', narration: `Reversal: ${request.reason}`,
         source: 'internal_operation', internal_reference: revFt.id, status: 'confirmed',
         confirmed_at: new Date().toISOString(),
         metadata: { original_ft_id: request.original_transaction_id, reversal_je_id: reversalJeId },
       });
+      if (revWtxError) {
+        console.error(`[Orchestrator] wallet_transactions reversal insert FAILED for FT ${revFt.transaction_reference}:`, revWtxError.message);
+      }
 
       await refreshWalletBalanceCache(original.wallet_id);
     }

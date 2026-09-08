@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { ArrowLeft, Check, Loader2, X, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-me";
 import { Button, LoadingState, ErrorState } from "@/components/yield";
 
@@ -45,38 +45,25 @@ export default function WithdrawPage() {
   const [withdrawalResult, setWithdrawalResult] = useState<WithdrawalResult | null>(null);
   const [error, setError] = useState("");
 
-  // Nigerian banks list
-  const banks = [
-    { code: "044", name: "Access Bank" },
-    { code: "035", name: "ALAT by Wema" },
-    { code: "011", name: "First Bank of Nigeria" },
-    { code: "058", name: "GTBank" },
-    { code: "070", name: "Fidelity Bank" },
-    { code: "076", name: "Zenith Bank" },
-    { code: "033", name: "United Bank for Africa" },
-    { code: "232", name: "Sterling Bank" },
-    { code: "057", name: "Stanbic IBTC" },
-    { code: "311", name: "Cowrywise" },
-    { code: "999", name: "Agriqcap MFB" },
-    { code: "030", name: "Heritage Bank" },
-    { code: "082", name: "Keystone Bank" },
-    { code: "221", name: "Stanbic IBTC Bank" },
-    { code: "215", name: "Unity Bank" },
-    { code: "040", name: "EcoBank" },
-    { code: "084", name: "Polaris Bank" },
-    { code: "214", name: "FCMB" },
-    { code: "032", name: "Wema Bank" },
-    { code: "038", name: "Jaiz Bank" },
-    { code: "503", name: "Opay" },
-    { code: "505", name: "Kuda Microfinance Bank" },
-    { code: "502", name: "PalmPay" },
-    { code: "512", name: "Moniepoint MFB" },
-  ];
+  // Live bank list from Safe Haven via /api/banks.
+  // The previous hardcoded list used legacy 3-digit CBN-style codes (044,
+  // 512, …) which Safe Haven rejects with "Unknown Bank Code" — the provider
+  // uses its own 6-digit codes (e.g. ACCESS BANK = 000014).
+  const { data: banksData, isLoading: banksLoading } = useQuery<{ banks: Array<{ bankName: string; bankCode: string }> }>({
+    queryKey: ["banks"],
+    queryFn: async () => {
+      const res = await fetch("/api/banks");
+      if (!res.ok) throw new Error("Could not load bank list");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 60, // banks rarely change
+  });
+  const banks = banksData?.banks || [];
 
   // Name enquiry mutation
   const nameEnquiryMutation = useMutation({
     mutationFn: async (data: { bankCode: string; accountNumber: string }) => {
-      const res = await fetch("/api/wallets/withdraw/name-enquiry", {
+      const res = await fetch("/api/transfers/name-enquiry", { // consolidated payout engine — one name-enquiry endpoint
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -202,16 +189,16 @@ export default function WithdrawPage() {
                 value={bankCode}
                 onChange={(e) => {
                   setBankCode(e.target.value);
-                  setBankName(banks.find(b => b.code === e.target.value)?.name || "");
+                  setBankName(banks.find(b => b.bankCode === e.target.value)?.bankName || "");
                   if (e.target.value && accountNumber.length === 10) {
                     setError("");
                   }
                 }}
                 className="w-full bg-paper border border-line rounded-xl px-4 py-3 text-base text-ink focus:outline-none focus:border-indigo"
               >
-                <option value="">Choose a bank…</option>
+                <option value="">{banksLoading ? "Loading banks…" : "Choose a bank…"}</option>
                 {banks.map(b => (
-                  <option key={b.code} value={b.code}>{b.name}</option>
+                  <option key={b.bankCode} value={b.bankCode}>{b.bankName}</option>
                 ))}
               </select>
             </div>
@@ -233,7 +220,7 @@ export default function WithdrawPage() {
           <div>
             <label className="text-xs font-medium text-ink mb-2 block">Destination Bank</label>
             <div className="bg-paper border border-line rounded-xl px-4 py-3 text-base text-ink flex items-center justify-between">
-              <span>{bankName || banks.find(b => b.code === bankCode)?.name}</span>
+              <span>{bankName || banks.find(b => b.bankCode === bankCode)?.bankName}</span>
               <button onClick={() => setStep("bank")} className="text-[11px] text-indigo hover:underline">Change</button>
             </div>
           </div>

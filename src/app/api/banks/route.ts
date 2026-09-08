@@ -10,8 +10,9 @@ export async function GET() {
     
     return NextResponse.json({
       banks: banks.map(b => ({
-        name: b.bankName,
-        code: b.bankCode,
+        bankName: b.bankName,
+        bankCode: b.bankCode,
+        logoUrl: b.logoUrl || undefined,
       })),
       count: banks.length,
     });

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { useMe } from "@/hooks/use-me";
+import { useWalletRealtime } from "@/hooks/use-wallet-realtime";
 import {
   Card,
   CardHeader,
@@ -123,6 +124,8 @@ export default function DashboardPage() {
   const [copiedAcct, setCopiedAcct] = useState(false);
 
   const { data: me, isLoading: meLoading, error: meError, refetch: refetchMe } = useMe();
+  // Live balance: refresh the instant a wallet transaction lands.
+  useWalletRealtime(me?.wallet?.id);
 
   const walletId = me?.wallet?.id;
 

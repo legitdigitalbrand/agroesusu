@@ -80,6 +80,13 @@ export interface WithdrawalRequest {
   wallet_id: string;
   amount: number;
   description?: string;
+  /**
+   * Emergency early exit from a locked savings product (fixed deposits).
+   * Returns the full principal to the wallet immediately and FORFEITS all
+   * accrued/unpaid interest — the deposit is closed. No penalty fee is
+   * charged: the customer never loses principal.
+   */
+  emergency?: boolean;
 }
 
 export interface WithdrawalValidationResult {
@@ -87,6 +94,10 @@ export interface WithdrawalValidationResult {
   errors: string[];
   penalty_amount?: number;
   net_amount?: number;
+  /** Emergency exit: interest forfeited by closing early (never paid out). */
+  interest_forfeited?: number;
+  /** Emergency exit: amount actually paid to the wallet (principal only). */
+  payout_amount?: number;
 }
 
 export interface SavingsHistorySignal {
