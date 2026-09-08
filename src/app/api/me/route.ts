@@ -90,7 +90,7 @@ export async function GET() {
     // Wallets table uses cached_* prefix for balance columns
     const { data: wallet } = await serviceClient
       .from('wallets')
-      .select('id, status, cached_available_balance, cached_ledger_balance, reserved_balance, wallet_number, account_number')
+      .select('id, status, cached_available_balance, cached_ledger_balance, reserved_balance, wallet_number, account_number, account_name')
       .eq('customer_id', customer.id)
       .in('status', ['active', 'created'])
       .limit(1)
@@ -106,6 +106,7 @@ export async function GET() {
       pending_balance: 0, // Not tracked as a wallet column; computed from transactions if needed
       currency: 'NGN',
       account_number: wallet.account_number,
+      account_name: wallet.account_name,
       wallet_number: wallet.wallet_number,
     } : null;
 

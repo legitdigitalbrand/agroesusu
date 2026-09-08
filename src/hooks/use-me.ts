@@ -39,6 +39,7 @@ interface MeResponse {
     pending_balance: number;
     currency: string;
     account_number: string | null;
+    account_name: string | null;
   } | null;
   summaries?: {
     savings: { count: number; total_balance: number; total_interest: number };

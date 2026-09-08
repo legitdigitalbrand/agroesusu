@@ -197,7 +197,7 @@ export default function WalletPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">
-                      Agriqcap Digital Wallet
+                      {wallet.account_name || "Agriqcap Digital Wallet"}
                     </p>
                     <p className="text-xs text-white/75">
                       {wallet.account_number ? `Account: ${wallet.account_number}` : "Main Balance"}
