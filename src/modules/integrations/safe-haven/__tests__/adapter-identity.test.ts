@@ -234,3 +234,113 @@ describe('SafeHavenAdapter.initiateIdentityVerification', () => {
     expect(result.identityId).toBe('69241f4d9f25fa0b5385620d');
   });
 });
+
+// ============================================================================
+// createSubAccount — OTP-at-creation semantics (2026-09-08 production fix)
+//
+// Evidenced in safe_haven_api_calls (2026-09-08): Safe Haven returns HTTP 201
+// with a business-status failure body ({statusCode: 400}) or a specific
+// message ("OTP already verified."). The subaccount endpoint verifies the
+// one-time OTP itself for BVN/NIN; HTTP status must never be trusted alone.
+// ============================================================================
+
+const subParams = {
+  identityType: 'NIN' as const,
+  identityNumber: '93911293560',
+  identityId: '6aa00e3ea4069463bbe81c1e',
+  phoneNumber: '+2348118351319',
+  emailAddress: 'legitdigitalbrand@gmail.com',
+  externalReference: 'agriqcap-wallet-4f48672a-a131-4040-b6aa-eb2c97b56a02',
+  otp: '320133',
+  customerName: 'CHINEDU OKONKWO',
+};
+
+// BARE 400 — the exact body captured in production logs on 2026-09-08
+// (HTTP 201, no message, no account data).
+const realBare400Response = {
+  status: 201,
+  data: { statusCode: 400 },
+};
+
+// "OTP already verified." — captured when the otp was consumed by the
+// standalone validate endpoint before creation.
+const realOtpSpentResponse = {
+  status: 201,
+  data: { message: 'OTP already verified.', statusCode: 400 },
+};
+
+// SUCCESS shape per the provider reference (Create Sub Account (Individual)):
+// body.data carries the account fields; names live in data.subAccountDetails.
+const realSubaccountSuccessResponse = {
+  status: 200,
+  data: {
+    statusCode: 200,
+    message: 'Account Created Successfully.',
+    data: {
+      _id: '662cf4fe8c6b9a0024372760',
+      accountNumber: '8021207606',
+      accountName: 'CROPXCHANGE / CHINEDU OKONKWO',
+      accountType: 'Current',
+      currencyCode: 'NGN',
+      identityId: '6aa00e3ea4069463bbe81c1e',
+      externalReference: 'agriqcap-wallet-4f48672a-a131-4040-b6aa-eb2c97b56a02',
+      isSubAccount: true,
+      subAccountDetails: {
+        _id: '662cf4fe8c6b9a0024372762',
+        firstName: 'CHINEDU',
+        lastName: 'OKONKWO',
+        emailAddress: 'legitdigitalbrand@gmail.com',
+        bvn: '',
+      },
+    },
+  },
+};
+
+describe('SafeHavenAdapter.createSubAccount', () => {
+  test('successful creation returns the account number and holder names', async () => {
+    const adapter = makeAdapter();
+    const post = jest.fn().mockResolvedValue(realSubaccountSuccessResponse);
+    inject(adapter, post);
+
+    const result = await adapter.createSubAccount(subParams);
+
+    expect(post).toHaveBeenCalledWith('/accounts/v2/subaccount', expect.objectContaining({
+      identityId: '6aa00e3ea4069463bbe81c1e',
+      otp: '320133',
+      identityType: 'NIN',
+    }));
+    expect(result.accountNumber).toBe('8021207606');
+    expect(result.accountName).toBe('CROPXCHANGE / CHINEDU OKONKWO');
+    expect(result.firstName).toBe('CHINEDU');
+    expect(result.lastName).toBe('OKONKWO');
+    expect(result.accountId).toBe('662cf4fe8c6b9a0024372760');
+  });
+
+  test('HTTP 201 with bare {statusCode: 400} body is treated as a provider rejection', async () => {
+    const adapter = makeAdapter();
+    inject(adapter, jest.fn().mockResolvedValue(realBare400Response));
+
+    await expect(adapter.createSubAccount(subParams)).rejects.toThrow(
+      /rejected by the provider.*statusCode 400/s
+    );
+  });
+
+  test('"OTP already verified." business failure surfaces the provider message', async () => {
+    const adapter = makeAdapter();
+    inject(adapter, jest.fn().mockResolvedValue(realOtpSpentResponse));
+
+    await expect(adapter.createSubAccount(subParams)).rejects.toThrow(/OTP already verified/);
+  });
+
+  test('success-status response with no accountNumber is a hard failure — never fabricated', async () => {
+    const adapter = makeAdapter();
+    inject(adapter, jest.fn().mockResolvedValue({
+      status: 200,
+      data: { statusCode: 200, message: 'Account Created Successfully.', data: { _id: 'x' } },
+    }));
+
+    await expect(adapter.createSubAccount(subParams)).rejects.toThrow(
+      /did not return an account number/
+    );
+  });
+});

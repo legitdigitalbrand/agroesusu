@@ -67,6 +67,9 @@ export interface CreateSubAccountResult {
   accountName: string;
   bankName: string;
   bankCode: string;
+  /** Account holder's names from the provider's subAccountDetails (when present). */
+  firstName?: string;
+  lastName?: string;
 }
 
 // Account Balance

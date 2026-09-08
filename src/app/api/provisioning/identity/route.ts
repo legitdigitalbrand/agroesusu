@@ -71,6 +71,22 @@ export async function POST(request: NextRequest) {
     );
 
     if ((alreadyHasBvn || alreadyHasNin) && hasRealIdentity) {
+      // Real verification exists. But if the customer has NO active DVA, the
+      // verification's one-time OTP was already consumed at validation — Safe
+      // Haven requires the OTP at subaccount creation, so the only supported
+      // path to a DVA is a FRESH verification session. Fall through to a real
+      // initiate instead of dead-ending these users.
+      const { data: activeAccount } = await identityClient
+        .from('safe_haven_accounts')
+        .select('id')
+        .eq('customer_id', customer.id)
+        .eq('status', 'active')
+        .limit(1);
+
+      if ((activeAccount || []).length === 0) {
+        // Verified but no active DVA — re-verification needed for provisioning.
+        // Do NOT short-circuit; run the real provider flow below.
+      } else {
       // BVN/NIN is already in the customers table. Check if kyc_tier is also set.
       const { data: profile } = await supabase
         .from('profiles')
@@ -163,6 +179,7 @@ export async function POST(request: NextRequest) {
         error: `${type} already verified`,
         alreadyVerified: true,
       }, { status: 409 });
+      }
     }
 
     // Get the Safe Haven banking provider

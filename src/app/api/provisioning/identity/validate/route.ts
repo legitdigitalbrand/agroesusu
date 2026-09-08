@@ -7,9 +7,16 @@ import { ensureProfileRow } from '@/lib/supabase/ensure-profile';
 import { PII_ENCRYPTION_KEY } from '@/lib/config/pii-key';
 
 // POST /api/provisioning/identity/validate
-// Validates the OTP from Safe Haven identity verification.
-// On success, stores the verified BVN/NIN (both plaintext for backward compat
-// AND encrypted via pgcrypto), updates kyc_tier, and creates/links a DVA.
+// Completes Safe Haven identity verification with the customer's OTP.
+//
+// Safe Haven's OTP is one-time and must be presented at subaccount creation
+// for BVN/NIN (the standalone identity/v2/validate consumes it). Therefore:
+//  - With an existing active DVA: standalone validate, then link the account.
+//  - Without a DVA: the OTP goes straight to subaccount creation, which
+//    verifies it — a wrong OTP means the provider rejects creation and
+//    nothing is marked verified.
+// On success, stores the verified BVN/NIN (plaintext for backward compat AND
+// encrypted via pgcrypto), updates kyc_tier, and creates/links the DVA.
 
 export async function POST(request: NextRequest) {
   const limited = applyRateLimit(request, "/api/provisioning/validate", RATE_LIMITS.PROVISIONING);
@@ -47,109 +54,24 @@ export async function POST(request: NextRequest) {
     }
 
     const provider = getBankingProvider();
-
-    const validationResult = await provider.validateIdentityVerification({
-      identityId,
-      otp,
-      type: type as 'BVN' | 'NIN',
-      customerId: customer.id,
-    });
-
-    if (!validationResult.verified) {
-      return NextResponse.json({ error: 'Verification failed. Check your OTP and try again.' }, { status: 400 });
-    }
-
     const serviceClient = createServiceClient();
 
-    // Update customer with verified BVN/NIN
-    // Store in BOTH plaintext (backward compat) AND encrypted columns
-    const updateData: Record<string, unknown> = {};
-    if (type === 'BVN') {
-      updateData.bvn = number;
-      // Also encrypt and store in bvn_encrypted via RPC
-      if (PII_ENCRYPTION_KEY) {
-        const { data: encryptedBvn } = await serviceClient.rpc('encrypt_pii', {
-          plaintext: number,
-          key: PII_ENCRYPTION_KEY,
-        });
-        if (encryptedBvn) updateData.bvn_encrypted = encryptedBvn;
-      }
-    }
-    if (type === 'NIN') {
-      updateData.nin = number;
-      // Also encrypt and store in nin_encrypted via RPC
-      if (PII_ENCRYPTION_KEY) {
-        const { data: encryptedNin } = await serviceClient.rpc('encrypt_pii', {
-          plaintext: number,
-          key: PII_ENCRYPTION_KEY,
-        });
-        if (encryptedNin) updateData.nin_encrypted = encryptedNin;
-      }
-    }
-
-    await serviceClient
-      .from('customers')
-      .update(updateData)
-      .eq('id', customer.id);
-
-    // Update identity verification record — retain the FULL verification
-    // result including the provider's validated record id (identityValidationId),
-    // which downstream DVA provisioning depends on.
-    await serviceClient
-      .from('safe_haven_identity_verifications')
-      .update({
-        status: 'verified',
-        verified_at: new Date().toISOString(),
-        verified_data: {
-          identityValidationId: validationResult.identityValidationId || identityId,
-          firstName: validationResult.firstName || null,
-          lastName: validationResult.lastName || null,
-          middleName: validationResult.middleName || null,
-          dateOfBirth: validationResult.dateOfBirth || null,
-          gender: validationResult.gender || null,
-          type,
-          number,
-        },
-      })
-      .eq('identity_id', identityId);
-
-    // Surface the verification on the customer record (single lookup point
-    // for status pages and DVA provisioning).
-    await serviceClient
-      .from('customers')
-      .update({
-        identity_verification_id: validationResult.identityValidationId || identityId,
-        identity_verification_status: 'verified',
-        identity_type: type,
-        identity_verified_at: new Date().toISOString(),
-      })
-      .eq('id', customer.id);
-
-    // ── Successful verification upgrades tier_0 users to tier_1 only ──
-    // It must NEVER downgrade a customer already at tier_2 or tier_3.
-    const { data: currentProfile } = await serviceClient
-      .from('profiles')
-      .select('kyc_tier')
-      .eq('id', user.id)
-      .maybeSingle();
-    const currentTier = (currentProfile as { kyc_tier?: string } | null)?.kyc_tier || 'tier_0';
-
-    if (currentTier === 'tier_0') {
-      await ensureProfileRow({
-        userId: user.id,
-        fullName: customer.full_name,
-        email: customer.email,
-        phone: customer.phone,
-        kycTier: 'tier_1',
-      });
-      await serviceClient
-        .from('profiles')
-        .update({ kyc_tier: 'tier_1' })
-        .eq('id', user.id);
-    }
-
-    // Check if customer already has an ACTIVE Safe Haven sub-account —
-    // non-active rows (e.g. purged mock records) are never linked as real
+    // ─────────────────────────────────────────────────────────────────────
+    // PATH SELECTION
+    //
+    // Safe Haven's OTP is ONE-TIME and, for BVN/NIN identities, must be
+    // presented at SUBACCOUNT CREATION (POST /accounts/v2/subaccount
+    // verifies the otp itself). The standalone identity/v2/validate call
+    // consumes the same OTP — validating first and creating afterwards can
+    // NEVER work ("OTP already verified" with otp, bare 400 without).
+    //
+    // Therefore:
+    //  - Customer with an ACTIVE DVA → no creation needed; the standalone
+    //    validate path is safe (OTP consumption is harmless there).
+    //  - Customer with NO active DVA → the combined path: present the OTP
+    //    directly to subaccount creation. A wrong OTP makes the provider
+    //    reject creation, so nothing is marked verified on failure.
+    // ─────────────────────────────────────────────────────────────────────
     const { data: existingAccount } = await serviceClient
       .from('safe_haven_accounts')
       .select('id, account_number, account_name, bank_name, bank_code, created_at')
@@ -157,7 +79,95 @@ export async function POST(request: NextRequest) {
       .eq('status', 'active')
       .maybeSingle();
 
+    // Shared post-verification persistence (identity row, PII columns,
+    // customer surface fields, tier_0 → tier_1 promotion).
+    const persistVerification = async (verifiedData: Record<string, unknown>) => {
+      const updateData: Record<string, unknown> = {};
+      if (type === 'BVN') {
+        updateData.bvn = number;
+        if (PII_ENCRYPTION_KEY) {
+          const { data: encryptedBvn } = await serviceClient.rpc('encrypt_pii', {
+            plaintext: number,
+            key: PII_ENCRYPTION_KEY,
+          });
+          if (encryptedBvn) updateData.bvn_encrypted = encryptedBvn;
+        }
+      }
+      if (type === 'NIN') {
+        updateData.nin = number;
+        if (PII_ENCRYPTION_KEY) {
+          const { data: encryptedNin } = await serviceClient.rpc('encrypt_pii', {
+            plaintext: number,
+            key: PII_ENCRYPTION_KEY,
+          });
+          if (encryptedNin) updateData.nin_encrypted = encryptedNin;
+        }
+      }
+      await serviceClient.from('customers').update(updateData).eq('id', customer.id);
+
+      await serviceClient
+        .from('safe_haven_identity_verifications')
+        .update({
+          status: 'verified',
+          verified_at: new Date().toISOString(),
+          verified_data: verifiedData,
+        })
+        .eq('identity_id', identityId);
+
+      await serviceClient
+        .from('customers')
+        .update({
+          identity_verification_id: identityId,
+          identity_verification_status: 'verified',
+          identity_type: type,
+          identity_verified_at: new Date().toISOString(),
+        })
+        .eq('id', customer.id);
+
+      const { data: currentProfile } = await serviceClient
+        .from('profiles')
+        .select('kyc_tier')
+        .eq('id', user.id)
+        .maybeSingle();
+      const currentTier = (currentProfile as { kyc_tier?: string } | null)?.kyc_tier || 'tier_0';
+      if (currentTier === 'tier_0') {
+        await ensureProfileRow({
+          userId: user.id,
+          fullName: customer.full_name,
+          email: customer.email,
+          phone: customer.phone,
+          kycTier: 'tier_1',
+        });
+        await serviceClient
+          .from('profiles')
+          .update({ kyc_tier: 'tier_1' })
+          .eq('id', user.id);
+      }
+    };
+
     if (existingAccount) {
+      // ── PATH A: active DVA exists → standalone validate, then link ──
+      const validationResult = await provider.validateIdentityVerification({
+        identityId,
+        otp,
+        type: type as 'BVN' | 'NIN',
+        customerId: customer.id,
+      });
+      if (!validationResult.verified) {
+        return NextResponse.json({ error: 'Verification failed. Check your OTP and try again.' }, { status: 400 });
+      }
+
+      await persistVerification({
+        identityValidationId: validationResult.identityValidationId || identityId,
+        firstName: validationResult.firstName || null,
+        lastName: validationResult.lastName || null,
+        middleName: validationResult.middleName || null,
+        dateOfBirth: validationResult.dateOfBirth || null,
+        gender: validationResult.gender || null,
+        type,
+        number,
+      });
+
       await serviceClient
         .from('wallets')
         .update({
@@ -181,84 +191,89 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create Safe Haven sub-account (DVA)
+    // ── PATH B: no active DVA → combined OTP verification + creation ──
+    // The subaccount endpoint verifies the OTP itself. A wrong/already-used
+    // OTP makes the provider reject the call — nothing is persisted then.
+    const rawPhone = customer.phone || '';
+    let phoneNumber = rawPhone.replace(/[^\d+]/g, '');
+    if (phoneNumber.startsWith('0')) phoneNumber = '+234' + phoneNumber.slice(1);
+    else if (phoneNumber.startsWith('234')) phoneNumber = '+' + phoneNumber;
+    else if (!phoneNumber.startsWith('+')) phoneNumber = '+' + phoneNumber;
+
+    if (!phoneNumber || !customer.email) {
+      return NextResponse.json({
+        error: 'Add a phone number and email to your profile, then restart verification.',
+      }, { status: 400 });
+    }
+
+    let subAccount;
     try {
-      const firstName = (validationResult.firstName || customer.full_name?.split(' ')[0] || '') as string;
-      const lastName = (validationResult.lastName || customer.full_name?.split(' ').slice(1).join(' ') || '') as string;
-
-      // Phone number must be +234 format; email is required by the provider.
-      const rawPhone = customer.phone || '';
-      let phoneNumber = rawPhone.replace(/[^\d+]/g, '');
-      if (phoneNumber.startsWith('0')) phoneNumber = '+234' + phoneNumber.slice(1);
-      else if (phoneNumber.startsWith('234')) phoneNumber = '+' + phoneNumber;
-      else if (!phoneNumber.startsWith('+')) phoneNumber = '+' + phoneNumber;
-
-      if (!phoneNumber || !customer.email) {
-        return NextResponse.json({
-          verified: true,
-          accountNumber: null,
-          message: 'Identity verified. Add a phone number and email to your profile, then retry funding account creation from your wallet.',
-          retryable: true,
-        });
-      }
-
-      const subAccount = await provider.createSubAccount({
+      subAccount = await provider.createSubAccount({
         identityType: type,
-        identityNumber: type === 'BVN' ? number : (customer.nin || number),
-        identityId: validationResult.identityValidationId || identityId,
+        identityNumber: number,
+        identityId,
         phoneNumber,
         emailAddress: customer.email,
         // Deterministic per customer — idempotent across retries.
         externalReference: `agriqcap-wallet-${customer.id}`,
         otp,
-        customerName: customer.full_name || `${firstName} ${lastName}`,
+        customerName: customer.full_name || undefined,
       });
+    } catch (createError) {
+      console.error('[API:provisioning-validate] Combined verification/creation failed:', createError);
+      // The provider rejected the OTP or the request — verification did NOT
+      // succeed. Never persist a verified state on a failed provider call.
+      return NextResponse.json(
+        { error: 'Verification failed. Check your OTP and try again.' },
+        { status: 400 }
+      );
+    }
 
-      await serviceClient.from('safe_haven_accounts').insert({
-        customer_id: customer.id,
-        safe_haven_account_id: subAccount.accountId,
+    // Provider accepted the OTP and created the account — persist everything.
+    await persistVerification({
+      identityValidationId: identityId,
+      firstName: subAccount.firstName || null,
+      lastName: subAccount.lastName || null,
+      type,
+      number,
+      accountNumber: subAccount.accountNumber,
+    });
+
+    await serviceClient.from('safe_haven_accounts').insert({
+      customer_id: customer.id,
+      safe_haven_account_id: subAccount.accountId,
+      account_number: subAccount.accountNumber,
+      account_name: subAccount.accountName,
+      bank_name: subAccount.bankName,
+      bank_code: subAccount.bankCode,
+      status: 'active',
+      created_at: new Date().toISOString(),
+    });
+
+    await serviceClient
+      .from('wallets')
+      .update({
         account_number: subAccount.accountNumber,
         account_name: subAccount.accountName,
         bank_name: subAccount.bankName,
         bank_code: subAccount.bankCode,
-        status: 'active',
-        created_at: new Date().toISOString(),
-      });
+        dva_provisioned_at: new Date().toISOString(),
+      })
+      .eq('customer_id', customer.id)
+      .eq('wallet_type', 'primary');
 
-      await serviceClient
-        .from('wallets')
-        .update({
-          account_number: subAccount.accountNumber,
-          account_name: subAccount.accountName,
-          bank_name: subAccount.bankName,
-          bank_code: subAccount.bankCode,
-          dva_provisioned_at: new Date().toISOString(),
-        })
-        .eq('customer_id', customer.id)
-        .eq('wallet_type', 'primary');
+    await serviceClient
+      .from('customers')
+      .update({ status: 'active' })
+      .eq('id', customer.id);
 
-      await serviceClient
-        .from('customers')
-        .update({ status: 'active' })
-        .eq('id', customer.id);
-
-      return NextResponse.json({
-        verified: true,
-        accountNumber: subAccount.accountNumber,
-        accountName: subAccount.accountName,
-        bankName: subAccount.bankName,
-        message: 'Identity verified and Safe Haven account created successfully',
-      });
-
-    } catch (subAccountError) {
-      console.error('[API:provisioning-validate] Sub-account creation failed:', subAccountError);
-      return NextResponse.json({
-        verified: true,
-        accountNumber: null,
-        message: 'Identity verified. Safe Haven account creation pending — please retry from the dashboard.',
-        retryable: true,
-      });
-    }
+    return NextResponse.json({
+      verified: true,
+      accountNumber: subAccount.accountNumber,
+      accountName: subAccount.accountName,
+      bankName: subAccount.bankName,
+      message: 'Identity verified and Safe Haven account created successfully',
+    });
 
   } catch (error) {
     console.error('[API:provisioning-validate] Error:', error);

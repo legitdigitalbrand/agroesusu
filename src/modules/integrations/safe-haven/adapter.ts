@@ -201,6 +201,17 @@ export class SafeHavenAdapter implements IBankingProvider {
 
       const data = response.data as Record<string, unknown>;
 
+      // Never trust HTTP status alone — Safe Haven returns 200/201 with a
+      // business-status body ({statusCode: 400, message: "OTP already verified."}).
+      const businessStatus = Number(data.statusCode);
+      if (businessStatus >= 400 || data.status === 'FAILED') {
+        throw new Error(
+          'Safe Haven sub-account creation was rejected by the provider. ' +
+          `${(data.message as string) || 'No provider message'} ` +
+          `(statusCode ${businessStatus || data.status || 'unknown'})`
+        );
+      }
+
       // Safe Haven returns account details on success
       const accountData = (data.account || data.data || data) as Record<string, unknown>;
 
@@ -214,12 +225,16 @@ export class SafeHavenAdapter implements IBankingProvider {
         );
       }
 
+      const subAccountDetails = (accountData.subAccountDetails || {}) as Record<string, unknown>;
+
       return {
         accountId: (accountData._id as string) || (accountData.id as string) || '',
         accountNumber,
         accountName: (accountData.accountName as string) || params.customerName || '',
         bankName: 'Safe Haven MFB',
         bankCode: (accountData.bankCode as string) || '999240',
+        firstName: (subAccountDetails.firstName as string) || undefined,
+        lastName: (subAccountDetails.lastName as string) || undefined,
       };
     });
   }
