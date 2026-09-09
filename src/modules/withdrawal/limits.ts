@@ -34,8 +34,8 @@ export async function getWithdrawalLimits(customerId: string): Promise<Withdrawa
 
   // Tier-based limits (server-side, hardcoded — never client-provided)
   const tierLimits: Record<number, WithdrawalLimits> = {
-    0: { minWithdrawal: 1000, maxPerTransaction: 50000, maxDaily: 100000, maxMonthly: 500000 },
-    1: { minWithdrawal: 1000, maxPerTransaction: 200000, maxDaily: 500000, maxMonthly: 2000000 },
+    0: { minWithdrawal: 50, maxPerTransaction: 50000, maxDaily: 100000, maxMonthly: 500000 },
+    1: { minWithdrawal: 50, maxPerTransaction: 200000, maxDaily: 500000, maxMonthly: 2000000 },
     2: { minWithdrawal: 1000, maxPerTransaction: 1000000, maxDaily: 2000000, maxMonthly: 10000000 },
     3: { minWithdrawal: 1000, maxPerTransaction: 5000000, maxDaily: 5000000, maxMonthly: 50000000 },
   };
