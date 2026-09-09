@@ -83,7 +83,7 @@ export default function StatementsPage() {
   const [toDate, setToDate] = useState("");
   const [directionFilter, setDirectionFilter] = useState<"all" | "credit" | "debit">("all");
 
-  const transactions = txData?.transactions || [];
+  const transactions = useMemo(() => txData?.transactions || [], [txData]);
 
   // Filter logic
   const filteredTransactions = useMemo(() => {

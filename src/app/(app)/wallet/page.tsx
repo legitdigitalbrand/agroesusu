@@ -269,7 +269,7 @@ export default function WalletPage() {
           <Info className="w-4 h-4 text-ochre shrink-0 mt-0.5" />
           <p className="text-xs text-ink-soft leading-relaxed">
             <span className="font-semibold text-ink">Your available balance.</span>{" "}
-            Money here doesn't earn interest. Move money into a Savings pot to start earning.
+            Money here doesn&#39;t earn interest. Move money into a Savings pot to start earning.
           </p>
         </div>
 

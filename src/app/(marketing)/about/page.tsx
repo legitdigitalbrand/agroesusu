@@ -70,7 +70,7 @@ export default function AboutPage() {
           </h1>
           <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
             Agriqcap was founded to bring digital security, automation, and fair interest rates 
-            to the traditional "Esusu" cooperative savings culture across Nigeria.
+            to the traditional &quot;Esusu&quot; cooperative savings culture across Nigeria.
           </p>
         </div>
       </section>
@@ -85,7 +85,7 @@ export default function AboutPage() {
             <p className="text-base text-ink-soft leading-relaxed">
               Nigeria is home to over 38 million smallholder farmers. However, they continue to face 
               extreme difficulty accessing formal finance. Traditional banking institutions demand 
-              onerous collateral and charge predatory interest rates, while local "Ajo" or "Esusu" savings 
+              onerous collateral and charge predatory interest rates, while local &quot;Ajo&quot; or &quot;Esusu&quot; savings 
               groups, though highly supportive, suffer from physical security vulnerabilities, human error, and manual tracking.
             </p>
             <p className="text-base text-ink-soft leading-relaxed">

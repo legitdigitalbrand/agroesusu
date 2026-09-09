@@ -208,7 +208,7 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
-          <p className="text-sm text-ink-soft">Couldn't load your dashboard</p>
+          <p className="text-sm text-ink-soft">Couldn&#39;t load your dashboard</p>
           <Button variant="primary" size="sm" onClick={() => refetchMe()}>
             Try again
           </Button>

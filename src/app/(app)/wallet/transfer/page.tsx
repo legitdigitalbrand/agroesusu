@@ -447,7 +447,7 @@ export default function TransferPage() {
         )}
 
         <p className="text-xs text-ink-soft text-center">
-          We'll verify the recipient's name before you confirm. Your money is safe.
+          We&#39;ll verify the recipient&#39;s name before you confirm. Your money is safe.
         </p>
       </Card>
     </div>

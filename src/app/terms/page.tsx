@@ -35,7 +35,7 @@ export default function TermsPage() {
           </section>
           <section>
             <h2 className="font-display text-xl text-ink">6. Limitation of Liability</h2>
-            <p>{BRAND.name} is provided "as is" without warranties of any kind. We are not liable for indirect, incidental, or consequential damages arising from your use of the platform.</p>
+            <p>{BRAND.name} is provided &quot;as is&quot; without warranties of any kind. We are not liable for indirect, incidental, or consequential damages arising from your use of the platform.</p>
           </section>
           <section>
             <h2 className="font-display text-xl text-ink">7. Contact</h2>

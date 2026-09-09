@@ -19,7 +19,7 @@ export function OtpInput({ length = 6, value, onChange, autoFocus = true, disabl
     // Sync external value
     const chars = value.split("");
     setLocalValues(Array.from({ length }, (_, i) => chars[i] || ""));
-  }, [value]);
+  }, [value, length]);
 
   useEffect(() => {
     if (autoFocus && inputs.current[0]) {

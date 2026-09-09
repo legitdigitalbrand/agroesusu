@@ -135,7 +135,7 @@ function VerifyLoginContent() {
         </div>
 
         <h1 className="font-display text-[28px] font-extrabold text-ink leading-[1.15] mb-2">
-          Verify it's you
+          Verify it&#39;s you
         </h1>
         <p className="text-[14px] text-ink-soft mb-8 leading-relaxed">
           We sent a 6-digit code to{" "}
