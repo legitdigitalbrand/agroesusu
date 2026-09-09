@@ -50,7 +50,7 @@ interface WalletTransaction {
   amount: number;
   direction: "credit" | "debit";
   status: string;
-  description: string | null;
+  narration: string | null;
   reference: string;
   created_at: string;
 }
@@ -512,7 +512,7 @@ export default function DashboardPage() {
                                 )}
                               </div>
                               <span className="text-xs font-medium text-ink capitalize truncate max-w-[160px]">
-                                {(tx.description || tx.transaction_type).replace(/_/g, " ")}
+                                {(tx.narration || tx.transaction_type).replace(/_/g, " ")}
                               </span>
                             </div>
                           </td>

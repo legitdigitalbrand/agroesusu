@@ -38,7 +38,9 @@ const WALLET_TX_TYPE_MAP: Record<string, string> = {
   group_payout: 'transfer_in',
   investment_redemption: 'deposit',
   investment_returns: 'deposit',
-  wallet_withdrawal: 'withdrawal',      // both reservation and settlement legs
+  wallet_withdrawal: 'withdrawal',
+  wallet_withdrawal_reservation: 'withdrawal',  // customer-facing debit leg of a send
+  wallet_withdrawal_settlement: 'withdrawal',   // escrow→settlement leg (not wallet-facing)
   savings_contribution: 'transfer_out',
   group_contribution: 'transfer_out',
   investment_subscription: 'transfer_out',
@@ -225,9 +227,23 @@ export async function initiate(
     }).eq('id', ftId);
 
     // 8. CREATE WALLET_TRANSACTIONS READ MODEL ENTRY
-    if (request.wallet_id && walletAccountId && request.transaction_type !== 'savings_interest') {
+    // Wallet-facing transactions only. Types whose journal lines do NOT touch
+    // the customer's wallet account (e.g. the escrow→settlement leg of a send)
+    // must NOT create a history row — one customer transfer would show as two
+    // separate debits.
+    const NON_WALLET_FACING_TYPES = new Set(['savings_interest', 'wallet_withdrawal_settlement']);
+    if (request.wallet_id && walletAccountId && !NON_WALLET_FACING_TYPES.has(request.transaction_type)) {
       const walletCreditTypes = ['wallet_deposit', 'incoming_deposit', 'savings_withdrawal', 'loan_disbursement', 'group_payout', 'investment_redemption', 'investment_returns'];
       const direction = walletCreditTypes.includes(request.transaction_type) ? 'credit' : 'debit';
+
+      // Customer-facing narration: prefer an explicit narration passed by the
+      // calling module (e.g. "Transfer to JANE DOE"), fall back to the FT
+      // description. Counterparty details ride along in metadata.
+      const meta = (request.metadata || {}) as Record<string, unknown>;
+      const customerNarration =
+        typeof meta.narration === 'string' && meta.narration.trim() !== ''
+          ? meta.narration
+          : request.description;
 
       const { error: wtxError } = await supabase.from('wallet_transactions').insert({
         wallet_id: request.wallet_id,
@@ -236,9 +252,12 @@ export async function initiate(
         amount: request.amount,
         currency: request.currency || 'NGN',
         transaction_type: mapWalletTxType(request.transaction_type),
-        narration: request.description,
+        narration: customerNarration,
         source: 'internal_operation',
         internal_reference: ftId,
+        counterparty_account_number: (meta.counterparty_account_number as string) || null,
+        counterparty_account_name: (meta.counterparty_account_name as string) || null,
+        counterparty_bank_code: (meta.counterparty_bank_code as string) || null,
         status: 'confirmed',
         confirmed_at: new Date().toISOString(),
         metadata: { ...request.metadata, ft_id: ftId, je_id: jeId },

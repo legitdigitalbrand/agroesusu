@@ -44,7 +44,8 @@ interface WalletTransaction {
   amount: number;
   direction: "credit" | "debit";
   status: string;
-  description: string | null;
+  narration: string | null;
+  counterparty_account_name?: string | null;
   reference: string;
   created_at: string;
 }
@@ -91,7 +92,7 @@ export default function StatementsPage() {
       // Search term (description or reference)
       if (search.trim()) {
         const q = search.toLowerCase().trim();
-        const descMatch = tx.description?.toLowerCase().includes(q) ?? false;
+        const descMatch = tx.narration?.toLowerCase().includes(q) ?? false;
         const refMatch = tx.reference?.toLowerCase().includes(q) ?? false;
         const typeMatch = tx.transaction_type?.toLowerCase().includes(q) ?? false;
         if (!descMatch && !refMatch && !typeMatch) return false;
@@ -184,7 +185,7 @@ export default function StatementsPage() {
       tx.amount.toString(),
       tx.status,
       tx.reference,
-      tx.description || "",
+      tx.narration || "",
     ]);
 
     const csvContent = [headers, ...rows]
@@ -471,8 +472,8 @@ export default function StatementsPage() {
                         </span>
                       </TableCell>
                       <TableCell className="max-w-[220px]">
-                        <p className="font-medium text-ink text-sm truncate" title={tx.description || "N/A"}>
-                          {tx.description || "N/A"}
+                        <p className="font-medium text-ink text-sm truncate" title={tx.narration || "N/A"}>
+                          {tx.narration || "N/A"}
                         </p>
                       </TableCell>
                       <TableCell className="font-mono text-xs text-ink-soft whitespace-nowrap">

@@ -56,7 +56,8 @@ interface WalletTransaction {
   amount: number;
   direction: "credit" | "debit";
   status: string;
-  description: string | null;
+  narration: string | null;
+  counterparty_account_name?: string | null;
   reference: string;
   created_at: string;
 }
@@ -529,7 +530,7 @@ export default function WalletPage() {
                               )}
                             </div>
                             <span className="font-medium text-ink truncate text-sm">
-                              {tx.description || tx.transaction_type.replace(/_/g, " ")}
+                              {tx.narration || tx.transaction_type.replace(/_/g, " ")}
                             </span>
                           </div>
                         </TableCell>

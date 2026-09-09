@@ -208,7 +208,7 @@ export async function initiateWithdrawal(
     // ── 4. RESERVE FUNDS: D Wallet, C Escrow ──────────────────────
     // Use the Orchestrator with the new wallet_withdrawal_reservation type
     const reservationResult = await initiate({
-      transaction_type: 'wallet_withdrawal_reservation' as any,
+      transaction_type: 'wallet_withdrawal_reservation',
       source_module: 'wallet',
       source_reference: withdrawalId,
       amount: req.amount,
@@ -220,6 +220,12 @@ export async function initiateWithdrawal(
         withdrawal_id: withdrawalId,
         payment_reference: paymentReference,
         beneficiary: req.beneficiary_account_name,
+        // Customer-facing narration + counterparty for the wallet history
+        // read model ("Transfer to JANE DOE" instead of internal FT jargon)
+        narration: req.narration || `Transfer to ${req.beneficiary_account_name}`,
+        counterparty_account_number: req.beneficiary_account_number,
+        counterparty_account_name: req.beneficiary_account_name,
+        counterparty_bank_code: req.beneficiary_bank_code,
       },
     });
 
@@ -406,7 +412,7 @@ async function settleWithdrawal(
   safeHavenReference: string
 ): Promise<void> {
   const settlementResult = await initiate({
-    transaction_type: 'wallet_withdrawal_settlement' as any,
+    transaction_type: 'wallet_withdrawal_settlement',
     source_module: 'wallet',
     source_reference: withdrawalId,
     amount,
