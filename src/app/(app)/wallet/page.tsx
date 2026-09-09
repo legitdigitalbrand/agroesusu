@@ -249,14 +249,14 @@ export default function WalletPage() {
                     Save
                   </Button>
                 </Link>
-                <Link href="/wallet/withdraw" className="w-full">
+                <Link href="/wallet/transfer" className="w-full">
                   <Button
                     variant="outline"
                     fullWidth
                     leftIcon={<ArrowUpRight className="w-4 h-4 text-white" />}
                     className="bg-paper/15 hover:bg-paper/25 text-white border-white/20 hover:border-white/40 shadow-none px-2 text-xs sm:px-4 sm:text-sm"
                   >
-                    Withdraw
+                    Send
                   </Button>
                 </Link>
               </div>

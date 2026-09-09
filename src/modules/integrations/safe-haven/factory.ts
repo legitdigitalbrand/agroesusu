@@ -36,6 +36,15 @@ export function getBankingProvider(): IBankingProvider {
   const apiUrl = process.env.SAFEHAVEN_API_URL || 'https://api.sandbox.safehavenmfb.com';
 
   if (clientId && privateKey) {
+    // Explicit environment visibility: never let a silent default decide
+    // whether real customer money moves through sandbox or live rails.
+    const envTag = apiUrl.includes('sandbox')
+      ? 'SANDBOX'
+      : apiUrl.includes('developer') || apiUrl.includes('staging')
+        ? 'STAGING'
+        : 'LIVE';
+    console.log(`[Integrations] Banking provider: Safe Haven (${envTag}) — ${apiUrl}`);
+
     return new SafeHavenAdapter({
       baseUrl: apiUrl,
       clientId,

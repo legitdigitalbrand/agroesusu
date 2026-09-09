@@ -58,11 +58,23 @@ export async function validateWithdrawal(
   const limits = await getWithdrawalLimits(customerId);
 
   // 2. Get wallet balance
-  const { data: wallet } = await supabase
+  // NOTE: the wallets table balance columns are the cached_* read-through
+  // cache (cached_balance / cached_available_balance, migration 00007).
+  // There is no plain `balance` / `available_balance` column — selecting
+  // them yields a Postgres 42703 error that surfaces as data:null, which
+  // previously masqueraded as "Wallet not found" for EVERY withdrawal.
+  const { data: wallet, error: walletError } = await supabase
     .from('wallets')
-    .select('id, balance, available_balance, status')
+    .select('id, cached_balance, cached_available_balance, reserved_balance, status')
     .eq('id', walletId)
     .maybeSingle();
+
+  if (walletError) {
+    // Surface the real error — never let a query failure impersonate
+    // business validation.
+    errors.push(`Wallet lookup failed: ${walletError.message}`);
+    return { valid: false, errors, limits, availableBalance: 0, tier: 0 };
+  }
 
   if (!wallet) {
     errors.push('Wallet not found');
@@ -90,7 +102,9 @@ export async function validateWithdrawal(
   const tierNum = parseInt(kycTier.replace('tier_', '')) || 0;
 
   // 4. Check amount against limits
-  const availableBalance = Number(wallet.available_balance || wallet.balance || 0);
+  const availableBalance = Number(
+    wallet.cached_available_balance ?? wallet.cached_balance ?? 0
+  );
 
   if (amount < limits.minWithdrawal) {
     errors.push(`Minimum withdrawal is ₦${limits.minWithdrawal.toLocaleString()}`);

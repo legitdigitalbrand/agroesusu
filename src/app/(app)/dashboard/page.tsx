@@ -17,7 +17,6 @@ import {
   Copy,
   TrendingUp,
   Send,
-  ArrowLeftRight,
   Receipt,
   ShieldCheck,
   CalendarClock,
@@ -250,11 +249,14 @@ export default function DashboardPage() {
   };
 
   // ── Quick actions config ──
+  // One external outflow only ("Send") — the retired /wallet/withdraw page
+  // was a duplicate UI over the same payout engine. "Withdraw" exists only
+  // in the savings context (pot → wallet).
   const quickActions = [
     { label: "Fund Wallet", href: "/wallet/deposit", icon: Plus, color: "loam" },
-    { label: "Transfer", href: "/wallet/transfer", icon: Send, color: "indigo" },
-    { label: "Withdraw", href: "/wallet/withdraw", icon: ArrowLeftRight, color: "indigo" },
-    { label: "Open Savings", href: "/savings", icon: PiggyBank, color: "loam" },
+    { label: "Send", href: "/wallet/transfer", icon: Send, color: "indigo" },
+    { label: "Move to Savings", href: "/wallet/move-to-savings", icon: ArrowDownLeft, color: "loam" },
+    { label: "Open Savings", href: "/savings", icon: PiggyBank, color: "indigo" },
     { label: "Apply Loan", href: "/loans", icon: Landmark, color: "indigo" },
     { label: "Statements", href: "/statements", icon: Receipt, color: "loam" },
   ] as const;
@@ -392,29 +394,8 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Action buttons — horizontal row */}
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Link href="/wallet/deposit">
-              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ochre text-indigo-deep font-semibold text-sm hover:opacity-90 transition shadow-sm">
-                <Plus className="w-4 h-4" strokeWidth={2} /> Fund
-              </span>
-            </Link>
-            <Link href="/wallet/withdraw">
-              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition border border-white/15">
-                <ArrowUpRight className="w-4 h-4" strokeWidth={2} /> Withdraw
-              </span>
-            </Link>
-            <Link href="/wallet/transfer">
-              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition border border-white/15">
-                <Send className="w-4 h-4" strokeWidth={2} /> Transfer
-              </span>
-            </Link>
-            <Link href="/statements">
-              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition border border-white/15">
-                <Receipt className="w-4 h-4" strokeWidth={2} /> History
-              </span>
-            </Link>
-          </div>
+          {/* Money actions live once, in the Quick Actions grid below —
+              the previous hero button row duplicated them on the same screen. */}
         </div>
       </Card>
 
