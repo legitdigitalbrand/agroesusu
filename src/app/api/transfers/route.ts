@@ -176,14 +176,33 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ transfers: [] });
     }
 
-    const { data: transfers } = await supabase
-      .from('transfers')
-      .select('*')
+    // Sends live in `withdrawal_requests` (single payout engine) — the old
+    // `transfers` table is never written by the current flow, so reading it
+    // returned an empty history. Service client because payout rows are
+    // created under the service role; scope by the authenticated customer.
+    const serviceClient = (await import('@/lib/supabase/service')).createServiceClient();
+    const { data: withdrawals } = await serviceClient
+      .from('withdrawal_requests')
+      .select('id, status, payment_reference, amount, narration, beneficiary_account_name, beneficiary_account_number, beneficiary_bank_code, created_at, completed_at, failed_at, failure_reason')
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false })
       .limit(50);
 
-    return NextResponse.json({ transfers: transfers || [] });
+    const transfers = (withdrawals || []).map((w) => ({
+      id: w.id,
+      reference: w.payment_reference,
+      status: w.status === 'completed' ? 'success' : w.status,
+      amount: Number(w.amount),
+      narration: w.narration,
+      beneficiary_account_name: w.beneficiary_account_name,
+      beneficiary_account_number: w.beneficiary_account_number,
+      beneficiary_bank_code: w.beneficiary_bank_code,
+      created_at: w.created_at,
+      completed_at: w.completed_at,
+      failure_reason: w.failure_reason,
+    }));
+
+    return NextResponse.json({ transfers });
 
   } catch (error) {
     console.error('[API:transfers GET] Error:', error);

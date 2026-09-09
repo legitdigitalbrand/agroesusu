@@ -35,6 +35,66 @@ interface IdempotencyRecord {
   response: unknown;
 }
 
+/**
+ * Safe Haven wraps every payload in a `{ statusCode, responseCode, message,
+ * data: {...} }` envelope (see the API reference examples and the
+ * safe_haven_api_calls production logs). Return the inner `data` object when
+ * present, otherwise the body itself — so responses that arrive flat (or from
+ * a mocked client) still work.
+ */
+function unwrapProviderData(body: Record<string, unknown>): Record<string, unknown> {
+  const inner = body.data;
+  if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+    return inner as Record<string, unknown>;
+  }
+  return body;
+}
+
+/**
+ * Normalize Safe Haven's transfer status to our domain values
+ * ('success' | 'pending' | 'failed').
+ *
+ * Safe Haven reports:
+ *   - data.status: "Completed" / "Pending" / "Failed" / "Reversed" / ...
+ *     (Capitalized — NOT lowercase like our domain values)
+ *   - data.responseCode: "00" means approved
+ *   - data.isReversed: true means the provider returned the funds
+ *   - data.queued / data.limitExceeded: still processing
+ *
+ * SAFETY RULES (money movement depends on this mapping):
+ *   1. Never map an ambiguous/unknown status to 'failed' — a false 'failed'
+ *      triggers an escrow reversal while the money may have actually left.
+ *      Unknown ⇒ 'pending' and let reconciliation confirm.
+ *   2. isReversed/REVERSED ⇒ 'failed' (funds were returned by the provider;
+ *      our escrow must be released back to the wallet).
+ *   3. Explicit failure status/responseCode ⇒ 'failed'.
+ */
+function normalizeTransferStatus(
+  record: Record<string, unknown>,
+  body: Record<string, unknown>
+): 'success' | 'pending' | 'failed' {
+  const rawStatus = String(record.status ?? body.status ?? '').trim().toUpperCase();
+  const responseCode = String(record.responseCode ?? body.responseCode ?? '').trim();
+  const isReversed = record.isReversed === true || body.isReversed === true;
+
+  // Provider returned the funds — treat as failure so the escrow reservation
+  // is reversed back into the customer's wallet.
+  if (isReversed || rawStatus === 'REVERSED') return 'failed';
+
+  if (['COMPLETED', 'SUCCESS', 'SUCCESSFUL', 'PROCESSED'].includes(rawStatus)) return 'success';
+  if (['PENDING', 'PROCESSING', 'QUEUED', 'INITIATED', 'SUBMITTED'].includes(rawStatus)) return 'pending';
+  if (['FAILED', 'FAILURE', 'REJECTED', 'CANCELLED', 'CANCELED'].includes(rawStatus)) return 'failed';
+
+  // Status field missing or unrecognized — fall back to the response code.
+  // "00" is Safe Haven's "Approved or completed successfully".
+  if (responseCode === '00') return 'success';
+  if (responseCode && responseCode !== '00') return 'failed';
+
+  // Nothing recognizable at all — leave funds reserved and let the
+  // webhook/reconciliation cron settle it. Never guess 'failed'.
+  return 'pending';
+}
+
 export class SafeHavenAdapter implements IBankingProvider {
   private client: SafeHavenClient;
   private config: SafeHavenConfig;
@@ -290,14 +350,35 @@ export class SafeHavenAdapter implements IBankingProvider {
       bankCode: params.bankCode,
     });
 
-    const data = response.data as Record<string, unknown>;
+    // Actual provider shape (per Safe Haven API reference and safe_haven_api_calls
+    // production logs): { statusCode, responseCode, message, data: { sessionId,
+    // accountName, bankCode, accountNumber, kycLevel, bvn, ... } } — the payload
+    // is nested under `data`, NOT at the top level.
+    const body = response.data as Record<string, unknown>;
+    const record = unwrapProviderData(body);
+
+    const sessionId = (record.sessionId as string) || (record.sessionReference as string) || '';
+    const accountName = typeof record.accountName === 'string' ? record.accountName.trim() : '';
+    const responseCode = String(record.responseCode ?? body.responseCode ?? '').trim();
+
+    // FAIL-CLOSED: no session id means the transfer can never be submitted (the
+    // nameEnquiryReference is mandatory); a missing account name means the
+    // customer cannot confirm the beneficiary. Never fabricate either.
+    if (!sessionId || !accountName || (responseCode && responseCode !== '00')) {
+      throw new IntegrationError(
+        body.message ? String(body.message) : 'Name enquiry failed — could not verify this account. Please check the account number and bank.',
+        'NAME_ENQUIRY_FAILED',
+        true,
+        response.status
+      );
+    }
 
     return {
-      sessionId: data.sessionId as string || data.sessionReference as string,
-      accountName: data.accountName as string,
+      sessionId,
+      accountName,
       accountNumber: params.accountNumber,
       bankCode: params.bankCode,
-      bankName: data.bankName as string || 'Unknown',
+      bankName: (record.bankName as string) || 'Unknown',
     };
   }
 
@@ -316,12 +397,20 @@ export class SafeHavenAdapter implements IBankingProvider {
         saveBeneficiary: params.saveBeneficiary ?? false,
       });
 
-      const data = response.data as Record<string, unknown>;
+      // Actual provider shape (per Safe Haven API reference): { statusCode,
+      // responseCode, message, data: { status: "Completed" | "Pending" | ...,
+      // sessionId, paymentReference, responseCode, responseMessage, isReversed,
+      // ... } } — payload nested under `data`, status is Capitalized.
+      const body = response.data as Record<string, unknown>;
+      const record = unwrapProviderData(body);
+
+      const status = normalizeTransferStatus(record, body);
 
       return {
-        reference: (data.reference as string) || params.paymentReference,
-        status: data.status === 'success' ? 'success' : data.status === 'pending' ? 'pending' : 'failed',
-        message: data.message as string | undefined,
+        reference: (record.paymentReference as string) || params.paymentReference,
+        status,
+        message: (record.responseMessage as string) || (body.message as string) || undefined,
+        rawStatus: typeof record.status === 'string' ? record.status : undefined,
       };
     });
   }
@@ -331,13 +420,18 @@ export class SafeHavenAdapter implements IBankingProvider {
       paymentReference: reference,
     });
 
-    const data = response.data as Record<string, unknown>;
+    // Same envelope as /transfers: { statusCode, responseCode, message,
+    // data: { status, isReversed, queued, limitExceeded, responseCode, ... } }.
+    const body = response.data as Record<string, unknown>;
+    const record = unwrapProviderData(body);
+
+    const status = normalizeTransferStatus(record, body);
 
     return {
       reference,
-      status: data.status === 'success' ? 'success' : data.status === 'pending' ? 'pending' : 'failed',
-      message: data.message as string | undefined,
-      rawStatus: typeof data.status === 'string' ? data.status : undefined,
+      status,
+      message: (record.responseMessage as string) || (body.message as string) || undefined,
+      rawStatus: typeof record.status === 'string' ? record.status : undefined,
     };
   }
 

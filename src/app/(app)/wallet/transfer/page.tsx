@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,7 @@ import {
   Card,
   Button,
 } from "@/components/yield";
+import { rankBanks } from "@/lib/bank-search";
 import {
   ArrowLeft,
   Send,
@@ -57,9 +58,12 @@ export default function TransferPage() {
     reference: string;
   } | null>(null);
 
-  // Fetch banks
+  // Fetch banks — cached for 24h; the NIBSS list (~500 institutions) never
+  // changes during a session.
   const { data: banksData, isLoading: banksLoading } = useQuery<{ banks: Bank[] }>({
     queryKey: ["banks"],
+    staleTime: 24 * 60 * 60 * 1000,
+    retry: 1,
     queryFn: async () => {
       const res = await fetch("/api/banks");
       if (!res.ok) throw new Error("Failed to load banks");
@@ -67,9 +71,15 @@ export default function TransferPage() {
     },
   });
 
-  const banks = (banksData?.banks || []).filter((b) =>
-    b.bankName.toLowerCase().includes(bankSearch.toLowerCase())
+  // Ranked search (aliases, acronyms, starts-with first) — typing "GTB" or
+  // "UBA" now surfaces the right bank instead of 50 irrelevant MFBs.
+  const banks = useMemo(
+    () => rankBanks(banksData?.banks || [], bankSearch),
+    [banksData, bankSearch]
   );
+  // Cap rendering for scroll performance on the ~500-bank list
+  const visibleBanks = useMemo(() => banks.slice(0, 50), [banks]);
+  const hiddenBankCount = banks.length - visibleBanks.length;
 
   // Name enquiry mutation
   const enquiryMutation = useMutation({
@@ -123,6 +133,40 @@ export default function TransferPage() {
     },
   });
 
+  // Poll transfer status while the result is pending (NIP transfers can
+  // take a moment to settle; the backend reconciles against Safe Haven).
+  const statusQuery = useQuery({
+    queryKey: ["transfer-status", transferResult?.reference],
+    enabled: step === "result" && transferResult?.status === "pending" && !!transferResult?.reference,
+    refetchInterval: (query) =>
+      query.state.data?.status === "pending" ? 5000 : false,
+    queryFn: async () => {
+      const ref = transferResult!.reference;
+      const res = await fetch(`/api/transfers/${encodeURIComponent(ref)}/status`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Status check failed");
+      return data as { status: string; message?: string };
+    },
+  });
+
+  useEffect(() => {
+    const data = statusQuery.data;
+    if (
+      data &&
+      data.status &&
+      data.status !== "pending" &&
+      transferResult &&
+      transferResult.status === "pending"
+    ) {
+      setTransferResult({
+        ...transferResult,
+        status: data.status,
+        message: data.message || transferResult.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+    }
+  }, [statusQuery.data, transferResult, queryClient]);
+
   const canSubmit = selectedBank && accountNumber.length === 10 && parseFloat(amount) > 0;
 
   // ─── Result Step ───
@@ -162,6 +206,12 @@ export default function TransferPage() {
             </h2>
             <p className="text-sm text-ink-soft mt-1">{transferResult.message}</p>
           </div>
+
+          {isPending && (
+            <p className="text-xs text-ink-soft">
+              We&#39;re confirming settlement with the bank — this page updates automatically.
+            </p>
+          )}
 
           {enquiryResult && (
             <div className="bg-parchment rounded-xl p-4 text-left space-y-2 text-sm">
@@ -358,7 +408,7 @@ export default function TransferPage() {
                     {banksLoading ? (
                       <div className="p-4 text-center text-sm text-ink-soft">Loading banks…</div>
                     ) : (
-                      banks.map((bank) => (
+                      visibleBanks.map((bank) => (
                         <button
                           key={bank.bankCode}
                           onClick={() => {
@@ -376,6 +426,11 @@ export default function TransferPage() {
                           )}
                         </button>
                       ))
+                    )}
+                    {hiddenBankCount > 0 && (
+                      <div className="px-4 py-2.5 text-xs text-ink-soft border-t border-line/60">
+                        +{hiddenBankCount} more banks — keep typing to narrow down
+                      </div>
                     )}
                   </div>
                 </div>
