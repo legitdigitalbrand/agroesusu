@@ -28,7 +28,7 @@ BEGIN;
 --    that never touched the customer's wallet account).
 DELETE FROM public.wallet_transactions wt
   USING public.financial_transactions ft
-  WHERE wt.internal_reference = ft.id
+  WHERE wt.internal_reference = ft.id::text
     AND ft.transaction_type = 'wallet_withdrawal_settlement';
 
 -- 2. Relabel the reservation-leg rows as proper withdrawals with a
@@ -41,7 +41,7 @@ SET transaction_type = 'withdrawal',
       ELSE wt.narration
     END
 FROM public.financial_transactions ft
-WHERE wt.internal_reference = ft.id
+WHERE wt.internal_reference = ft.id::text
   AND ft.transaction_type = 'wallet_withdrawal_reservation'
   AND (wt.transaction_type = 'unknown' OR wt.narration LIKE 'Withdrawal reservation%');
 
@@ -50,7 +50,7 @@ WHERE wt.internal_reference = ft.id
 UPDATE public.wallet_transactions wt
 SET counterparty_account_name = COALESCE(wt.counterparty_account_name, wt.metadata->>'beneficiary')
 FROM public.financial_transactions ft
-WHERE wt.internal_reference = ft.id
+WHERE wt.internal_reference = ft.id::text
   AND ft.transaction_type = 'wallet_withdrawal_reservation'
   AND COALESCE(wt.metadata->>'beneficiary', '') <> ''
   AND wt.counterparty_account_name IS NULL;
