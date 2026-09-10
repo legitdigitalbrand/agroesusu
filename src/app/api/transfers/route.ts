@@ -3,6 +3,7 @@ import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { initiateWithdrawal } from '@/modules/withdrawal';
 import { dispatchNotification } from '@/modules/communications';
+import { verifyTransactionPin } from '@/lib/auth/transaction-pin';
 
 // POST /api/transfers — initiate a bank transfer from wallet
 //
@@ -25,7 +26,8 @@ import { dispatchNotification } from '@/modules/communications';
 //   beneficiaryAccountName: string,
 //   amount: number,
 //   narration?: string,
-//   clientReference?: string  // optional client-supplied idempotency reference
+//   pin: string,               // 4-digit transaction PIN (required)
+//   clientReference?: string   // optional client-supplied idempotency reference
 // }
 export async function POST(request: NextRequest) {
   const limited = applyRateLimit(request, "/api/transfers", RATE_LIMITS.TRANSFER);
@@ -47,6 +49,7 @@ export async function POST(request: NextRequest) {
       amount,
       narration,
       clientReference,
+      pin,
     } = body;
 
     // Validate required fields
@@ -55,6 +58,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields for transfer' },
         { status: 400 }
+      );
+    }
+
+    // ── TRANSACTION PIN (extra security layer) ─────────────────────
+    // Verified BEFORE any wallet lookup, hold, or provider call — a wrong
+    // PIN can never move money, and a business failure downstream never
+    // consumes a PIN attempt.
+    const pinResult = await verifyTransactionPin(user.id, pin);
+    if (!pinResult.ok) {
+      return NextResponse.json(
+        {
+          error: pinResult.error,
+          code: pinResult.code,
+          ...(pinResult.code === 'pin_invalid' ? { attempts_left: pinResult.attempts_left } : {}),
+        },
+        { status: pinResult.status }
       );
     }
 

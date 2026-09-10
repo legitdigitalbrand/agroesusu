@@ -9,10 +9,12 @@ import {
   Button,
 } from "@/components/yield";
 import { rankBanks } from "@/lib/bank-search";
+import { OtpInput } from "@/components/auth/OtpInput";
 import {
   ArrowLeft,
   Send,
   Building2,
+  Lock,
   Check,
   AlertCircle,
   Loader2,
@@ -57,6 +59,11 @@ export default function TransferPage() {
     message: string;
     reference: string;
   } | null>(null);
+  // Transaction PIN layer — required by the API before funds move
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [newPin, setNewPin] = useState("");
+  const [newPinConfirm, setNewPinConfirm] = useState("");
 
   // Fetch banks — cached for 24h; the NIBSS list (~500 institutions) never
   // changes during a session.
@@ -102,6 +109,37 @@ export default function TransferPage() {
     },
   });
 
+  // Does the user already have a transaction PIN?
+  const { data: pinStatus } = useQuery<{ has_pin: boolean }>({
+    queryKey: ["login-pin-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/login-pin");
+      if (!res.ok) return { has_pin: false };
+      return res.json();
+    },
+  });
+  const hasPin = pinStatus?.has_pin === true;
+
+  // First-time PIN creation (inline on the confirm step)
+  const createPinMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/login-pin/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: newPin, confirmPin: newPinConfirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save your PIN");
+      return data;
+    },
+    onSuccess: () => {
+      setPinError(null);
+      setNewPin("");
+      setNewPinConfirm("");
+      queryClient.setQueryData(["login-pin-status"], { has_pin: true });
+    },
+  });
+
   // Transfer mutation
   const transferMutation = useMutation({
     mutationFn: async () => {
@@ -116,13 +154,20 @@ export default function TransferPage() {
           beneficiaryAccountName: enquiryResult!.accountName,
           amount: parseFloat(amount),
           narration,
+          pin,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Transfer failed");
+      if (!res.ok) {
+        const err = new Error(data.error || "Transfer failed") as Error & { code?: string };
+        err.code = data.code;
+        throw err;
+      }
       return data;
     },
     onSuccess: (data) => {
+      setPin("");
+      setPinError(null);
       setTransferResult({
         status: data.status,
         message: data.message,
@@ -130,6 +175,13 @@ export default function TransferPage() {
       });
       setStep("result");
       queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+    },
+    onError: (err) => {
+      const code = (err as Error & { code?: string }).code;
+      if (code === "pin_invalid" || code === "pin_locked" || code === "pin_required" || code === "pin_not_set") {
+        setPinError((err as Error).message);
+        setPin("");
+      }
     },
   });
 
@@ -307,6 +359,57 @@ export default function TransferPage() {
             </p>
           </div>
 
+          {/* ── Transaction PIN layer ── */}
+          <div className="border-t border-line/60 pt-4 space-y-2">
+            {pinStatus === undefined ? (
+              <p className="text-xs text-ink-soft text-center py-2">Checking your security PIN…</p>
+            ) : hasPin ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-indigo shrink-0" />
+                  <p className="text-xs font-medium text-ink">
+                    Enter your transaction PIN
+                  </p>
+                </div>
+                <div className="flex justify-center pt-1">
+                  <OtpInput length={4} value={pin} onChange={(v) => { setPin(v); setPinError(null); }} error={!!pinError} />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-indigo shrink-0" />
+                  <p className="text-xs font-medium text-ink">
+                    Create a transaction PIN
+                  </p>
+                </div>
+                <p className="text-[11px] text-ink-soft leading-relaxed">
+                  A 4-digit PIN protects every transfer from your wallet. You only set it up once.
+                </p>
+                <div className="space-y-2 pt-1">
+                  <OtpInput length={4} value={newPin} onChange={setNewPin} error={false} />
+                  <p className="text-[11px] text-ink-soft text-center pt-1">Confirm PIN</p>
+                  <OtpInput length={4} value={newPinConfirm} onChange={setNewPinConfirm} error={false} />
+                  <Button
+                    variant="outline"
+                    fullWidth
+                    onClick={() => createPinMutation.mutate()}
+                    isLoading={createPinMutation.isPending}
+                    disabled={createPinMutation.isPending || newPin.length !== 4 || newPin !== newPinConfirm}
+                  >
+                    Save PIN
+                  </Button>
+                  {createPinMutation.error && (
+                    <p className="text-xs text-red-600 text-center">{(createPinMutation.error as Error).message}</p>
+                  )}
+                </div>
+              </>
+            )}
+            {pinError && (
+              <p className="text-xs text-red-600 text-center" role="alert">{pinError}</p>
+            )}
+          </div>
+
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -321,7 +424,7 @@ export default function TransferPage() {
               fullWidth
               leftIcon={transferMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               onClick={() => transferMutation.mutate()}
-              disabled={transferMutation.isPending}
+              disabled={transferMutation.isPending || (hasPin && pin.length !== 4)}
             >
               {transferMutation.isPending ? "Processing…" : `Send ${fmtNGN(parseFloat(amount))}`}
             </Button>
