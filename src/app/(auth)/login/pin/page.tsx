@@ -86,16 +86,16 @@ function PinContent() {
         <AuthLogo />
 
         <div className="mt-8 mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-            <Lock className="h-6 w-6 text-white" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-parchment border border-line">
+            <Lock className="h-6 w-6 text-indigo" />
           </div>
-          <h1 className="font-display text-2xl text-white">Enter your PIN</h1>
-          <p className="mt-2 text-sm text-white/60">Your login PIN keeps your account extra secure.</p>
+          <h1 className="font-display text-2xl text-ink">Enter your PIN</h1>
+          <p className="mt-2 text-sm text-ink-soft">Your login PIN keeps your account extra secure.</p>
         </div>
 
         {checking ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+            <Loader2 className="h-6 w-6 animate-spin text-indigo" />
           </div>
         ) : (
           <>
@@ -115,7 +115,7 @@ function PinContent() {
 
             <button
               onClick={handleSignOut}
-              className="mt-4 w-full text-center text-sm text-white/50 hover:text-white/80 transition"
+              className="mt-4 w-full text-center text-sm text-ink-soft hover:text-ink transition"
             >
               Sign out instead
             </button>

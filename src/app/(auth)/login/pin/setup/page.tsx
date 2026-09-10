@@ -91,13 +91,13 @@ function PinSetupContent() {
         <AuthLogo />
 
         <div className="mt-8 mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-            <ShieldCheck className="h-6 w-6 text-white" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-parchment border border-line">
+            <ShieldCheck className="h-6 w-6 text-indigo" />
           </div>
-          <h1 className="font-display text-2xl text-white">
+          <h1 className="font-display text-2xl text-ink">
             {step === "create" ? "Create a login PIN" : "Confirm your PIN"}
           </h1>
-          <p className="mt-2 text-sm text-white/60">
+          <p className="mt-2 text-sm text-ink-soft">
             {step === "create"
               ? "You'll enter this 4-digit PIN each time you sign in."
               : "Re-enter the PIN to confirm it."}
@@ -129,7 +129,7 @@ function PinSetupContent() {
               </PrimaryButton>
               <button
                 onClick={handleBack}
-                className="w-full text-center text-sm text-white/50 hover:text-white/80 transition"
+                className="w-full text-center text-sm text-ink-soft hover:text-ink transition"
               >
                 Back
               </button>
