@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { LoadingState, ErrorState, Card, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ProgressRing, MoneyText, StatusBadge } from "@/components/yield";
@@ -90,6 +91,7 @@ export default function SavingsAccountDetailPage() {
   const [showEditTargetModal, setShowEditTargetModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const searchParams = useSearchParams();
 
   const { data: account, isLoading, error, refetch } = useQuery<AccountDetail>({
     queryKey: ["savings-account", accountId],
@@ -100,6 +102,22 @@ export default function SavingsAccountDetailPage() {
       return data.account || data;
     },
   });
+
+
+  // Deep-link support: /savings/<id>?action=deposit|withdraw opens the
+  // corresponding modal straight away (used by the savings cards).
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current || !account) return;
+    const action = searchParams.get("action");
+    if (action === "deposit" && account.status !== "withdrawn") {
+      setShowDepositModal(true);
+      deepLinkHandled.current = true;
+    } else if (action === "withdraw" && (account.status === "active" || account.status === "matured")) {
+      setShowWithdrawModal(true);
+      deepLinkHandled.current = true;
+    }
+  }, [account, searchParams]);
 
   const { data: me } = useQuery<{ wallet?: { id: string; available_balance: number } }>({
     queryKey: ["me"],
@@ -178,6 +196,44 @@ export default function SavingsAccountDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      router.push("/savings");
+    },
+  });
+
+  // One-click close-out: withdraw the full balance back to the wallet, then
+  // archive, then permanently delete the goal. Used by the delete dialog when
+  // the goal still holds funds — saves the user a 3-step manual flow.
+  const withdrawAndDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const fullBalance = account?.current_balance || 0;
+      if (fullBalance <= 0) throw new Error("Nothing to withdraw");
+
+      const withdrawRes = await fetch(`/api/savings/accounts/${accountId}/withdraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: fullBalance, wallet_id: me?.wallet?.id }),
+      });
+      const withdrawData = await withdrawRes.json();
+      if (!withdrawRes.ok) throw new Error(withdrawData.error || "Failed to withdraw balance");
+
+      const archiveRes = await fetch(`/api/savings/pots/${accountId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "archived" }),
+      });
+      const archiveData = await archiveRes.json();
+      if (!archiveRes.ok) throw new Error(archiveData.error || "Failed to archive goal");
+
+      const deleteRes = await fetch(`/api/savings/pots/${accountId}`, {
+        method: "DELETE",
+      });
+      const deleteData = await deleteRes.json();
+      if (!deleteRes.ok) throw new Error(deleteData.error || "Failed to delete goal");
+      return deleteData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       router.push("/savings");
     },
   });
@@ -587,9 +643,29 @@ export default function SavingsAccountDetailPage() {
               </DialogDescription>
             </DialogHeader>
             {balance > 0 ? (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>Cannot delete a goal with a positive balance. Please withdraw all funds first.</span>
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    This goal still holds {fmtNGN(balance)}. You can move the full balance back to your
+                    wallet and delete the goal in one step below.
+                  </span>
+                </div>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={() => withdrawAndDeleteMutation.mutate()}
+                  isLoading={withdrawAndDeleteMutation.isPending}
+                  disabled={withdrawAndDeleteMutation.isPending}
+                >
+                  Withdraw {fmtNGN(balance)} to wallet & Delete
+                </Button>
+                {withdrawAndDeleteMutation.error && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{(withdrawAndDeleteMutation.error as Error).message}</span>
+                  </div>
+                )}
               </div>
             ) : deleteMutation.error ? (
               <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs">
@@ -603,10 +679,12 @@ export default function SavingsAccountDetailPage() {
               </div>
             )}
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setShowDeleteModal(false)} disabled={deleteMutation.isPending}>Cancel</Button>
-              <Button variant="primary" onClick={() => deleteMutation.mutate()} isLoading={deleteMutation.isPending} disabled={balance > 0} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                Delete Permanently
-              </Button>
+              <Button variant="ghost" onClick={() => setShowDeleteModal(false)} disabled={deleteMutation.isPending || withdrawAndDeleteMutation.isPending}>Cancel</Button>
+              {balance <= 0 && (
+                <Button variant="primary" onClick={() => deleteMutation.mutate()} isLoading={deleteMutation.isPending} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                  Delete Permanently
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

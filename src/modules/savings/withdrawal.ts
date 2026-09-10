@@ -62,8 +62,11 @@ export async function validateWithdrawal(request: WithdrawalRequest): Promise<Wi
   };
 
   // 4. Check if withdrawals are allowed at all
-  if (!terms.withdrawal_allowed) {
-    errors.push('Withdrawals are not allowed for this savings product');
+  // Emergency early exit is the ONE exception: a customer locked out of their
+  // own principal is never acceptable, so it bypasses this gate entirely and
+  // forfeits interest instead (validated further below).
+  if (!terms.withdrawal_allowed && !request.emergency) {
+    errors.push('Withdrawals are not allowed for this savings product. Emergency withdrawal (interest forfeited) may still be available.');
     return { allowed: false, errors };
   }
 

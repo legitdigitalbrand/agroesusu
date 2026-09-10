@@ -10,7 +10,6 @@ import {
   Button,
   StatusBadge,
   MoneyText,
-  ProgressRing,
   LoadingState,
   ErrorState,
   Dialog,
@@ -22,7 +21,6 @@ import {
 import {
   PiggyBank,
   AlertCircle,
-  TrendingUp,
   Calendar,
   Wallet,
   ChevronRight,
@@ -524,7 +522,7 @@ export default function SavingsPage() {
   );
 }
 
-// ─── Flexible Savings Card ─────────────────────────────────
+// ─── Flexible Savings Card (compact, whole card clickable) ─
 function FlexibleSavingsCard({ account }: { account: SavingsAccount }) {
   const balance = account.current_balance || 0;
   const interestEarned = account.interest_earned || 0;
@@ -538,45 +536,37 @@ function FlexibleSavingsCard({ account }: { account: SavingsAccount }) {
   const monthlyTarget = goal?.monthly_target || null;
   const milestone = getMilestone(progress);
   const insight = getInsight(progress, balance, target, monthlyTarget);
-  const exceeded = balance > target && target > 0;
+  const detailHref = `/savings/${account.id}`;
 
   return (
-    <Card variant="light" padding="md" className="flex flex-col justify-between space-y-4">
-      <div>
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-parchment border border-line shrink-0">
-              {isGoal ? <Target className="w-5 h-5 text-loam" strokeWidth={1.8} /> : <PiggyBank className="w-5 h-5 text-indigo" strokeWidth={1.8} />}
+    <Card variant="light" padding="sm" className="relative h-full transition hover:border-indigo/50 hover:shadow-md">
+      {/* Whole-card click target — sits under the content; action buttons above it */}
+      <Link href={detailHref} className="absolute inset-0 z-0 rounded-[inherit]" aria-label={`View ${potName}`} />
+
+      <div className="relative z-10 pointer-events-none">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 rounded-lg bg-parchment border border-line shrink-0">
+              {isGoal ? <Target className="w-4 h-4 text-loam" strokeWidth={1.8} /> : <PiggyBank className="w-4 h-4 text-indigo" strokeWidth={1.8} />}
             </div>
-            <div>
-              <h3 className="font-display font-semibold text-base text-ink leading-tight">{potName}</h3>
-              <p className="text-xs text-ink-soft mt-0.5">{fmtRate(rate)}% p.a.</p>
+            <div className="min-w-0">
+              <h3 className="font-display font-semibold text-sm text-ink leading-tight truncate">{potName}</h3>
+              <p className="text-[11px] text-ink-soft">{fmtRate(rate)}% p.a.{interestEarned > 0 && !isGoal ? ` • ${fmtNGN(interestEarned)} earned` : ""}</p>
             </div>
           </div>
           <StatusBadge status={account.status} />
         </div>
 
-        <div className="flex items-end justify-between gap-4 mt-2">
-          <div>
-            <p className="text-xs text-ink-soft uppercase font-medium tracking-wider mb-1">{isGoal ? "Current Balance" : "Available Balance"}</p>
-            <MoneyText amount={balance} size="2xl" />
-          </div>
-          {isGoal && target > 0 && (
-            <ProgressRing
-              progress={progress}
-              size={64}
-              strokeWidth={6}
-              label={`${progress}%`}
-              sublabel="target"
-              variant="indigo"
-            />
+        <div className="mt-3 flex items-end justify-between gap-3">
+          <MoneyText amount={balance} size="xl" />
+          {isGoal && target > 0 && milestone && (
+            <span className="text-[11px] text-ink-soft shrink-0">{milestone.emoji} {milestone.label}</span>
           )}
         </div>
 
-        {/* Progress Bar — only for goal-enabled accounts */}
         {isGoal && target > 0 && (
-          <div className="mt-4">
-            <div className="h-2 rounded-full bg-parchment border border-line/60 overflow-hidden">
+          <div className="mt-2">
+            <div className="h-1.5 rounded-full bg-parchment border border-line/60 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, progress)}%` }}
@@ -584,132 +574,90 @@ function FlexibleSavingsCard({ account }: { account: SavingsAccount }) {
                 className={`h-full rounded-full ${progress >= 100 ? "bg-loam" : "bg-indigo"}`}
               />
             </div>
-            <div className="flex items-center justify-between mt-2 text-xs">
-              <span className="text-ink-soft">{fmtNGN(balance)} of {fmtNGN(target)}</span>
-              <span className="font-semibold text-ink">{progress}%</span>
-            </div>
-            {exceeded && (
-              <p className="text-xs text-loam font-medium mt-1">🎉 Goal Achieved — Exceeded by {fmtNGN(balance - target)}</p>
-            )}
+            <p className="mt-1.5 text-[11px] text-ink-soft">
+              {fmtNGN(balance)} of {fmtNGN(target)} ({progress}%)
+              {targetDate && <> • <Calendar className="inline w-3 h-3 -mt-0.5" /> {targetDate}</>}
+            </p>
+            {insight && <p className="mt-1 text-[11px] text-ink-soft/80 truncate">{insight}</p>}
           </div>
         )}
 
-        {/* Target Date */}
-        {isGoal && targetDate && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft">
-            <Calendar className="w-3.5 h-3.5 shrink-0" />
-            <span>Target: {targetDate}</span>
-          </div>
-        )}
-
-        {/* Milestone */}
-        {isGoal && milestone && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs">
-            <span>{milestone.emoji}</span>
-            <span className="font-semibold text-ink">{milestone.label}</span>
-          </div>
-        )}
-
-        {/* Insight */}
-        {isGoal && insight && (
-          <div className="mt-2 p-2.5 rounded-lg bg-parchment border border-line/60 text-xs text-ink-soft">
-            {insight}
-          </div>
-        )}
-
-        {/* Interest Earned (non-goal) */}
-        {!isGoal && interestEarned > 0 && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs">
-            <TrendingUp className="w-3.5 h-3.5 text-loam" />
-            <span className="text-ink-soft">Interest earned: </span>
-            <span className="font-semibold text-loam">{fmtNGN(interestEarned)}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="pt-2 flex items-center gap-2">
-        <Link href={`/savings/${account.id}`} className="flex-1">
-          <Button variant="outline" size="sm" fullWidth>Deposit</Button>
-        </Link>
-        <Link href={`/savings/${account.id}`} className="flex-1">
-          <Button variant="ghost" size="sm" fullWidth>Withdraw</Button>
-        </Link>
-        <Link href={`/savings/${account.id}`}>
-          <Button variant="ghost" size="sm" rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>Details</Button>
-        </Link>
+        {/* Actions — above the overlay link */}
+        <div className="pointer-events-auto mt-3 pt-1 flex items-center gap-1.5">
+          <Link href={`${detailHref}?action=deposit`}>
+            <Button variant="outline" size="sm">Deposit</Button>
+          </Link>
+          <Link href={`${detailHref}?action=withdraw`}>
+            <Button variant="outline" size="sm">Withdraw</Button>
+          </Link>
+          <span className="ml-auto text-ink-soft group-hover:text-indigo">
+            <ChevronRight className="w-4 h-4" />
+          </span>
+        </div>
       </div>
     </Card>
   );
 }
 
-// ─── Fixed Deposit Card ───────────────────────────────────
+// ─── Fixed Deposit Card (compact, whole card clickable) ────
 function FixedDepositCard({ account }: { account: SavingsAccount }) {
   const balance = account.current_balance || 0;
   const rate = account.product?.interest_rate || 0;
   const maturityDate = fmtDate(account.maturity_date);
+  const detailHref = `/savings/${account.id}`;
 
-  // Calculate days remaining
   const daysRemaining = account.maturity_date
     ? Math.max(0, Math.ceil((new Date(account.maturity_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
   const isMatured = account.status === "matured" || daysRemaining <= 0;
 
   return (
-    <Card variant="light" padding="md" className="flex flex-col justify-between space-y-4">
-      <div>
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-parchment border border-line shrink-0">
-              <Lock className="w-5 h-5 text-indigo" strokeWidth={1.8} />
+    <Card variant="light" padding="sm" className="relative h-full transition hover:border-indigo/50 hover:shadow-md">
+      <Link href={detailHref} className="absolute inset-0 z-0 rounded-[inherit]" aria-label="View fixed deposit" />
+
+      <div className="relative z-10 pointer-events-none">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 rounded-lg bg-parchment border border-line shrink-0">
+              <Lock className="w-4 h-4 text-indigo" strokeWidth={1.8} />
             </div>
-            <div>
-              <h3 className="font-display font-semibold text-base text-ink leading-tight">
+            <div className="min-w-0">
+              <h3 className="font-display font-semibold text-sm text-ink leading-tight truncate">
                 {account.product?.product_name || "Fixed Deposit"}
               </h3>
-              <p className="text-xs text-ink-soft mt-0.5">{fmtRate(rate)}% p.a.</p>
+              <p className="text-[11px] text-ink-soft">{fmtRate(rate)}% p.a.</p>
             </div>
           </div>
           <StatusBadge status={account.status} />
         </div>
 
-        <div className="mt-2">
-          <p className="text-xs text-ink-soft uppercase font-medium tracking-wider mb-1">Balance</p>
-          <MoneyText amount={balance} size="2xl" />
+        <div className="mt-3 flex items-end justify-between gap-3">
+          <MoneyText amount={balance} size="xl" />
+          {isMatured ? (
+            <span className="text-[11px] text-loam font-medium shrink-0">🎉 Matured</span>
+          ) : daysRemaining > 0 ? (
+            <span className="text-[11px] text-ink-soft shrink-0">{daysRemaining} days left</span>
+          ) : null}
         </div>
 
-        {/* Fixed Deposit info — no progress bar */}
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-ink-soft">Interest Rate</span>
-            <span className="font-semibold text-ink">{fmtRate(rate)}% p.a.</span>
-          </div>
-          {daysRemaining > 0 && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-ink-soft">Days Remaining</span>
-              <span className="font-semibold text-ink">{daysRemaining} days</span>
-            </div>
-          )}
-          {maturityDate && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-ink-soft">Maturity Date</span>
-              <span className="font-semibold text-ink">{maturityDate}</span>
-            </div>
-          )}
-          {isMatured && (
-            <div className="flex items-center gap-1.5 text-xs text-loam font-medium pt-1">
-              <span>🎉 Matured — ready to withdraw</span>
-            </div>
-          )}
-        </div>
-      </div>
+        {maturityDate && (
+          <p className="mt-2 text-[11px] text-ink-soft">
+            Matures {maturityDate}
+            {!isMatured && account.status === "active" && " • emergency withdrawal available"}
+          </p>
+        )}
 
-      <div className="pt-2 flex items-center gap-2">
-        <Link href={`/savings/${account.id}`} className="flex-1">
-          <Button variant="outline" size="sm" fullWidth>Details</Button>
-        </Link>
-        <Link href={`/savings/${account.id}`}>
-          <Button variant="ghost" size="sm" rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>View</Button>
-        </Link>
+        <div className="pointer-events-auto mt-3 pt-1 flex items-center gap-1.5">
+          <Link href={`${detailHref}?action=deposit`}>
+            <Button variant="outline" size="sm">Deposit</Button>
+          </Link>
+          <Link href={`${detailHref}?action=withdraw`}>
+            <Button variant="outline" size="sm">Withdraw</Button>
+          </Link>
+          <span className="ml-auto text-ink-soft group-hover:text-indigo">
+            <ChevronRight className="w-4 h-4" />
+          </span>
+        </div>
       </div>
     </Card>
   );
