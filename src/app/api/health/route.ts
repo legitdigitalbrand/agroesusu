@@ -1,6 +1,32 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@supabase/supabase-js";
 import { REQUIRED_MIGRATION, isDbUpToDate } from "@/lib/db-version";
+
+// ============================================================================
+// NO-STORE SERVICE CLIENT (2026-09-11 incident #2):
+// Next.js 14 caches fetch() (GET) by default — and on Vercel that Data Cache
+// is shared and persists ACROSS deployments. The original guard used the
+// plain service client, so its `select('latest')` on db_migration_status was
+// served from a frozen Data Cache entry from the first ever request: the
+// endpoint kept reporting migration 00057 (stale snapshot) while the real
+// database moved to 00058/00059 — the guard could never detect a lagging
+// database because its only "signal" was itself frozen. Any DB change was
+// invisible to it. pg_stat_statements proved the query stopped hitting
+// Postgres at all.
+//
+// This client overrides fetch with cache:'no-store' so every health check
+// reads live data. (The count queries below used HTTP HEAD, which Next
+// does not cache — which is why those numbers were already live.)
+// ============================================================================
+function createNoStoreServiceClient() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, { ...init, cache: "no-store" }),
+    },
+  });
+}
 
 // ============================================================================
 // GET /api/health — PUBLIC launch guard + operational smoke check
@@ -25,7 +51,7 @@ import { REQUIRED_MIGRATION, isDbUpToDate } from "@/lib/db-version";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const service = createServiceClient();
+  const service = createNoStoreServiceClient();
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
