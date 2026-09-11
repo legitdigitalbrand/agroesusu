@@ -112,7 +112,7 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
                 AgroPocket
               </span>
               <span className="text-[11px] text-ink-soft tracking-wide">
-                AgroEsusu Fintech
+                Save, Loan, Access
               </span>
             </div>
           </Link>

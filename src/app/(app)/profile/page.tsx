@@ -15,6 +15,7 @@ import {
   ErrorState,
   LoadingState,
   ScreenHeader,
+  BackLink,
 } from "@/components/yield";
 import {
   User,
@@ -206,6 +207,7 @@ export default function ProfilePage() {
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
       <ScreenHeader
         title="Profile & Account"
+        backButton={<BackLink href="/dashboard" />}
         subtitle="Manage your personal details, verification, and security settings"
         action={
           !editing ? (

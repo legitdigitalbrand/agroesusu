@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-me";
-import { LoadingState, ErrorState, Card, EmptyState, Button } from "@/components/yield";
+import { LoadingState, ErrorState, Card, EmptyState, Button, BackLink } from "@/components/yield";
 import { Bell, CheckCheck, ArrowDownLeft, Shield, TrendingUp, PiggyBank, FileText } from "lucide-react";
 import Link from "next/link";
 import { formatRelativeTime } from "@/lib/format";
@@ -74,6 +74,7 @@ export default function NotificationsPage() {
   if (notifications.length === 0) {
     return (
       <div className="space-y-5">
+        <BackLink href="/dashboard" />
         <div>
           <h1 className="font-display text-2xl text-ink">Notifications</h1>
           <p className="text-sm text-ink-soft">Stay updated on your account activity</p>
@@ -89,6 +90,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-5">
+      <BackLink href="/dashboard" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-ink">Notifications</h1>

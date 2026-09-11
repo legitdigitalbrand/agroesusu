@@ -18,7 +18,8 @@ import { Loader2, ShieldCheck } from "lucide-react";
 function PinSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/dashboard";
+  const redirectPath = searchParams.get("next") || searchParams.get("redirect") || "/dashboard";
+  const isFirstRun = searchParams.get("first_run") === "1";
 
   const [step, setStep] = useState<"create" | "confirm">("create");
   const [firstPin, setFirstPin] = useState("");
@@ -95,11 +96,11 @@ function PinSetupContent() {
             <ShieldCheck className="h-6 w-6 text-indigo" />
           </div>
           <h1 className="font-display text-2xl text-ink">
-            {step === "create" ? "Create a login PIN" : "Confirm your PIN"}
+            {step === "create" ? "Create your Security PIN" : "Confirm your PIN"}
           </h1>
           <p className="mt-2 text-sm text-ink-soft">
             {step === "create"
-              ? "You'll enter this 4-digit PIN each time you sign in."
+              ? "One 4-digit PIN unlocks your account and authorises every transfer."
               : "Re-enter the PIN to confirm it."}
           </p>
         </div>
@@ -109,10 +110,18 @@ function PinSetupContent() {
             <div className="flex justify-center">
               <OtpInput length={4} value={firstPin} onChange={setFirstPin} />
             </div>
-            <div className="mt-6">
+            <div className="mt-6 space-y-3">
               <PrimaryButton onClick={handleCreate} disabled={firstPin.length !== 4}>
                 Continue
               </PrimaryButton>
+              {isFirstRun && (
+                <button
+                  onClick={() => router.push(redirectPath)}
+                  className="w-full text-center text-sm text-ink-soft hover:text-ink transition"
+                >
+                  Skip for now
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -121,7 +130,7 @@ function PinSetupContent() {
               <OtpInput length={4} value={confirmPin} onChange={setConfirmPin} error={!!error} />
             </div>
             {error && (
-              <p className="mt-3 text-center text-sm text-red-400" role="alert">{error}</p>
+              <p className="mt-3 text-center text-sm text-clay" role="alert">{error}</p>
             )}
             <div className="mt-6 space-y-3">
               <PrimaryButton onClick={handleConfirm} disabled={confirmPin.length !== 4 || loading}>

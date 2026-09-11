@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { ArrowLeft } from "lucide-react";
 
 // ──────────────────────────────────────────────
 // LogoMark — two-tone logo (outer ring + inner dot)
@@ -11,13 +13,15 @@ import { Button } from "./button";
 
 export interface LogoMarkProps {
   size?: number;
-  variant?: "customer" | "admin";
+  variant?: "customer" | "admin" | "footer";
   className?: string;
 }
 
 export function LogoMark({ size = 40, variant = "customer", className }: LogoMarkProps) {
-  const ringColor = variant === "customer" ? "#1B5E20" : "#E8F5E9";
-  const dotColor = variant === "customer" ? "#BBDC12" : "#3E8E2F";
+  const ringColor =
+    variant === "customer" ? "#1B5E20" : variant === "footer" ? "#FFFFFF" : "#E8F5E9";
+  const dotColor =
+    variant === "customer" ? "#BBDC12" : variant === "footer" ? "#BBDC12" : "#3E8E2F";
 
   return (
     <svg
@@ -238,6 +242,34 @@ export function ScreenHeader({
       </div>
       {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────
+// BackLink — consistent back navigation for sub-screens
+// ──────────────────────────────────────────────────
+
+export interface BackLinkProps {
+  /** Route to return to (explicit parent, not browser history) */
+  href: string;
+  /** Optional label; defaults to "Back" */
+  label?: string;
+  className?: string;
+}
+
+export function BackLink({ href, label = "Back", className }: BackLinkProps) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink transition min-h-[44px] py-1",
+        className
+      )}
+      aria-label={label}
+    >
+      <ArrowLeft className="w-4 h-4" strokeWidth={1.8} />
+      {label}
+    </Link>
   );
 }
 

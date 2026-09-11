@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Shield, Lock, ChevronLeft, Loader2, KeyRound } from "lucide-react";
-import { Card, Button } from "@/components/yield";
+import { Shield, Lock, Loader2, KeyRound } from "lucide-react";
+import { Card, Button, BackLink } from "@/components/yield";
 import { useMe } from "@/hooks/use-me";
 
 export default function SecurityPage() {
@@ -71,10 +71,7 @@ export default function SecurityPage() {
 
   return (
     <div className="space-y-5">
-      <Link href="/settings" className="inline-flex items-center gap-1 text-sm text-ink-soft hover:text-ink transition">
-        <ChevronLeft className="h-4 w-4" />
-        Settings
-      </Link>
+      <BackLink href="/settings" label="Settings" />
 
       <div>
         <h1 className="font-display text-2xl text-ink">Security</h1>
@@ -106,13 +103,13 @@ export default function SecurityPage() {
             <KeyRound className="h-5 w-5 text-indigo" />
           </div>
           <div>
-            <p className="font-medium text-ink">Login PIN</p>
+            <p className="font-medium text-ink">Security PIN</p>
             <p className="text-xs text-ink-soft">
               {hasPin === null
                 ? "Extra security for sign-ins"
                 : hasPin
                   ? "Required each time you sign in"
-                  : "Add a 4-digit PIN for extra security"}
+                  : "Set your 4-digit PIN for login & transfers"}
             </p>
           </div>
         </div>

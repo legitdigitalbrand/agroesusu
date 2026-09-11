@@ -23,7 +23,7 @@ function VerifyEmailContent() {
       if (session) {
         // Email confirmed — redirect to onboarding for OTP verification
         // (OTP verification must happen before onboarding per security policy)
-        router.push("/onboarding");
+        router.push("/login/pin/setup?next=/onboarding&first_run=1");
         router.refresh();
       }
     };

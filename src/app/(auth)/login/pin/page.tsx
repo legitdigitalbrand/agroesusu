@@ -104,7 +104,7 @@ function PinContent() {
             </div>
 
             {error && (
-              <p className="mt-3 text-center text-sm text-red-400" role="alert">{error}</p>
+              <p className="mt-3 text-center text-sm text-clay" role="alert">{error}</p>
             )}
 
             <div className="mt-6">

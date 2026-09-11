@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   Check, TrendingUp, Clock, Landmark, Shield, Wallet,
 } from "lucide-react";
+import { LogoMark } from "@/components/yield";
 
 // ════════════════════════════════════════════════════════════
 // Landing Page — AgroPocket
@@ -220,9 +221,7 @@ export default function LandingPage() {
       <footer className="bg-indigo-deep py-8 px-6 md:px-10">
         <div className="max-w-[1180px] mx-auto flex flex-wrap justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo flex items-center justify-center">
-              <span className="text-white font-bold text-sm">A</span>
-            </div>
+            <LogoMark size={28} variant="footer" />
             <span className="font-display font-semibold text-white text-[16px]">AgroPocket</span>
           </div>
           <nav className="flex gap-5 text-[13px] text-white/70">

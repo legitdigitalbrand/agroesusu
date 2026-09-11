@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useBalanceVisibility } from "@/hooks/use-balance-visibility";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -28,6 +29,8 @@ import {
   Target,
   Lock,
   Users,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 // ════════════════════════════════════════════════════════════
@@ -80,6 +83,7 @@ export interface SavingsAccount {
 }
 
 export default function SavingsPage() {
+  const { visible: balanceVisible, toggle: toggleBalanceVisible } = useBalanceVisibility();
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [showFlexibleStyleSelector, setShowFlexibleStyleSelector] = useState(false);
   const [showGoalWizard, setShowGoalWizard] = useState(false);
@@ -228,10 +232,22 @@ export default function SavingsPage() {
             <div className="p-2.5 rounded-xl bg-white/10">
               <Wallet className="w-5 h-5 text-white" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-xs text-white/70 uppercase font-medium tracking-wider">Total Savings</p>
-              <MoneyText amount={allAccounts.reduce((s, a) => s + (a.current_balance || 0), 0)} size="2xl" className="text-white" />
+              {balanceVisible ? (
+                <MoneyText amount={allAccounts.reduce((s, a) => s + (a.current_balance || 0), 0)} size="2xl" className="text-white" />
+              ) : (
+                <p className="font-display text-2xl font-bold text-white tracking-widest">••••••••</p>
+              )}
             </div>
+            <button
+              onClick={toggleBalanceVisible}
+              className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition"
+              title={balanceVisible ? "Hide balance" : "Show balance"}
+              aria-label={balanceVisible ? "Hide balance" : "Show balance"}
+            >
+              {balanceVisible ? <EyeOff className="w-4 h-4" strokeWidth={1.8} /> : <Eye className="w-4 h-4" strokeWidth={1.8} />}
+            </button>
           </div>
           <p className="text-xs text-white/60">{allAccounts.filter((a) => a.status === "active" || a.status === "pending").length} active {allAccounts.filter((a) => a.status === "active" || a.status === "pending").length === 1 ? "account" : "accounts"}</p>
         </Card>

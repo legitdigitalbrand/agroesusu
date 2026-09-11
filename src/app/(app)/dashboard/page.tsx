@@ -24,6 +24,7 @@ import {
 
 import { useMe } from "@/hooks/use-me";
 import { useWalletRealtime } from "@/hooks/use-wallet-realtime";
+import { useBalanceVisibility } from "@/hooks/use-balance-visibility";
 import {
   Card,
   CardHeader,
@@ -119,7 +120,7 @@ function DashboardSkeleton() {
 // Main Dashboard Page
 // ═══════════════════════════════════════════════════════════════
 export default function DashboardPage() {
-  const [balanceVisible, setBalanceVisible] = useState(true);
+  const { visible: balanceVisible, toggle: toggleBalanceVisible } = useBalanceVisibility();
   const [copiedAcct, setCopiedAcct] = useState(false);
 
   const { data: me, isLoading: meLoading, error: meError, refetch: refetchMe } = useMe();
@@ -304,7 +305,7 @@ export default function DashboardPage() {
           icon={<Wallet className="w-5 h-5 text-indigo" strokeWidth={1.8} />}
           action={
             <button
-              onClick={() => setBalanceVisible(!balanceVisible)}
+              onClick={toggleBalanceVisible}
               className="p-1.5 rounded-lg text-ink-soft hover:text-ink hover:bg-parchment transition"
               title={balanceVisible ? "Hide balance" : "Show balance"}
             >
@@ -314,9 +315,24 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Savings Balance"
-          value={<MoneyText amount={savingsTotal} size="2xl" className="font-bold" />}
+          value={
+            balanceVisible ? (
+              <MoneyText amount={savingsTotal} size="2xl" className="font-bold" />
+            ) : (
+              "••••••••"
+            )
+          }
           subtitle={`${savingsCount} active ${savingsCount === 1 ? "account" : "accounts"}`}
           icon={<PiggyBank className="w-5 h-5 text-indigo" strokeWidth={1.8} />}
+          action={
+            <button
+              onClick={toggleBalanceVisible}
+              className="p-1.5 rounded-lg text-ink-soft hover:text-ink hover:bg-parchment transition"
+              title={balanceVisible ? "Hide balance" : "Show balance"}
+            >
+              {balanceVisible ? <EyeOff className="w-4 h-4" strokeWidth={1.8} /> : <Eye className="w-4 h-4" strokeWidth={1.8} />}
+            </button>
+          }
         />
         <StatCard
           title="Outstanding Loan"
@@ -351,7 +367,7 @@ export default function DashboardPage() {
               Available Wallet Balance
             </span>
             <button
-              onClick={() => setBalanceVisible(!balanceVisible)}
+              onClick={toggleBalanceVisible}
               className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition"
               title={balanceVisible ? "Hide balance" : "Show balance"}
             >
