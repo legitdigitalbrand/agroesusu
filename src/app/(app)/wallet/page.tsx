@@ -28,6 +28,7 @@ import {
   LoadingState,
   ScreenHeader,
   Skeleton,
+  Pagination,
 } from "@/components/yield";
 import {
   Plus,
@@ -86,6 +87,10 @@ const fmtNGN = (v: number) => {
 export default function WalletPage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [copied, setCopied] = useState(false);
+  // Transaction history pagination (2026-09-11): server-paginated via the
+  // wallet transactions API's page/limit params.
+  const [txPage, setTxPage] = useState(1);
+  const TX_PAGE_SIZE = 15;
 
   const { data: me, isLoading: meLoading, error: meError, refetch: refetchMe } = useMe();
 
@@ -98,10 +103,10 @@ export default function WalletPage() {
     isLoading: txLoading,
     error: txError,
     refetch: refetchTx,
-  } = useQuery<{ transactions: WalletTransaction[] }>({
-    queryKey: ["wallet-transactions", walletId],
+  } = useQuery<{ transactions: WalletTransaction[]; pagination?: { page: number; limit: number; total: number; total_pages: number } }>({
+    queryKey: ["wallet-transactions", walletId, txPage],
     queryFn: async () => {
-      const res = await fetch(`/api/wallets/${walletId}/transactions`);
+      const res = await fetch(`/api/wallets/${walletId}/transactions?page=${txPage}&limit=${TX_PAGE_SIZE}`);
       if (!res.ok) throw new Error("Failed to load transactions");
       return res.json();
     },
@@ -148,6 +153,7 @@ export default function WalletPage() {
 
   const wallet = me.wallet;
   const transactions = txData?.transactions || [];
+  const txPagination = txData?.pagination;
   const dva = fundingDetails?.provisioned ? fundingDetails.account : null;
 
   const copyAccountNumber = () => {
@@ -170,6 +176,7 @@ export default function WalletPage() {
             leftIcon={<RefreshCw className="w-4 h-4" />}
             onClick={() => {
               refetchMe();
+              setTxPage(1);
               refetchTx();
               refetchFunding();
             }}
@@ -465,7 +472,7 @@ export default function WalletPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => refetchTx()}
+                onClick={() => { setTxPage(1); refetchTx(); }}
                 leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
               >
                 Refresh
@@ -557,6 +564,16 @@ export default function WalletPage() {
                 </Table>
               </TableContainer>
             )}
+
+            {/* Pagination — server-driven via page/limit on the transactions API */}
+            {txPagination && txPagination.total_pages > 1 && (
+              <Pagination
+                page={txPagination.page}
+                totalPages={txPagination.total_pages}
+                onPageChange={(p) => setTxPage(p)}
+                rangeLabel={`Showing ${Math.min((txPagination.page - 1) * txPagination.limit + 1, txPagination.total)}–${Math.min(txPagination.page * txPagination.limit, txPagination.total)} of ${txPagination.total}`}
+              />
+            )}
           </Card>
         </div>
 
@@ -610,7 +627,7 @@ export default function WalletPage() {
               </div>
               <div className="flex items-center justify-between py-1 border-b border-line/60">
                 <span className="text-ink-soft">Total Transactions</span>
-                <span className="font-mono font-medium text-ink">{transactions.length}</span>
+                <span className="font-mono font-medium text-ink">{txPagination?.total ?? transactions.length}</span>
               </div>
               <div className="flex items-center justify-between py-1">
                 <span className="text-ink-soft">Currency</span>

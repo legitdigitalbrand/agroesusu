@@ -12,3 +12,4 @@ export * from "./table";
 export * from "./dialog";
 export * from "./dropdown";
 export * from "./skeleton";
+export * from "./pagination";

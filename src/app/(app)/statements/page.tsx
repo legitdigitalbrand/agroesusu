@@ -20,6 +20,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  Pagination,
 } from "@/components/yield";
 import {
   FileText,
@@ -83,6 +84,10 @@ export default function StatementsPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [directionFilter, setDirectionFilter] = useState<"all" | "credit" | "debit">("all");
+  // Transaction table pagination (2026-09-11): client-side, since the full
+  // filtered/sorted set drives the monthly summaries too.
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const transactions = useMemo(() => txData?.transactions || [], [txData]);
 
@@ -171,7 +176,88 @@ export default function StatementsPage() {
     setFromDate("");
     setToDate("");
     setDirectionFilter("all");
+    setPage(1);
   };
+
+  // Any filter change invalidates the current page — snap back to page 1
+  // so the user isn't stranded on an out-of-range page.
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, directionFilter, fromDate, toDate]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedTransactions.length / PAGE_SIZE));
+  // Clamp: if data shrinks (e.g. a filter removes rows) while on a later page.
+  const currentPage = Math.min(page, totalPages);
+  const paginatedTransactions = useMemo(
+    () => sortedTransactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [sortedTransactions, currentPage]
+  );
+
+  // Shared row renderer — used for both the paginated on-screen table and
+  // the full (unpaginated) table that only appears via `hidden print:block`,
+  // so Print/PDF still exports every filtered transaction, not just the
+  // current page.
+  const renderTxRows = (list: WalletTransaction[]) =>
+    list.map((tx) => (
+      <TableRow key={tx.id} className="hover:bg-parchment/40">
+        <TableCell className="whitespace-nowrap font-mono text-xs text-ink">
+          {format(new Date(tx.created_at), "MMM d, yyyy")}
+          <span className="block text-[11px] text-ink-soft font-mono">
+            {format(new Date(tx.created_at), "HH:mm")}
+          </span>
+        </TableCell>
+        <TableCell className="max-w-[220px]">
+          <p className="font-medium text-ink text-sm truncate" title={tx.narration || "N/A"}>
+            {tx.narration || "N/A"}
+          </p>
+        </TableCell>
+        <TableCell className="font-mono text-xs text-ink-soft whitespace-nowrap">
+          {tx.reference}
+        </TableCell>
+        <TableCell className="capitalize text-xs font-semibold text-ink-soft whitespace-nowrap">
+          {tx.transaction_type?.replace(/_/g, " ")}
+        </TableCell>
+        <TableCell className="whitespace-nowrap">
+          <span
+            className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md border ${
+              tx.direction === "credit"
+                ? "bg-loam-light/70 text-loam border-loam/20"
+                : "bg-clay-light/70 text-clay border-clay/20"
+            }`}
+          >
+            {tx.direction === "credit" ? (
+              <>
+                <ArrowDownLeft className="h-3 w-3" /> Credit
+              </>
+            ) : (
+              <>
+                <ArrowUpRight className="h-3 w-3" /> Debit
+              </>
+            )}
+          </span>
+        </TableCell>
+        <TableCell className="text-right whitespace-nowrap">
+          <MoneyText amount={tx.amount} direction={tx.direction} size="sm" />
+        </TableCell>
+        <TableCell className="text-center whitespace-nowrap">
+          <StatusBadge status={tx.status} size="sm" />
+        </TableCell>
+      </TableRow>
+    ));
+
+  const txTableHead = (
+    <TableHeader>
+      <TableRow>
+        <TableHead>Date & Time</TableHead>
+        <TableHead>Description</TableHead>
+        <TableHead>Reference</TableHead>
+        <TableHead>Type</TableHead>
+        <TableHead>Direction</TableHead>
+        <TableHead className="text-right">Amount</TableHead>
+        <TableHead className="text-center">Status</TableHead>
+      </TableRow>
+    </TableHeader>
+  );
 
   // Export helper function
   const downloadCSV = (txList: WalletTransaction[], filename: string) => {
@@ -444,72 +530,30 @@ export default function StatementsPage() {
               <div>
                 <h2 className="font-display text-lg font-semibold text-ink">Transaction History</h2>
                 <p className="text-xs text-ink-soft">
-                  Showing {sortedTransactions.length} of {transactions.length} total transactions
+                  Showing {sortedTransactions.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, sortedTransactions.length)} of {sortedTransactions.length} filtered ({transactions.length} total)
                 </p>
               </div>
             </div>
 
-            <TableContainer>
+            {/* On-screen: paginated */}
+            <TableContainer className="print:hidden">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Reference</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Direction</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedTransactions.map((tx) => (
-                    <TableRow key={tx.id} className="hover:bg-parchment/40">
-                      <TableCell className="whitespace-nowrap font-mono text-xs text-ink">
-                        {format(new Date(tx.created_at), "MMM d, yyyy")}
-                        <span className="block text-[11px] text-ink-soft font-mono">
-                          {format(new Date(tx.created_at), "HH:mm")}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-[220px]">
-                        <p className="font-medium text-ink text-sm truncate" title={tx.narration || "N/A"}>
-                          {tx.narration || "N/A"}
-                        </p>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-ink-soft whitespace-nowrap">
-                        {tx.reference}
-                      </TableCell>
-                      <TableCell className="capitalize text-xs font-semibold text-ink-soft whitespace-nowrap">
-                        {tx.transaction_type?.replace(/_/g, " ")}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md border ${
-                            tx.direction === "credit"
-                              ? "bg-loam-light/70 text-loam border-loam/20"
-                              : "bg-clay-light/70 text-clay border-clay/20"
-                          }`}
-                        >
-                          {tx.direction === "credit" ? (
-                            <>
-                              <ArrowDownLeft className="h-3 w-3" /> Credit
-                            </>
-                          ) : (
-                            <>
-                              <ArrowUpRight className="h-3 w-3" /> Debit
-                            </>
-                          )}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <MoneyText amount={tx.amount} direction={tx.direction} size="sm" />
-                      </TableCell>
-                      <TableCell className="text-center whitespace-nowrap">
-                        <StatusBadge status={tx.status} size="sm" />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                {txTableHead}
+                <TableBody>{renderTxRows(paginatedTransactions)}</TableBody>
+              </Table>
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                rangeLabel={`Page ${currentPage} of ${totalPages}`}
+              />
+            </TableContainer>
+
+            {/* Print/PDF: full filtered list, unpaginated, so exports are complete */}
+            <TableContainer className="hidden print:block">
+              <Table>
+                {txTableHead}
+                <TableBody>{renderTxRows(sortedTransactions)}</TableBody>
               </Table>
             </TableContainer>
           </div>
