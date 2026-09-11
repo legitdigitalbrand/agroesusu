@@ -17,6 +17,7 @@ interface MeResponse {
     phone: string;
     bvn: string | null;
     nin: string | null;
+    avatar_url: string | null;
     kyc_level: number;
     kyc_status: string;
     residential_address: string | null;

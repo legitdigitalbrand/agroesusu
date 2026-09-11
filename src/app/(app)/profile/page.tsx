@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMe } from "@/hooks/use-me";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardHeader,
@@ -18,6 +18,7 @@ import {
 } from "@/components/yield";
 import {
   User,
+  Camera,
   LogOut,
   MapPin,
   Smartphone,
@@ -60,6 +61,71 @@ function maskNumber(val?: string | null): string {
 export default function ProfilePage() {
   const { data: me, isLoading, error, refetch } = useMe();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  // Upload avatar: downscale/compress on the client, then POST multipart
+  const avatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      return data as { avatar_url: string };
+    },
+    onSuccess: (data: { avatar_url: string }) => {
+      setAvatarError(null);
+      // Optimistically show the new avatar; refetch so the header etc. sync
+      queryClient.setQueryData(["me"], (old: unknown) =>
+        old && typeof old === "object"
+          ? { ...(old as Record<string, unknown>), profile: { ...((old as { profile?: object }).profile || {}), avatar_url: data.avatar_url } }
+          : old
+      );
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: (err: Error) => setAvatarError(err.message),
+  });
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setAvatarError("Only JPG, PNG or WebP images are allowed");
+      return;
+    }
+    try {
+      // Client-side downscale to a 320px square JPEG — keeps uploads tiny
+      const bitmap = await createImageBitmap(file);
+      const size = 320;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Could not process image");
+      // Cover-crop to square
+      const side = Math.min(bitmap.width, bitmap.height);
+      ctx.drawImage(
+        bitmap,
+        (bitmap.width - side) / 2,
+        (bitmap.height - side) / 2,
+        side,
+        side,
+        0,
+        0,
+        size,
+        size
+      );
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85)
+      );
+      if (!blob) throw new Error("Could not process image");
+      avatarMutation.mutate(new File([blob], "avatar.jpg", { type: "image/jpeg" }));
+    } catch {
+      setAvatarError("Could not process that image. Try another one.");
+    }
+  };
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -165,30 +231,81 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* 1. Profile Header Card */}
-      <Card variant="dark" className="relative overflow-hidden text-center p-6 sm:p-8">
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-paper/10 border-2 border-ochre/50 flex items-center justify-center shadow-md backdrop-blur-xs">
-            <span className="font-display text-2xl sm:text-3xl font-bold text-white tracking-wider">
-              {initials(profile.full_name || "User")}
-            </span>
+      {/* 1. Profile Header — layered gradient hero with avatar upload */}
+      <div className="relative overflow-hidden rounded-2xl">
+        {/* Layer 1: base brand gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-deep via-indigo to-loam" />
+        {/* Layer 2: ochre glow, top-left */}
+        <div className="absolute -top-16 -left-16 h-56 w-56 rounded-full bg-ochre/20 blur-3xl" />
+        {/* Layer 3: light halo, bottom-right */}
+        <div className="absolute -bottom-20 -right-10 h-64 w-64 rounded-full bg-loam-light/20 blur-3xl" />
+        {/* Layer 4: subtle dot texture */}
+        <div
+          className="absolute inset-0 opacity-[0.12]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #BBDC12 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col items-center text-center px-6 py-8 sm:py-10">
+          {/* Avatar with camera badge */}
+          <div className="relative">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-[3px] border-ochre/70 bg-indigo-deep/60 flex items-center justify-center shadow-lg">
+              {profile.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name || "Profile"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="font-display text-2xl sm:text-3xl font-bold text-white tracking-wider">
+                  {initials(profile.full_name || "User")}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Change profile picture"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarMutation.isPending}
+              className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full bg-ochre text-indigo-deep flex items-center justify-center shadow-md border-2 border-indigo-deep/40 transition hover:bg-ochre/90 disabled:opacity-70"
+            >
+              {avatarMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
 
           <h2 className="mt-4 font-display text-xl sm:text-2xl font-bold text-white tracking-tight">
             {profile.full_name || "Valued User"}
           </h2>
-          <p className="text-sm text-parchment/80 font-medium mt-1">
+          <p className="text-sm text-parchment/90 font-medium mt-1">
             {profile.email || "Not provided"}
           </p>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <StatusBadge status={profile.kyc_status || "unverified"} />
-            <span className="text-xs text-parchment/80 font-medium bg-indigo-deep/60 px-3 py-1 rounded-full border border-indigo-light/20">
+            <span className="text-xs text-parchment/90 font-medium bg-indigo-deep/50 px-3 py-1 rounded-full border border-indigo-light/25 backdrop-blur-sm">
               Member since {formatDate(profile.created_at)}
             </span>
           </div>
+
+          {avatarError && (
+            <p className="mt-3 text-xs text-clay-light" role="alert">{avatarError}</p>
+          )}
         </div>
-      </Card>
+      </div>
 
       {/* 2. Personal Information (read-only: name, email, phone, BVN, NIN) */}
       <Card>

@@ -28,7 +28,7 @@ export async function GET() {
     // an additional field so both the customer app and /dev panel work.
     const { data: customer } = await supabase
       .from('customers')
-      .select('id, customer_number, full_name, email, phone, status, bvn, nin, created_at')
+      .select('id, customer_number, full_name, email, phone, status, bvn, nin, avatar_url, created_at')
       .eq('auth_id', user.id)
       .maybeSingle();
 
