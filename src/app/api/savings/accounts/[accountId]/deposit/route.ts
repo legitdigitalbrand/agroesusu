@@ -71,7 +71,13 @@ export async function POST(
     });
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      // Pass through the structured failure so the UI can react to the code
+      // (e.g. insufficient_wallet_balance shows a top-up CTA).
+      return NextResponse.json({
+        error: result.error,
+        code: result.code,
+        details: result.details,
+      }, { status: 400 });
     }
 
     // Dispatch notification (non-blocking)

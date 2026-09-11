@@ -243,6 +243,21 @@ export async function markAsMatured(accountId: string): Promise<void> {
   if (error) throw new Error(`Failed to mark as matured: ${error.message}`);
 }
 
+/**
+ * Reactivate a previously withdrawn flexible savings account (2026-09-11):
+ * a pot that was emptied is NOT dead — depositing into it re-opens it.
+ * Only 'withdrawn' accounts are affected; 'closed' stays closed.
+ */
+export async function reactivateAccount(accountId: string): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from('savings_accounts')
+    .update({ status: 'active', closed_at: null })
+    .eq('id', accountId)
+    .eq('status', 'withdrawn');
+  if (error) throw new Error(`Failed to reactivate savings account: ${error.message}`);
+}
+
 /** Close a savings account */
 export async function closeAccount(accountId: string, reason?: string): Promise<void> {
   const supabase = getServiceClient();

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { LoadingState, ErrorState, Card, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ProgressRing, MoneyText, StatusBadge } from "@/components/yield";
-import { ArrowLeft, AlertCircle, Plus, ArrowUpRight, PiggyBank, Calendar, Target, Edit3, Archive, Trash2, TrendingUp, Lock } from "lucide-react";
+import { ArrowLeft, AlertCircle, Plus, ArrowUpRight, PiggyBank, Calendar, Target, Edit3, Archive, Trash2, TrendingUp, Lock, CheckCircle2, Info, Wallet, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 const fmtNGN = (v: number) => `₦${(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
@@ -14,6 +14,28 @@ const fmtDate = (d?: string | null) => {
   if (!d) return null;
   return new Date(d).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
 };
+
+// Result-card payloads for the deposit/withdraw modals (2026-09-11)
+interface DepositResultDetails {
+  required?: number;
+  available?: number;
+  shortfall?: number;
+  minimum?: number;
+}
+interface DepositResultCard {
+  ok: boolean;
+  amount: number;
+  message?: string;
+  code?: string;
+  details?: DepositResultDetails;
+  transactionRef?: string;
+}
+interface WithdrawResultCard {
+  ok: boolean;
+  amount: number;
+  message?: string;
+  transactionRef?: string;
+}
 
 function getMilestone(pct: number): { emoji: string; label: string } | null {
   if (pct >= 100) return { emoji: "🎉", label: "Goal Achieved" };
@@ -87,6 +109,13 @@ export default function SavingsAccountDetailPage() {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [showEarlyWithdrawWarning, setShowEarlyWithdrawWarning] = useState(false);
+  const [emergencyResult, setEmergencyResult] = useState<WithdrawResultCard | null>(null);
+  // Success/failure result cards shown inside the deposit & withdraw modals
+  // (2026-09-11): users get explicit confirmation that money moved from/to
+  // the Main Wallet, or a clear failure card with the next step.
+  const [depositResult, setDepositResult] = useState<DepositResultCard | null>(null);
+  const [withdrawResult, setWithdrawResult] = useState<WithdrawResultCard | null>(null);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showEditTargetModal, setShowEditTargetModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -104,16 +133,21 @@ export default function SavingsAccountDetailPage() {
   });
 
 
+  const openDepositModal = () => { setDepositResult(null); depositMutation.reset(); setShowDepositModal(true); };
+  const openWithdrawModal = () => { setWithdrawResult(null); withdrawMutation.reset(); setShowWithdrawModal(true); };
+
   // Deep-link support: /savings/<id>?action=deposit|withdraw opens the
   // corresponding modal straight away (used by the savings cards).
   const deepLinkHandled = useRef(false);
   useEffect(() => {
     if (deepLinkHandled.current || !account) return;
     const action = searchParams.get("action");
-    if (action === "deposit" && account.status !== "withdrawn") {
+    if (action === "deposit" && account.status !== "closed") {
+      setDepositResult(null);
       setShowDepositModal(true);
       deepLinkHandled.current = true;
     } else if (action === "withdraw" && (account.status === "active" || account.status === "matured")) {
+      setWithdrawResult(null);
       setShowWithdrawModal(true);
       deepLinkHandled.current = true;
     }
@@ -247,14 +281,30 @@ export default function SavingsAccountDetailPage() {
         body: JSON.stringify({ amount, wallet_id: me?.wallet?.id }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Deposit failed");
+      if (!res.ok) {
+        // Structured failure: the API returns code + details (e.g. the
+        // wallet pre-check's required/available/shortfall).
+        throw Object.assign(new Error(data.error || "Deposit failed"), {
+          code: data.code,
+          details: data.details,
+        });
+      }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, amount) => {
       queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
       queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
       queryClient.invalidateQueries({ queryKey: ["me"] });
-      setShowDepositModal(false);
+      setDepositResult({ ok: true, amount, transactionRef: data.transaction_reference });
+    },
+    onError: (err: Error & { code?: string; details?: DepositResultDetails }) => {
+      setDepositResult({
+        ok: false,
+        amount: 0,
+        message: err.message,
+        code: err.code,
+        details: err.details,
+      });
     },
   });
 
@@ -272,11 +322,14 @@ export default function SavingsAccountDetailPage() {
       if (!res.ok) throw new Error(data.error || "Emergency withdrawal failed");
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
       queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
       queryClient.invalidateQueries({ queryKey: ["me"] });
-      setShowEmergencyModal(false);
+      setEmergencyResult({ ok: true, amount: account?.current_balance || 0, transactionRef: data.transaction_reference });
+    },
+    onError: (err: Error) => {
+      setEmergencyResult({ ok: false, amount: 0, message: err.message });
     },
   });
 
@@ -292,11 +345,14 @@ export default function SavingsAccountDetailPage() {
       if (!res.ok) throw new Error(data.error || "Withdrawal failed");
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, amount) => {
       queryClient.invalidateQueries({ queryKey: ["savings-account", accountId] });
       queryClient.invalidateQueries({ queryKey: ["savings-accounts"] });
       queryClient.invalidateQueries({ queryKey: ["me"] });
-      setShowWithdrawModal(false);
+      setWithdrawResult({ ok: true, amount, transactionRef: data.transaction_reference });
+    },
+    onError: (err: Error) => {
+      setWithdrawResult({ ok: false, amount: 0, message: err.message });
     },
   });
 
@@ -490,10 +546,23 @@ export default function SavingsAccountDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowDepositModal(true)}>
+          <Button variant="secondary" leftIcon={<Plus className="w-4 h-4" />} onClick={openDepositModal}>
             Deposit
           </Button>
-          <Button variant="outline" leftIcon={<ArrowUpRight className="w-4 h-4" />} onClick={() => setShowWithdrawModal(true)} disabled={account.status === "pending"}>
+          {/* Unmatured fixed deposit: warn about forfeited interest BEFORE the
+              amount/confirm flow. Flexible & matured accounts withdraw freely. */}
+          <Button
+            variant="outline"
+            leftIcon={<ArrowUpRight className="w-4 h-4" />}
+            onClick={() => {
+              if (isFixedDeposit && !isMatured && account.status === "active") {
+                setShowEarlyWithdrawWarning(true);
+              } else {
+                openWithdrawModal();
+              }
+            }}
+            disabled={account.status === "pending"}
+          >
             Withdraw
           </Button>
           {isGoal && (
@@ -518,16 +587,95 @@ export default function SavingsAccountDetailPage() {
           onClose={() => setShowDepositModal(false)}
           onDeposit={(amt) => depositMutation.mutate(amt)}
           isLoading={depositMutation.isPending}
-          error={depositMutation.error?.message}
+          result={depositResult}
+          onRetry={() => { setDepositResult(null); depositMutation.reset(); }}
           walletBalance={walletBalance}
           accountName={displayName}
         />
+      )}
+
+      {/* Early Withdrawal Warning — fixed deposit not yet matured (2026-09-11):
+           warn that withdrawing now forfeits accrued interest, BEFORE any
+           amount entry or confirmation. */}
+      {showEarlyWithdrawWarning && (
+        <Dialog open onOpenChange={(open) => !open && setShowEarlyWithdrawWarning(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Info className="w-5 h-5 text-loam" /> Withdraw before maturity?
+              </DialogTitle>
+              <DialogDescription>
+                This fixed deposit has not matured yet — about {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              <div className="p-4 rounded-xl bg-parchment border border-line space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-ink-soft">Interest earned so far</span>
+                  <span className="font-semibold text-loam">{fmtNGN(account.interest_earned || 0)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-ink-soft">Interest if you keep saving to maturity</span>
+                  <span className="font-semibold text-ink">{fmtRate(rate)}% p.a.</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2 text-amber-700 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Withdrawing now <span className="font-semibold">forfeits all accrued interest ({fmtNGN(account.interest_earned || 0)})</span>. Only your principal returns to your Main Wallet, and the deposit closes.</span>
+              </div>
+              <DialogFooter>
+                <Button variant="primary" onClick={() => setShowEarlyWithdrawWarning(false)}>Keep Saving</Button>
+                <Button variant="ghost" onClick={() => { setShowEarlyWithdrawWarning(false); setEmergencyResult(null); emergencyWithdrawMutation.reset(); setShowEmergencyModal(true); }}>
+                  Proceed to Withdraw
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Emergency Withdrawal Confirm Modal */}
       {showEmergencyModal && (
         <Dialog open onOpenChange={(open) => !open && setShowEmergencyModal(false)}>
           <DialogContent className="max-w-md">
+            {emergencyResult ? (
+              <div className="space-y-4 pt-2">
+                {emergencyResult.ok ? (
+                  <div className="pt-4 pb-2 text-center">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200">
+                      <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+                    </div>
+                    <h3 className="font-display text-xl font-semibold text-ink">Withdrawal Successful</h3>
+                    <p className="mt-2 text-sm text-ink-soft">
+                      <span className="font-semibold text-ink">{fmtNGN(emergencyResult.amount)}</span> principal returned to your{" "}
+                      <span className="font-semibold text-ink">Main Wallet</span>. Accrued interest was forfeited and the deposit is now closed.
+                    </p>
+                    {emergencyResult.transactionRef && (
+                      <p className="mt-2 text-[11px] text-ink-soft">Ref: {emergencyResult.transactionRef}</p>
+                    )}
+                    <div className="mt-5 flex justify-center gap-2">
+                      <Button variant="ghost" onClick={() => { setShowEmergencyModal(false); setEmergencyResult(null); }}>Close</Button>
+                      <Link href="/wallet">
+                        <Button variant="primary" leftIcon={<Wallet className="w-4 h-4" />}>View Wallet</Button>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-4 pb-2 text-center">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 border border-red-200">
+                      <AlertCircle className="w-7 h-7 text-red-600" />
+                    </div>
+                    <h3 className="font-display text-xl font-semibold text-ink">Withdrawal Not Completed</h3>
+                    <p className="mt-2 text-sm text-ink-soft">{emergencyResult.message}</p>
+                    <div className="mt-5 flex justify-center gap-2">
+                      <Button variant="ghost" onClick={() => { setShowEmergencyModal(false); setEmergencyResult(null); }}>Close</Button>
+                      <Button variant="primary" onClick={() => { setEmergencyResult(null); emergencyWithdrawMutation.reset(); }} leftIcon={<RefreshCw className="w-4 h-4" />}>Try Again</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+            <>
             <DialogHeader>
               <DialogTitle>Emergency Withdrawal</DialogTitle>
               <DialogDescription>
@@ -559,6 +707,8 @@ export default function SavingsAccountDetailPage() {
                 </Button>
               </DialogFooter>
             </div>
+            </>
+            )}
           </DialogContent>
         </Dialog>
       )}
@@ -569,7 +719,8 @@ export default function SavingsAccountDetailPage() {
           onClose={() => setShowWithdrawModal(false)}
           onWithdraw={(amt) => withdrawMutation.mutate(amt)}
           isLoading={withdrawMutation.isPending}
-          error={withdrawMutation.error?.message}
+          result={withdrawResult}
+          onRetry={() => { setWithdrawResult(null); withdrawMutation.reset(); }}
           maxAmount={balance}
           accountName={displayName}
         />
@@ -694,38 +845,123 @@ export default function SavingsAccountDetailPage() {
 }
 
 // ─── Deposit Modal ────────────────────────────────────────
-function DepositModal({ onClose, onDeposit, isLoading, error, walletBalance, accountName }: {
+// Shows success/failure result cards (2026-09-11): deposits always move
+// money FROM the Main Wallet — say so explicitly, warn before submitting
+// when the wallet can't cover the amount, and on insufficient balance
+// guide the user to top up and try again.
+function DepositModal({ onClose, onDeposit, isLoading, result, onRetry, walletBalance, accountName }: {
   onClose: () => void;
   onDeposit: (amount: number) => void;
   isLoading: boolean;
-  error?: string;
+  result: DepositResultCard | null;
+  onRetry: () => void;
   walletBalance: number;
   accountName: string;
 }) {
   const [amount, setAmount] = useState("");
+  const parsed = parseFloat(amount) || 0;
+  const insufficient = parsed > 0 && parsed > walletBalance;
+
+  // ── Result card view ──
+  if (result) {
+    if (result.ok) {
+      return (
+        <Dialog open onOpenChange={(open) => !open && onClose()}>
+          <DialogContent className="max-w-md">
+            <div className="pt-6 pb-2 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200">
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h3 className="font-display text-xl font-semibold text-ink">Deposit Successful</h3>
+              <p className="mt-2 text-sm text-ink-soft">
+                <span className="font-semibold text-ink">{fmtNGN(result.amount)}</span> moved from your{" "}
+                <span className="font-semibold text-ink">Main Wallet</span> to{" "}
+                <span className="font-semibold text-ink">{accountName}</span>.
+              </p>
+              {result.transactionRef && (
+                <p className="mt-2 text-[11px] text-ink-soft">Ref: {result.transactionRef}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={onClose}>Close</Button>
+              <Link href="/wallet" className="w-full sm:w-auto">
+                <Button variant="primary" className="w-full sm:w-auto" leftIcon={<Wallet className="w-4 h-4" />}>View Wallet</Button>
+              </Link>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    // Failure card
+    const walletShortfall = result.code === "insufficient_wallet_balance";
+    return (
+      <Dialog open onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md">
+          <div className="pt-6 pb-2 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 border border-red-200">
+              <AlertCircle className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="font-display text-xl font-semibold text-ink">Deposit Not Completed</h3>
+            <p className="mt-2 text-sm text-ink-soft">{result.message}</p>
+            {walletShortfall && result.details?.shortfall != null && (
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Top up your Main Wallet with at least {fmtNGN(result.details.shortfall)} and try again.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose}>Close</Button>
+            {walletShortfall ? (
+              <Link href="/wallet/deposit" className="w-full sm:w-auto">
+                <Button variant="primary" className="w-full sm:w-auto" leftIcon={<Plus className="w-4 h-4" />}>Top Up Wallet</Button>
+              </Link>
+            ) : (
+              <Button variant="primary" onClick={onRetry} leftIcon={<RefreshCw className="w-4 h-4" />}>Try Again</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // ── Amount entry view ──
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Deposit to {accountName}</DialogTitle>
-          <DialogDescription>Move money from your wallet to this savings account.</DialogDescription>
+          <DialogDescription>
+            Transfers instantly from your <span className="font-medium text-ink">Main Wallet</span> to this savings account.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 pt-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-ink-soft">Wallet Balance</span>
-            <span className="font-semibold text-ink">{fmtNGN(walletBalance)}</span>
+          <div className="p-3 rounded-xl bg-parchment border border-line flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-indigo" strokeWidth={1.8} />
+              <span className="text-xs font-medium text-ink-soft">Main Wallet Balance</span>
+            </div>
+            <span className="text-sm font-semibold text-ink">{fmtNGN(walletBalance)}</span>
           </div>
           <div>
-            <label className="text-xs font-semibold text-ink block mb-1.5">Amount</label>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Amount to move</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-soft">₦</span>
               <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
             </div>
+            {insufficient && (
+              <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2 text-amber-700 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Your Main Wallet does not have enough for this deposit — short by{" "}
+                  <span className="font-semibold">{fmtNGN(parsed - walletBalance)}</span>.{" "}
+                  <Link href="/wallet/deposit" className="underline font-semibold">Top up your wallet</Link> and try again.
+                </span>
+              </div>
+            )}
           </div>
-          {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
           <DialogFooter>
             <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
-            <Button variant="primary" onClick={() => onDeposit(parseFloat(amount))} isLoading={isLoading} disabled={!amount || parseFloat(amount) <= 0}>Deposit</Button>
+            <Button variant="primary" onClick={() => onDeposit(parsed)} isLoading={isLoading} disabled={!amount || parsed <= 0 || insufficient}>Deposit</Button>
           </DialogFooter>
         </div>
       </DialogContent>
@@ -734,21 +970,79 @@ function DepositModal({ onClose, onDeposit, isLoading, error, walletBalance, acc
 }
 
 // ─── Withdraw Modal ───────────────────────────────────────
-function WithdrawModal({ onClose, onWithdraw, isLoading, error, maxAmount, accountName }: {
+// Success/failure result cards (2026-09-11): withdrawals move money to the
+// Main Wallet — confirm it explicitly with the amount and new balances.
+function WithdrawModal({ onClose, onWithdraw, isLoading, result, onRetry, maxAmount, accountName }: {
   onClose: () => void;
   onWithdraw: (amount: number) => void;
   isLoading: boolean;
-  error?: string;
+  result: WithdrawResultCard | null;
+  onRetry: () => void;
   maxAmount: number;
   accountName: string;
 }) {
   const [amount, setAmount] = useState("");
+  const parsed = parseFloat(amount) || 0;
+
+  // ── Result card view ──
+  if (result) {
+    if (result.ok) {
+      return (
+        <Dialog open onOpenChange={(open) => !open && onClose()}>
+          <DialogContent className="max-w-md">
+            <div className="pt-6 pb-2 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200">
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h3 className="font-display text-xl font-semibold text-ink">Withdrawal Successful</h3>
+              <p className="mt-2 text-sm text-ink-soft">
+                <span className="font-semibold text-ink">{fmtNGN(result.amount)}</span> moved from{" "}
+                <span className="font-semibold text-ink">{accountName}</span> to your{" "}
+                <span className="font-semibold text-ink">Main Wallet</span>.
+              </p>
+              {result.transactionRef && (
+                <p className="mt-2 text-[11px] text-ink-soft">Ref: {result.transactionRef}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={onClose}>Close</Button>
+              <Link href="/wallet" className="w-full sm:w-auto">
+                <Button variant="primary" className="w-full sm:w-auto" leftIcon={<Wallet className="w-4 h-4" />}>View Wallet</Button>
+              </Link>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    return (
+      <Dialog open onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md">
+          <div className="pt-6 pb-2 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 border border-red-200">
+              <AlertCircle className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="font-display text-xl font-semibold text-ink">Withdrawal Not Completed</h3>
+            <p className="mt-2 text-sm text-ink-soft">{result.message}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose}>Close</Button>
+            <Button variant="primary" onClick={onRetry} leftIcon={<RefreshCw className="w-4 h-4" />}>Try Again</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // ── Amount entry view ──
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Withdraw from {accountName}</DialogTitle>
-          <DialogDescription>Move money from this savings account to your wallet.</DialogDescription>
+          <DialogDescription>
+            Moves money from this savings account to your{" "}
+            <span className="font-medium text-ink">Main Wallet</span>.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 pt-2">
           <div className="flex justify-between text-xs">
@@ -756,16 +1050,15 @@ function WithdrawModal({ onClose, onWithdraw, isLoading, error, maxAmount, accou
             <span className="font-semibold text-ink">{fmtNGN(maxAmount)}</span>
           </div>
           <div>
-            <label className="text-xs font-semibold text-ink block mb-1.5">Amount</label>
+            <label className="text-xs font-semibold text-ink block mb-1.5">Amount to move</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-soft">₦</span>
               <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-line bg-paper text-sm text-ink outline-none focus:border-indigo" />
             </div>
           </div>
-          {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-600 text-xs"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
           <DialogFooter>
             <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
-            <Button variant="primary" onClick={() => onWithdraw(parseFloat(amount))} isLoading={isLoading} disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > maxAmount}>Withdraw</Button>
+            <Button variant="primary" onClick={() => onWithdraw(parsed)} isLoading={isLoading} disabled={!amount || parsed <= 0 || parsed > maxAmount}>Withdraw</Button>
           </DialogFooter>
         </div>
       </DialogContent>
