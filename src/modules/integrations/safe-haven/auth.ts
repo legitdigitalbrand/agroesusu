@@ -300,7 +300,7 @@ export class SafeHavenAuthService {
 
     const header = { alg: 'RS256', typ: 'JWT' };
     const payload = {
-      iss: this.config.issuer,      // Agriqcap company URL
+      iss: this.config.issuer,      // Issuer must match the live production domain (see AGROPOCKET_REBRAND_PLAN.md — domain migration)
       sub: this.config.clientId,     // Safe Haven OAuth Client ID
       aud: this.config.apiUrl,       // https://api.sandbox.safehavenmfb.com
       iat: now,

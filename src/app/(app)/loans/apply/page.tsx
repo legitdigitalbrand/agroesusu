@@ -425,7 +425,7 @@ function LoanApplyContent() {
 
           <div className="bg-parchment rounded-xl p-3.5">
             <p className="text-xs text-ink-soft">
-              Funds will be credited to your AgriqCap wallet instantly upon approval.
+              Funds will be credited to your AgroPocket wallet instantly upon approval.
             </p>
           </div>
 
@@ -522,7 +522,7 @@ function LoanApplyContent() {
             </div>
             <div className="flex justify-between text-sm pt-2 border-t border-line/60">
               <span className="text-ink-soft">Disbursement</span>
-              <span className="font-semibold text-ink">AgriqCap Wallet</span>
+              <span className="font-semibold text-ink">AgroPocket Wallet</span>
             </div>
           </div>
 
@@ -536,7 +536,7 @@ function LoanApplyContent() {
             />
             <span className="text-xs text-ink-soft leading-relaxed">
               I agree to the loan terms, including the interest rate, processing fee, and repayment schedule.
-              I confirm the information provided is accurate. Funds will be disbursed to my AgriqCap wallet upon approval.
+              I confirm the information provided is accurate. Funds will be disbursed to my AgroPocket wallet upon approval.
             </span>
           </label>
 

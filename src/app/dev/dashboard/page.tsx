@@ -102,7 +102,7 @@ export default function AdminDashboardPage() {
       <div>
         <h1 className="font-display text-xl text-ink">Platform Overview</h1>
         <p className="text-[14px] text-ink-soft mt-1">
-          Agriqcap Operations · last updated {new Date().toLocaleTimeString("en-NG")}
+          AgroPocket Operations · last updated {new Date().toLocaleTimeString("en-NG")}
         </p>
       </div>
 

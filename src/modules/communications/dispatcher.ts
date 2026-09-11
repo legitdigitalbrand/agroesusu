@@ -113,7 +113,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<void> 
         if (email) {
           const result = await sendBrandedEmail({
             to: email,
-            subject: `${title} — Agriqcap`,
+            subject: `${title} — AgroPocket`,
             title,
             message,
           });

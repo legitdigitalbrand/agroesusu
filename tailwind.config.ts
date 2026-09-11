@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ─── Agriqcap Design System ─────────────────────────────
+        // ─── AgroPocket Design System ─────────────────────────────
         // All values must match the mockup tokens EXACTLY.
         // loam-light, ochre-light, clay-light, indigo-deep, line are
         // used throughout — they must be defined here.

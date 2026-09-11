@@ -35,7 +35,7 @@ export function AuthLogo({ showHome = false }: AuthLogoProps) {
       <div className="flex items-center gap-2">
         <LogoMark size={28} variant="customer" />
         <span className="font-display font-medium text-[17px] tracking-tight text-ink">
-          Agriqcap
+          AgroPocket
         </span>
       </div>
     </div>

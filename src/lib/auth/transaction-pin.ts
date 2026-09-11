@@ -1,5 +1,5 @@
 // ============================================================================
-// Agriqcap — Transaction PIN verification (server-side)
+// AgroPocket — Transaction PIN verification (server-side)
 //
 // An extra security layer for money-movement endpoints (e.g. bank transfers).
 // Reuses the login PIN (login_pins table): one scrypt-hashed PIN per user,

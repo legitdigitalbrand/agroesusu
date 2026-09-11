@@ -83,7 +83,7 @@ export default function CareersPage() {
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
           <h2 className="text-3xl font-extrabold text-ink tracking-tight">
-            Cultivate Your Career at Agriqcap
+            Cultivate Your Career at AgroPocket
           </h2>
           <p className="text-sm sm:text-base text-ink-soft">
             We provide our teams with the resources, benefits, and support they need to deliver outstanding 
@@ -172,7 +172,7 @@ export default function CareersPage() {
         </h2>
         <p className="text-ink-soft max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
           We are always looking for visionary agricultural enthusiasts and builders. Send us a 
-          spontaneous application detailing what you want to achieve at Agriqcap.
+          spontaneous application detailing what you want to achieve at AgroPocket.
         </p>
         <div className="pt-2">
           <Link

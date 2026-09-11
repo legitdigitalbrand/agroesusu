@@ -348,7 +348,7 @@ export default function TransferPage() {
             )}
             <div className="flex justify-between items-center py-2 border-t border-line/40">
               <span className="text-sm text-ink-soft">From</span>
-              <span className="text-sm text-ink">Agriqcap Wallet</span>
+              <span className="text-sm text-ink">AgroPocket Wallet</span>
             </div>
           </div>
 

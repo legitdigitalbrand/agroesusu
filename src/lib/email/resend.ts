@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Agriqcap — Resend Email Service
+// AgroPocket — Resend Email Service
 //
 // Branded transactional emails via Resend.
 // Falls back to no-op (log) if RESEND_API_KEY is not set.
@@ -22,7 +22,7 @@ function getClient(): Resend | null {
 
 // ── Config ──────────────────────────────────────────────────
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Agriqcap <noreply@agriqcap.com>';
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AgroPocket <noreply@agriqcap.com>';
 const REPLY_TO = process.env.RESEND_REPLY_TO || BRAND.supportEmail;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://agriqcap.vercel.app';
 

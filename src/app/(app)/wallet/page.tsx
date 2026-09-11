@@ -162,7 +162,7 @@ export default function WalletPage() {
     <div className="space-y-6">
       <ScreenHeader
         title="Wallet"
-        subtitle="Manage your Agriqcap digital balance, account details, and transaction history."
+        subtitle="Manage your AgroPocket digital balance, account details, and transaction history."
         action={
           <Button
             variant="ghost"
@@ -197,7 +197,7 @@ export default function WalletPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">
-                      {wallet.account_name || "Agriqcap Digital Wallet"}
+                      {wallet.account_name || "AgroPocket Digital Wallet"}
                     </p>
                     <p className="text-xs text-white/75">
                       {wallet.account_number ? `Account: ${wallet.account_number}` : "Main Balance"}

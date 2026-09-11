@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 
 // ════════════════════════════════════════════════════════════
-// Landing Page — Agriqcap
+// Landing Page — AgroPocket
 // Active products: Wallet, Savings, Loans
 // No fake stats. No cooperative/investment promotions.
 // ════════════════════════════════════════════════════════════
@@ -27,7 +27,7 @@ export default function LandingPage() {
             Borrow with <span className="text-loam">confidence.</span>
           </h1>
           <p className="text-[15px] text-ink-soft leading-relaxed max-w-[420px] mb-6">
-            Agriqcap helps farmers and small businesses build savings discipline,
+            AgroPocket helps farmers and small businesses build savings discipline,
             unlock fair loans, and manage money — all in one secure platform.
           </p>
           <div className="flex gap-3 mb-5">
@@ -138,7 +138,7 @@ export default function LandingPage() {
           </h3>
           <p className="text-[15px] text-ink-soft leading-relaxed mb-5">
             Whether you&apos;re saving toward next season&apos;s inputs or building a long-term
-            fund, Agriqcap&apos;s savings products are built around real agricultural
+            fund, AgroPocket&apos;s savings products are built around real agricultural
             cycles — not generic bank terms.
           </p>
           <ul className="space-y-2.5 list-none p-0 m-0">
@@ -178,7 +178,7 @@ export default function LandingPage() {
             Affordable credit to fund your farming season.
           </h3>
           <p className="text-[15px] text-ink-soft leading-relaxed mb-5">
-            Agriqcap offers simple, transparent loans sized to your savings and repayment
+            AgroPocket offers simple, transparent loans sized to your savings and repayment
             schedules that match your harvest cycle.
           </p>
           <ul className="space-y-2.5 list-none p-0 m-0">
@@ -205,7 +205,7 @@ export default function LandingPage() {
             Ready to start saving?
           </h2>
           <p className="text-[15px] text-ink-soft max-w-[400px] mx-auto mb-6">
-            Join Agriqcap today. Open your account in under 2 minutes.
+            Join AgroPocket today. Open your account in under 2 minutes.
           </p>
           <Link
             href="/signup"
@@ -223,7 +223,7 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-indigo flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
             </div>
-            <span className="font-display font-semibold text-white text-[16px]">Agriqcap</span>
+            <span className="font-display font-semibold text-white text-[16px]">AgroPocket</span>
           </div>
           <nav className="flex gap-5 text-[13px] text-white/70">
             <Link href="/features" className="hover:text-white transition">Features</Link>
@@ -234,7 +234,7 @@ export default function LandingPage() {
           </nav>
         </div>
         <div className="max-w-[1180px] mx-auto mt-4">
-          <p className="text-[12px] text-white/70 text-center">© 2026 Agriqcap. All rights reserved.</p>
+          <p className="text-[12px] text-white/70 text-center">© 2026 AgroPocket. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -110,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center gap-2.5 px-6 py-6">
           <LogoMark size={32} variant="admin" />
           <div>
-            <span className="font-display text-xl text-white block leading-tight">Agriqcap</span>
+            <span className="font-display text-xl text-white block leading-tight">AgroPocket</span>
             <span className="text-[12px] text-white/70 uppercase tracking-wider">Operations</span>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2.5">
             <LogoMark size={32} variant="admin" />
-            <div><span className="font-display text-xl text-white block leading-tight">Agriqcap</span><span className="text-[12px] text-white/70 uppercase tracking-wider">Operations</span></div>
+            <div><span className="font-display text-xl text-white block leading-tight">AgroPocket</span><span className="text-[12px] text-white/70 uppercase tracking-wider">Operations</span></div>
           </div>
           <button onClick={() => setDrawerOpen(false)} className="h-9 w-9 rounded-lg bg-paper/10 flex items-center justify-center text-white/70 hover:text-white" aria-label="Close menu"><X className="h-5 w-5" /></button>
         </div>

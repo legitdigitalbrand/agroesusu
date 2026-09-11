@@ -26,7 +26,7 @@ export function LogoMark({ size = 40, variant = "customer", className }: LogoMar
       viewBox="0 0 48 48"
       fill="none"
       className={cn("shrink-0 transition-transform hover:scale-105 duration-200", className)}
-      aria-label="Agriqcap logo"
+      aria-label="AgroPocket logo"
     >
       <circle cx="24" cy="24" r="20" stroke={ringColor} strokeWidth="3.5" fill="none" />
       <circle cx="24" cy="24" r="6.5" fill={dotColor} />

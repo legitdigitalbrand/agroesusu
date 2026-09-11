@@ -1,5 +1,5 @@
 // ============================================================================
-// Agriqcap — Login PIN (server-side primitives)
+// AgroPocket — Login PIN (server-side primitives)
 //
 // A user-configurable 4-digit PIN required after password sign-in when the
 // user has one set up.

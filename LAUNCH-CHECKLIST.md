@@ -1,4 +1,4 @@
-# Launch Checklist — Agriqcap
+# Launch Checklist — AgroPocket
 
 Born from the 2026-09-11 incident: the app was deployed with database
 migrations lagging behind the code. Deposits arrived at Safe Haven but the

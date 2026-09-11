@@ -16,7 +16,7 @@ const loanTypes = [
     features: [
       'Fast-track approval within 48 hours',
       'Direct disbursement to verified agro-dealers or farm wallets',
-      'No collateral required for verified Agriqcap users',
+      'No collateral required for verified AgroPocket users',
       'Flexible repayment matching harvest calendars',
     ],
   },
@@ -178,7 +178,7 @@ export default function LoanPlansPage() {
               Our 5-Step Digital Lending Process
             </h2>
             <p className="text-sm sm:text-base text-white/70">
-              No long queues or endless stacks of collateral paper. Agriqcap brings quick, 
+              No long queues or endless stacks of collateral paper. AgroPocket brings quick, 
               accountable agricultural lending directly to your fingertips.
             </p>
           </div>
@@ -206,7 +206,7 @@ export default function LoanPlansPage() {
           Trustworthy Credit Backed by Partners
         </h2>
         <p className="text-base text-ink-soft max-w-2xl mx-auto leading-relaxed">
-          Agriqcap ensures all credit products comply fully with Central Bank of Nigeria guidelines. 
+          AgroPocket ensures all credit products comply fully with Central Bank of Nigeria guidelines. 
           We work closely with local crop insurance providers to offer weather index insurance, protecting 
           you against drought, crop disease, and flash flooding.
         </p>

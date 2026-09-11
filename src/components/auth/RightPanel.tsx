@@ -79,8 +79,8 @@ export function LoginRightPanel() {
 
         {/* Testimonial — right, rotated +1°, lowest z */}
         <TestimonialCard
-          text='"Agriqcap lets me save, earn interest, and borrow against my savings — all in one place."'
-          author="— Why members choose Agriqcap"
+          text='"AgroPocket lets me save, earn interest, and borrow against my savings — all in one place."'
+          author="— Why members choose AgroPocket"
           delay={0.5}
           rotate={1}
           offsetX={20}

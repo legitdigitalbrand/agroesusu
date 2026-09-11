@@ -1,4 +1,4 @@
-# Agriqcap — Local Development Setup
+# AgroPocket — Local Development Setup
 
 ## Prerequisites
 

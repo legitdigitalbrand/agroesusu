@@ -9,7 +9,7 @@ import {
 import { PIN_COOKIE_NAME, verifyPinCookie } from '@/lib/auth/login-pin';
 
 // ════════════════════════════════════════════════════════════
-// Agriqcap — Authentication Middleware
+// AgroPocket — Authentication Middleware
 //
 //  1. Session refresh on every request
 //  2. Inactivity expiry: 2-hour inactivity forces re-login (server-side)

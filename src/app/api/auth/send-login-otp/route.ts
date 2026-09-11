@@ -70,10 +70,10 @@ export async function POST(request: NextRequest) {
 
     const result = await sendBrandedEmail({
       to: email,
-      subject: 'Your Agriqcap Login Code',
+      subject: 'Your AgroPocket Login Code',
       title: 'Login Verification Code',
       message: `Your verification code is <strong style="font-size:28px;letter-spacing:6px;color:#1B5E20;">${code}</strong><br><br>This code expires in 5 minutes. If you didn't attempt to log in, please ignore this email and contact support immediately.`,
-      footerNote: 'Never share this code with anyone. Agriqcap will never ask for your verification code.',
+      footerNote: 'Never share this code with anyone. AgroPocket will never ask for your verification code.',
     });
 
     if (!result.sent) {

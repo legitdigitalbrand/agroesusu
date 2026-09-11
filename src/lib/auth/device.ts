@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-// Agriqcap — Device & Session Constants
+// AgroPocket — Device & Session Constants
 //
 // Device ID is stored in a cookie for UX purposes.
 // Session inactivity timeout is enforced server-side via middleware.

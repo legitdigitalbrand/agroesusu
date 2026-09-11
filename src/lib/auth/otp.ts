@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Agriqcap — OTP Utility
+// AgroPocket — OTP Utility
 //
 // Generates and verifies 6-digit OTP codes for the Resend email flow.
 // When Resend is not configured, the system falls back to Supabase

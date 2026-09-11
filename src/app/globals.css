@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Agriqcap Design System — mapped to shadcn variables for compatibility */
+    /* AgroPocket Design System — mapped to shadcn variables for compatibility */
     /* Updated to match mockup token values exactly */
     --background: 120 30% 96%;      /* parchment #E8F5E9 */
     --foreground: 130 16% 12%;      /* ink #1A2417 */
@@ -51,7 +51,7 @@
 }
 
 @layer components {
-  /* ─── Agriqcap shared component classes ─── */
+  /* ─── AgroPocket shared component classes ─── */
 
   /* Standard card — paper surface with line border */
   .ys-card {

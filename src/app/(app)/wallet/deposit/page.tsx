@@ -6,7 +6,7 @@ import { Copy, Check, Share2, RefreshCw, AlertCircle, Info, ArrowLeft } from "lu
 
 // ── Wallet Funding Page ─────────────────────────────────────
 // Shows customer funding account details for bank transfer.
-// Uses Agriqcap design tokens (no hardcoded colors).
+// Uses AgroPocket design tokens (no hardcoded colors).
 
 interface FundingAccount {
   account_name: string;
@@ -77,10 +77,10 @@ export default function WalletDepositPage() {
 
   const shareDetails = async () => {
     if (!details?.account) return;
-    const text = `Fund my Agriqcap wallet:\nAccount Name: ${details.account.account_name}\nAccount Number: ${details.account.account_number}\nBank: ${details.account.bank_name}`;
+    const text = `Fund my AgroPocket wallet:\nAccount Name: ${details.account.account_name}\nAccount Number: ${details.account.account_number}\nBank: ${details.account.bank_name}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Agriqcap Wallet Funding', text });
+        await navigator.share({ title: 'AgroPocket Wallet Funding', text });
       } catch { /* cancelled */ }
     } else {
       await copyToClipboard(text, 'share');

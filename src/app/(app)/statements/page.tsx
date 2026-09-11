@@ -211,7 +211,7 @@ export default function StatementsPage() {
 
   const downloadMonthCSV = (month: MonthSummary) => {
     const monthTx = sortedTransactions.filter((tx) => format(new Date(tx.created_at), "yyyy-MM") === month.month);
-    downloadCSV(monthTx, `agriqcap-statement-${month.month}.csv`);
+    downloadCSV(monthTx, `agropocket-statement-${month.month}.csv`);
   };
 
   if (meLoading) return <LoadingState message="Loading account statements…" />;
@@ -247,7 +247,7 @@ export default function StatementsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => downloadCSV(sortedTransactions, `agriqcap-statement-${format(new Date(), "yyyy-MM-dd")}.csv`)}
+              onClick={() => downloadCSV(sortedTransactions, `agropocket-statement-${format(new Date(), "yyyy-MM-dd")}.csv`)}
               disabled={sortedTransactions.length === 0}
               leftIcon={<Download className="h-4 w-4" />}
             >

@@ -297,7 +297,7 @@ export default function SettingsPage() {
             iconBgClass="bg-parchment"
             iconColorClass="text-ink-soft"
             title="Terms of Service"
-            description="Agriqcap cooperative rules, terms of usage, and member agreements"
+            description="AgroPocket cooperative rules, terms of usage, and member agreements"
             href="/terms"
           />
           <SettingsRow

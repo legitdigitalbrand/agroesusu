@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────
-// Agriqcap Shared UI Primitive Library
+// AgroPocket Shared UI Primitive Library
 // Premium Fintech Design System Primitives
 // ──────────────────────────────────────────────
 

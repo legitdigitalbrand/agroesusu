@@ -109,7 +109,7 @@ export function DesktopShell({ children, rightRail }: DesktopShellProps) {
             <LogoMark size={32} variant="customer" />
             <div className="flex flex-col">
               <span className="font-display font-bold text-[18px] text-ink leading-tight group-hover:text-indigo transition">
-                Agriqcap
+                AgroPocket
               </span>
               <span className="text-[11px] text-ink-soft tracking-wide">
                 AgroEsusu Fintech

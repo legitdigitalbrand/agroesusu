@@ -2,7 +2,7 @@ import { BRAND } from "@/config/brand";
 
 export const metadata = {
   title: `Terms of Service — ${BRAND.name}`,
-  description: "Terms of service for Agriqcap platform.",
+  description: "Terms of service for AgroPocket platform.",
 };
 
 export default function TermsPage() {
@@ -19,7 +19,7 @@ export default function TermsPage() {
           </section>
           <section>
             <h2 className="font-display text-xl text-ink">2. Description of Service</h2>
-            <p>{BRAND.name} is a digital cooperative finance platform providing digital wallets, savings, loans, investments, and cooperative banking services. {BRAND.name} is a financial technology platform, not a bank. Banking services are provided by our partner bank, Safe Haven Microfinance Bank, licensed by the Central Bank of Nigeria.</p>
+            <p>{BRAND.name} is a digital cooperative finance platform providing digital wallets, savings, loans, investments, and cooperative banking services. {BRAND.name} is a financial technology platform, not a bank. Banking services are provided by our partner bank, Safe Haven Microfinance Bank, licensed by the Central Bank of Nigeria.</p></section><section>{/* LEGAL INFORMATION REQUIRED: CAC/RC registration number and registered address for Agro Pocket Limited are pending — add to this section once provided. */}<p>{BRAND.name} is operated by {BRAND.legalName}. {BRAND.name} is a financial technology platform, not a bank. Banking services are provided by our partner bank, Safe Haven Microfinance Bank, licensed by the Central Bank of Nigeria.</p>
           </section>
           <section>
             <h2 className="font-display text-xl text-ink">3. User Accounts</h2>

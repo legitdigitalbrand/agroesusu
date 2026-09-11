@@ -376,7 +376,7 @@ export default function DashboardPage() {
           {dva && (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/15">
-                <span className="text-xs text-white/60 font-medium max-w-[200px] sm:max-w-none truncate">{dva.account_name || "Agriqcap MFB"}</span>
+                <span className="text-xs text-white/60 font-medium max-w-[200px] sm:max-w-none truncate">{dva.account_name || "AgroPocket MFB"}</span>
                 <span className="text-xs text-white/40">•</span>
                 <span className="text-sm font-mono text-white font-semibold tracking-wide">{dva.account_number}</span>
               </div>
@@ -465,7 +465,7 @@ export default function DashboardPage() {
               ) : transactions.length === 0 ? (
                 <EmptyState
                   title="No transactions yet"
-                  message="Your transaction history will appear here once you start using Agriqcap."
+                  message="Your transaction history will appear here once you start using AgroPocket."
                   icon={<Wallet className="w-6 h-6 text-ink-soft" strokeWidth={1.8} />}
                   action={
                     <Link href="/wallet/deposit">

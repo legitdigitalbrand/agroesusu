@@ -2,7 +2,7 @@ import { BRAND } from "@/config/brand";
 
 export const metadata = {
   title: `Help & Support — ${BRAND.name}`,
-  description: "Get help with Agriqcap.",
+  description: "Get help with AgroPocket.",
 };
 
 export default function HelpPage() {

@@ -128,7 +128,7 @@ export default function ContactPage() {
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-ink">Thank you! Message Sent</h3>
                     <p className="text-sm text-ink-soft max-w-sm mx-auto leading-relaxed">
-                      We have received your request successfully. An Agriqcap representative will 
+                      We have received your request successfully. An AgroPocket representative will 
                       contact you within 2-4 working hours on your phone number or email address.
                     </p>
                   </div>

@@ -2,7 +2,7 @@ import { BRAND } from "@/config/brand";
 
 export const metadata = {
   title: `Privacy Policy — ${BRAND.name}`,
-  description: "Privacy policy for Agriqcap platform.",
+  description: "Privacy policy for AgroPocket platform.",
 };
 
 export default function PrivacyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
 
         <div className="prose prose-sm max-w-none space-y-6 text-ink">
           <section>
-            <h2 className="font-display text-xl text-ink">1. Information We Collect</h2>
+            <h2 className="font-display text-xl text-ink">1. Information We Collect</h2>{/* LEGAL INFORMATION REQUIRED: CAC/RC registration number and registered address for Agro Pocket Limited are pending — add to this section once provided. */}<p>{BRAND.legalName} operates {BRAND.name} and is responsible for the personal data described in this policy.</p>
             <p>We collect information you provide directly: name, email, phone number, BVN, NIN, and financial transaction data. We also collect device and usage information.</p>
           </section>
           <section>

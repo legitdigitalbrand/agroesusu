@@ -601,7 +601,7 @@ export default function OnboardingPage() {
           <Card className="text-center py-12">
             <ShieldCheck className="h-12 w-12 text-loam mx-auto mb-3" />
             <h2 className="font-display text-xl text-ink">Fully verified</h2>
-            <p className="text-sm text-ink-soft mt-1">You have access to all Agriqcap features.</p>
+            <p className="text-sm text-ink-soft mt-1">You have access to all AgroPocket features.</p>
             <Button className="mt-6" onClick={() => router.push("/dashboard")}>
               Go to dashboard <ArrowRight className="h-4 w-4 ml-2" />
             </Button>

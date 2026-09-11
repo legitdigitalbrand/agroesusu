@@ -69,7 +69,7 @@ export default function FeaturesPage() {
             Digital Financial Tools for Nigerian Agribusiness
           </h1>
           <p className="text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
-            Agriqcap brings modern banking technology to farmers and small businesses. 
+            AgroPocket brings modern banking technology to farmers and small businesses. 
             Save, borrow, and manage money with tools built for your success.
           </p>
         </div>
@@ -104,7 +104,7 @@ export default function FeaturesPage() {
                 Designed for Absolute Security & Transparency
               </h2>
               <p className="text-base text-ink-soft leading-relaxed">
-                Agriqcap respects the tradition of community trust and uses modern software 
+                AgroPocket respects the tradition of community trust and uses modern software 
                 engineering to provide secure, transparent financial services. Every transaction 
                 is logged, traceable, and protected.
               </p>
@@ -151,7 +151,7 @@ export default function FeaturesPage() {
       {/* CTA Section */}
       <section className="py-20 text-center max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
         <h2 className="text-3xl font-extrabold text-ink">
-          Ready to experience Agriqcap?
+          Ready to experience AgroPocket?
         </h2>
         <p className="text-ink-soft max-w-xl mx-auto text-sm sm:text-base">
           Sign up today and start building your financial future. Open your account in under 2 minutes.

@@ -7,7 +7,7 @@ import { NotificationEvent, NotificationTemplate } from './types';
 export const TEMPLATES: Record<NotificationEvent, NotificationTemplate> = {
   // Auth Templates
   account_created: {
-    title: 'Welcome to Agriqcap',
+    title: 'Welcome to AgroPocket',
     message: 'Hello $name, your account has been successfully created.',
     category: 'auth',
     defaultChannels: ['in_app', 'email'],

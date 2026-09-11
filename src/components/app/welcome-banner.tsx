@@ -34,10 +34,10 @@ export function WelcomeBanner() {
       <div className="relative">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-ochre" />
-          <h3 className="font-display font-semibold text-[16px]">Welcome to Agriqcap</h3>
+          <h3 className="font-display font-semibold text-[16px]">Welcome to AgroPocket</h3>
         </div>
         <p className="text-[13px] text-white/80 leading-relaxed max-w-md">
-          Agriqcap is your digital financial companion for farming and small business.
+          AgroPocket is your digital financial companion for farming and small business.
           Save money in flexible or fixed accounts, build credit through consistent savings,
           and borrow against your savings balance when you need funds for inputs, equipment, or expansion.
           Every naira in your wallet is held securely with our CBN-licensed, NDIC-insured banking partner.

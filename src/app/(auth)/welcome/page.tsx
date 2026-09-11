@@ -22,7 +22,7 @@ export default function WelcomePage() {
       <div className="flex items-center gap-2 mb-8">
         <LogoMark size={28} variant="admin" />
         <span className="font-display font-medium text-[17px] tracking-wide text-white/90">
-          Agriqcap
+          AgroPocket
         </span>
       </div>
 
