@@ -17,7 +17,7 @@
 // don't block the app can be allowed to lag.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const REQUIRED_MIGRATION = "00057";
+export const REQUIRED_MIGRATION = "00059";
 
 // Zero-padded versions compare correctly as strings; when we hit 100000
 // (never), revisit this comparison.

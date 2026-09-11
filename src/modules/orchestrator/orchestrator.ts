@@ -12,6 +12,7 @@ import {
   addJournalLines,
   postJournalEntry,
   reverseJournalEntry,
+  getAccountBalance,
   getWalletAccountId,
   getAccountByCode,
   refreshWalletBalanceCache,
@@ -179,6 +180,41 @@ export async function initiate(
       if (!feeRevenueAccount) validationErrors.push('Fee revenue account (4000) not found');
     }
 
+    // Pre-flight sufficient-funds check (2026-09-11 incident):
+    // The DB guard (migration 00059) is the authoritative backstop, but
+    // failing HERE gives the customer a clean "insufficient balance" error
+    // with no financial_transaction record left behind.
+    if (validationErrors.length === 0 && walletAccountId && template && request.amount > 0) {
+      const lines = template.buildLines({
+        amount: request.amount,
+        walletAccountId: walletAccountId || '',
+        safeHavenAccountId: safeHavenAccount!.id,
+        escrowAccountId: escrowAccount?.id,
+        productAccountId: request.product_account_id,
+        interestExpenseAccountId: interestExpenseAccount?.id,
+        interestRevenueAccountId: interestRevenueAccount?.id,
+        feeRevenueAccountId: feeRevenueAccount?.id,
+        description: request.description,
+      });
+      const walletDebit = lines
+        .filter((l) => l.account_id === walletAccountId && l.entry_type === 'debit')
+        .reduce((sum, l) => sum + l.amount, 0);
+      if (walletDebit > 0 && request.wallet_id) {
+        const { data: walletRow } = await supabase
+          .from('wallets')
+          .select('reserved_balance')
+          .eq('id', request.wallet_id)
+          .maybeSingle();
+        const reserved = Number(walletRow?.reserved_balance ?? 0);
+        const available = (await getAccountBalance(walletAccountId)) - reserved;
+        if (walletDebit > available) {
+          validationErrors.push(
+            `Insufficient wallet balance: ₦${walletDebit.toLocaleString('en-NG')} required, ₦${Math.max(available, 0).toLocaleString('en-NG')} available`
+          );
+        }
+      }
+    }
+
     if (validationErrors.length > 0) {
       await supabase.from('financial_transactions').update({
         status: 'failed', validation_errors: validationErrors, failed_at: new Date().toISOString(),
@@ -270,9 +306,20 @@ export async function initiate(
       }
     }
 
-    // 9. REFRESH BALANCE CACHE
+    // 9. REFRESH BALANCE CACHE — non-fatal (2026-09-11 incident):
+    // the journal entry is ALREADY posted; the money HAS moved. A cache
+    // refresh failure must not surface to the customer as a failed
+    // transaction (that's how a posted debit got stranded with a scary
+    // constraint error). Log loudly — the reconcile cron re-syncs caches.
     if (request.wallet_id) {
-      await refreshWalletBalanceCache(request.wallet_id);
+      try {
+        await refreshWalletBalanceCache(request.wallet_id);
+      } catch (refreshError) {
+        console.error(
+          `[Orchestrator] wallet cache refresh FAILED for FT ${ftRef} (JE ${jeId} remains posted; reconcile cron will re-sync):`,
+          refreshError instanceof Error ? refreshError.message : refreshError
+        );
+      }
     }
 
     // 10. TRANSITION: posted → completed
