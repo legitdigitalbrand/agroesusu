@@ -129,6 +129,13 @@ export default function DashboardPage() {
   const { visible: balanceVisible, toggle: toggleBalanceVisible } = useBalanceVisibility();
   const [copiedAcct, setCopiedAcct] = useState(false);
 
+  // Receipt dialog — tapping any transaction row opens a downloadable
+  // receipt. MUST live before the loading/error early returns below
+  // (Rules of Hooks: it was previously declared after them, which made
+  // the hook count change between renders and crashed the page with
+  // React error #310 "Rendered fewer hooks than expected").
+  const [receiptTx, setReceiptTx] = useState<WalletTransaction | null>(null);
+
   const { data: me, isLoading: meLoading, error: meError, refetch: refetchMe } = useMe();
   // Live balance: refresh the instant a wallet transaction lands.
   useWalletRealtime(me?.wallet?.id);
@@ -226,9 +233,6 @@ export default function DashboardPage() {
   // ── Derived values (same logic, no changes) ──
   const wallet = me.wallet;
   const transactions = txData?.transactions || [];
-
-  // Receipt dialog — tapping any transaction row opens a downloadable receipt
-  const [receiptTx, setReceiptTx] = useState<WalletTransaction | null>(null);
   const notifications = notifData?.notifications || [];
   const dva = fundingDetails?.provisioned ? fundingDetails.account : null;
   const activeLoans = (loansData?.loans || []).filter((l) =>
