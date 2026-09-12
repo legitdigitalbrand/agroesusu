@@ -40,6 +40,7 @@ import {
   CardSkeleton,
 } from "@/components/yield";
 import { WelcomeBanner } from "@/components/app/welcome-banner";
+import { TransactionReceiptDialog, type ReceiptTransaction } from "@/components/transactions/TransactionReceiptDialog";
 import { formatRelativeTime, initials, formatDate } from "@/lib/format";
 
 // ─────────────────────────────────────────────────────────────
@@ -53,6 +54,11 @@ interface WalletTransaction {
   status: string;
   narration: string | null;
   reference: string;
+  external_reference?: string | null;
+  counterparty_account_number?: string | null;
+  counterparty_account_name?: string | null;
+  counterparty_bank_name?: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -220,6 +226,9 @@ export default function DashboardPage() {
   // ── Derived values (same logic, no changes) ──
   const wallet = me.wallet;
   const transactions = txData?.transactions || [];
+
+  // Receipt dialog — tapping any transaction row opens a downloadable receipt
+  const [receiptTx, setReceiptTx] = useState<WalletTransaction | null>(null);
   const notifications = notifData?.notifications || [];
   const dva = fundingDetails?.provisioned ? fundingDetails.account : null;
   const activeLoans = (loansData?.loans || []).filter((l) =>
@@ -506,7 +515,12 @@ export default function DashboardPage() {
                     </thead>
                     <tbody className="divide-y divide-line/60">
                       {transactions.slice(0, 8).map((tx) => (
-                        <tr key={tx.id} className="hover:bg-parchment/40 transition-colors">
+                        <tr
+                          key={tx.id}
+                          onClick={() => setReceiptTx(tx)}
+                          className="cursor-pointer hover:bg-parchment/40 transition-colors"
+                          title="View receipt"
+                        >
                           {/* Date */}
                           <td className="py-3.5 pr-4 text-xs text-ink-soft whitespace-nowrap">
                             {formatDate(tx.created_at, { month: "short", day: "numeric" })}
@@ -693,6 +707,15 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Receipt dialog — downloadable receipt for the tapped transaction */}
+      <TransactionReceiptDialog
+        transaction={receiptTx as ReceiptTransaction | null}
+        open={receiptTx !== null}
+        onOpenChange={(o) => {
+          if (!o) setReceiptTx(null);
+        }}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { TransactionReceiptDialog, type ReceiptTransaction } from "@/components/transactions/TransactionReceiptDialog";
 import { useMe } from "@/hooks/use-me";
 import {
   LoadingState,
@@ -48,6 +49,10 @@ interface WalletTransaction {
   narration: string | null;
   counterparty_account_name?: string | null;
   reference: string;
+  external_reference?: string | null;
+  counterparty_account_number?: string | null;
+  counterparty_bank_name?: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -87,6 +92,9 @@ export default function StatementsPage() {
   // Transaction table pagination (2026-09-11): client-side, since the full
   // filtered/sorted set drives the monthly summaries too.
   const [page, setPage] = useState(1);
+
+  // Receipt dialog — tapping any transaction row opens a downloadable receipt
+  const [receiptTx, setReceiptTx] = useState<WalletTransaction | null>(null);
   const PAGE_SIZE = 20;
 
   const transactions = useMemo(() => txData?.transactions || [], [txData]);
@@ -199,7 +207,12 @@ export default function StatementsPage() {
   // current page.
   const renderTxRows = (list: WalletTransaction[]) =>
     list.map((tx) => (
-      <TableRow key={tx.id} className="hover:bg-parchment/40">
+      <TableRow
+        key={tx.id}
+        onClick={() => setReceiptTx(tx)}
+        className="cursor-pointer hover:bg-parchment/40 print:cursor-default"
+        title="View receipt"
+      >
         <TableCell className="whitespace-nowrap font-mono text-xs text-ink">
           {format(new Date(tx.created_at), "MMM d, yyyy")}
           <span className="block text-[11px] text-ink-soft font-mono">
@@ -559,6 +572,15 @@ export default function StatementsPage() {
           </div>
         </div>
       )}
+
+      {/* Receipt dialog — downloadable receipt for the tapped transaction */}
+      <TransactionReceiptDialog
+        transaction={receiptTx as ReceiptTransaction | null}
+        open={receiptTx !== null}
+        onOpenChange={(o) => {
+          if (!o) setReceiptTx(null);
+        }}
+      />
     </div>
   );
 }
