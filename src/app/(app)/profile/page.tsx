@@ -11,7 +11,6 @@ import {
   CardContent,
   Button,
   StatusBadge,
-  ProgressRing,
   ErrorState,
   LoadingState,
   ScreenHeader,
@@ -26,7 +25,6 @@ import {
   ChevronRight,
   ShieldCheck,
   Lock,
-  CheckCircle2,
   Users,
   Edit3,
   Save,
@@ -51,13 +49,6 @@ const kycLevelLabels: Record<number, string> = {
   2: "Standard (BVN + ID)",
   3: "Enhanced Verification",
 };
-
-function maskNumber(val?: string | null): string {
-  if (!val || val.trim() === "") return "Not provided";
-  const cleaned = val.trim();
-  if (cleaned.length <= 4) return cleaned;
-  return `****${cleaned.slice(-4)}`;
-}
 
 export default function ProfilePage() {
   const { data: me, isLoading, error, refetch } = useMe();
@@ -140,7 +131,6 @@ export default function ProfilePage() {
 
   const profile = me.profile;
   const kycLevel = profile.kyc_level ?? 0;
-  const kycProgress = Math.min(100, Math.round((kycLevel / 3) * 100));
 
   const handleLogout = async () => {
     try { await fetch("/api/auth/sign-out", { method: "POST" }); } catch (err) { console.warn("[logout] Sign-out failed:", err); }
@@ -428,7 +418,8 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* 5. Verification Section */}
+      {/* 5. Compliance & Verification — now on its own dedicated page so
+          BVN/KYC is one click away instead of a scroll hunt. */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-line/60">
           <div className="flex items-center gap-2.5">
@@ -436,98 +427,28 @@ export default function ProfilePage() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle>KYC Verification</CardTitle>
-              <CardDescription>Identity verification level and compliance</CardDescription>
+              <CardTitle>Compliance & Verification</CardTitle>
+              <CardDescription>
+                KYC level: {kycLevelLabels[kycLevel]} — BVN/NIN verification lives here
+              </CardDescription>
             </div>
           </div>
           <StatusBadge status={profile.kyc_status || "unverified"} />
         </CardHeader>
-        <CardContent className="pt-5 space-y-5">
-          <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl bg-parchment/40 border border-line/60">
-            <ProgressRing
-              progress={kycProgress}
-              size={100}
-              strokeWidth={8}
-              label={`${kycProgress}%`}
-              sublabel={`Level ${kycLevel}`}
-              variant="indigo"
-            />
-            <div className="space-y-1.5 text-center sm:text-left flex-1">
-              <div className="inline-flex items-center gap-2">
-                <span className="font-display font-semibold text-ink text-base">
-                  {kycLevelLabels[kycLevel] || `Level ${kycLevel}`}
-                </span>
-              </div>
-              <p className="text-xs text-ink-soft leading-relaxed">
-                {kycLevel >= 3
-                  ? "Your account is fully verified. You have unlocked all transaction limits and premium features."
-                  : "Complete your identity verification to increase transfer limits and access loans and investments."}
-              </p>
-            </div>
-          </div>
-
-          {/* Identity Verification (BVN / NIN) — dedicated section, separate from
-              personal information. One action: run /verify (Safe Haven OTP flow). */}
-          <div className="p-4 rounded-xl border border-line/60 bg-paper">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-indigo" />
-                  <span className="text-sm font-semibold text-ink">Identity Verification (BVN / NIN)</span>
-                </div>
-                <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-soft">
-                  <span>BVN: <span className="font-mono">{profile.bvn ? maskNumber(profile.bvn) : "—"}</span></span>
-                  <span>NIN: <span className="font-mono">{profile.nin ? maskNumber(profile.nin) : "—"}</span></span>
-                </div>
-                <p className="text-xs text-ink-soft leading-relaxed">
-                  {kycLevel >= 1
-                    ? "Your identity is verified with our banking partner. You can re-run verification at any time to use a different BVN or NIN."
-                    : "Verify your BVN or NIN to unlock deposits and your funding account. A one-time password (OTP) will be sent to the phone number registered with it."}
-                </p>
-              </div>
-              <Button
-                variant={kycLevel >= 1 ? "secondary" : "primary"}
-                size="sm"
-                leftIcon={<ShieldCheck className="h-4 w-4" />}
-                onClick={() => router.push("/verify")}
-              >
-                {kycLevel >= 1 ? "Update BVN / NIN" : "Verify BVN / NIN"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Steps breakdown */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <KycStepItem
-              step={1}
-              title="Basic Profile"
-              description="Phone & Personal details"
-              isDone={kycLevel >= 1}
-            />
-            <KycStepItem
-              step={2}
-              title="Identity & BVN"
-              description="BVN & Government ID"
-              isDone={kycLevel >= 2}
-            />
-            <KycStepItem
-              step={3}
-              title="Enhanced Verification"
-              description="Proof of Address & Limits"
-              isDone={kycLevel >= 3}
-            />
-          </div>
-
-          {kycLevel < 3 && (
-            <Button
-              variant="loam"
-              fullWidth
-              leftIcon={<ShieldCheck className="h-4 w-4" />}
-              onClick={() => router.push("/onboarding")}
-            >
-              Complete Verification
-            </Button>
-          )}
+        <CardContent className="pt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <p className="text-xs text-ink-soft leading-relaxed flex-1">
+            {kycLevel >= 1
+              ? "Your identity is verified. Update your BVN or NIN anytime from Compliance."
+              : "Verify your BVN or NIN to unlock deposits, your funding account, loans and higher limits."}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            rightIcon={<ChevronRight className="h-4 w-4" />}
+            onClick={() => router.push("/compliance")}
+          >
+            Go to Compliance
+          </Button>
         </CardContent>
       </Card>
 
@@ -660,41 +581,6 @@ function EditableSelectField({
   );
 }
 
-function KycStepItem({
-  step,
-  title,
-  description,
-  isDone,
-}: {
-  step: number;
-  title: string;
-  description: string;
-  isDone: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "p-3 rounded-xl border flex items-start gap-3 transition-colors",
-        isDone
-          ? "bg-loam-light/40 border-loam/30 text-ink"
-          : "bg-parchment/20 border-line/60 text-ink-soft"
-      )}
-    >
-      <div
-        className={cn(
-          "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5",
-          isDone ? "bg-loam text-white" : "bg-track/60 text-ink-soft"
-        )}
-      >
-        {isDone ? <CheckCircle2 className="h-4 w-4" /> : step}
-      </div>
-      <div>
-        <h5 className="text-xs font-semibold text-ink">{title}</h5>
-        <p className="text-[11px] text-ink-soft mt-0.5 leading-tight">{description}</p>
-      </div>
-    </div>
-  );
-}
 
 function SecurityShortcutItem({
   icon: Icon,

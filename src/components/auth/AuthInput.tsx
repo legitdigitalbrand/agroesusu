@@ -7,12 +7,15 @@ interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   hintHref?: string;
   onHintClick?: () => void;
+  /** Validation error — shows a clay/red border + message under the field. */
+  error?: string | null;
 }
 
 export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
-  ({ label, hint, hintHref, onHintClick, className = "", id: propId, ...props }, ref) => {
+  ({ label, hint, hintHref, onHintClick, error, className = "", id: propId, ...props }, ref) => {
     const generatedId = useId();
     const inputId = propId || generatedId;
+    const errorId = `${inputId}-error`;
 
     return (
       <div className="mb-5">
@@ -33,9 +36,16 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
         <input
           ref={ref}
           id={inputId}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className="auth-input focus:ring-2 focus:ring-loam focus:border-loam focus:outline-none transition"
           {...props}
         />
+        {error && (
+          <p id={errorId} role="alert" className="mt-1.5 text-[12px] font-medium text-clay">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

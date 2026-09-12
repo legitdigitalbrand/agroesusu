@@ -8,13 +8,18 @@ interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement>
   hint?: string;
   hintHref?: string;
   onHintClick?: () => void;
+  /** Validation error — shows a clay/red border + message under the field. */
+  error?: string | null;
+  /** Optional success note rendered in loam (e.g. "Passwords match"). */
+  success?: string | null;
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ label, hint, hintHref, onHintClick, className = "", id: propId, ...props }, ref) => {
+  ({ label, hint, hintHref, onHintClick, error, success, className = "", id: propId, ...props }, ref) => {
     const [show, setShow] = useState(false);
     const generatedId = useId();
     const inputId = propId || generatedId;
+    const noteId = `${inputId}-note`;
 
     return (
       <div className="mb-5">
@@ -37,6 +42,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             ref={ref}
             id={inputId}
             type={show ? "text" : "password"}
+            aria-invalid={!!error}
+            aria-describedby={error || success ? noteId : undefined}
             className="auth-input pr-11 focus:ring-2 focus:ring-loam focus:border-loam focus:outline-none transition"
             data-lpignore="1"
             data-1p-ignore
@@ -52,6 +59,11 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
+        {(error || success) && (
+          <p id={noteId} role={error ? "alert" : undefined} className={`mt-1.5 text-[12px] font-medium ${error ? "text-clay" : "text-loam-dim"}`}>
+            {error || success}
+          </p>
+        )}
       </div>
     );
   }

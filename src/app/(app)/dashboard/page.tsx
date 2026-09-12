@@ -300,6 +300,30 @@ export default function DashboardPage() {
       {/* Banners (unchanged — just spaced better) */}
       <div className="space-y-4">
         <WelcomeBanner />
+        {pendingVerifications && (
+          <Link
+            href="/verify"
+            className="block rounded-2xl border border-ochre/50 bg-ochre-light/40 p-5 group transition hover:shadow-md"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="w-11 h-11 rounded-xl bg-ochre/25 text-indigo-deep flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" strokeWidth={1.8} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-ink">
+                  Your KYC is incomplete — finish verification
+                </p>
+                <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">
+                  Verify your BVN with Safe Haven to generate your funding account number,
+                  unlock deposits, loans and higher limits.
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-indigo whitespace-nowrap group-hover:translate-x-0.5 transition-transform">
+                Complete now →
+              </span>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════

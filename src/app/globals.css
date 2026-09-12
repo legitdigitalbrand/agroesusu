@@ -287,3 +287,18 @@ body {
 /* Ochre/gold = positive states (money in, interest earned) */
 /* Clay/rust = warnings only */
 /* Neutral = everything else */
+
+/* Auth input error state — clay/red replaces the loam/green ring when a
+   field fails validation (aria-invalid is set by AuthInput/PasswordInput). */
+.auth-input[aria-invalid="true"] {
+  border-color: #B23A2E;
+}
+.auth-input[aria-invalid="true"]:hover {
+  border-color: #B23A2E;
+  background: var(--paper);
+}
+.auth-input[aria-invalid="true"]:focus {
+  border-color: #B23A2E;
+  background: var(--paper);
+  box-shadow: 0 0 0 4px rgba(178, 58, 46, 0.10), 0 2px 8px rgba(178, 58, 46, 0.06);
+}

@@ -107,10 +107,23 @@ export default function LandingPage() {
           <span className="text-[14px] text-ink-soft whitespace-nowrap">Features</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* Image card */}
-          <div className="bg-indigo rounded-2xl p-5 flex items-end min-h-[180px]">
-            <Wallet className="w-11 h-11 text-ochre" strokeWidth={1.6} />
-          </div>
+          {/* CTA card — previously an empty icon block; now a real
+              "open an account" card with a deep-green hover state. */}
+          <Link
+            href="/signup"
+            className="bg-indigo hover:bg-indigo-deep transition-colors rounded-2xl p-[18px] min-h-[180px] flex flex-col group"
+          >
+            <div className="w-[34px] h-[34px] rounded-[9px] bg-ochre/20 flex items-center justify-center mb-3">
+              <Wallet className="w-4 h-4 text-ochre" strokeWidth={1.8} />
+            </div>
+            <h4 className="text-[14px] font-medium text-white mb-2">Open a free account</h4>
+            <p className="text-[12px] text-white/70 leading-relaxed">
+              Create your account in under 2 minutes — no paperwork, no branches.
+            </p>
+            <span className="mt-auto pt-3 text-[12px] font-semibold text-ochre inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
+              Get started <span aria-hidden>→</span>
+            </span>
+          </Link>
           {/* Feature cards */}
           <FeatureCard
             icon={Clock}

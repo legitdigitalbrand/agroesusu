@@ -35,6 +35,7 @@ const sidebarNavItems = [
   { name: "Savings", href: "/savings", icon: PiggyBank },
   { name: "Loans", href: "/loans", icon: Landmark },
   { name: "Statements", href: "/statements", icon: FileText },
+  { name: "Compliance", href: "/compliance", icon: Shield },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BRAND } from "@/config/brand";
 
 export const metadata = {
@@ -7,10 +8,27 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-paper">
-      <div className="max-w-3xl mx-auto px-6 py-16">
-        <h1 className="font-display text-3xl text-ink mb-2">Privacy Policy</h1>
-        <p className="text-sm text-ink-soft mb-8">Last updated: July 2026</p>
+    <div className="min-h-screen bg-paper flex flex-col">
+      <header className="bg-indigo-deep text-white">
+        <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="h-8 w-8 rounded-lg bg-ochre flex items-center justify-center font-display font-extrabold text-indigo-deep">A</span>
+            <span className="font-display font-bold tracking-tight text-[16px]">{BRAND.name}</span>
+          </Link>
+          <Link href="/" className="text-[13px] text-white/70 hover:text-white transition">
+            ← Back to home
+          </Link>
+        </div>
+        <div className="h-1 bg-ochre" />
+      </header>
+
+      <div className="max-w-3xl w-full mx-auto px-6 py-12 flex-1">
+        <div className="rounded-2xl border border-line bg-parchment/50 p-6 sm:p-9 mb-8">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-ink mb-2">Privacy Policy</h1>
+          <p className="text-sm text-ink-soft mb-0">
+            Last updated: July 2026 · {BRAND.legalName}
+          </p>
+        </div>
 
         <div className="prose prose-sm max-w-none space-y-6 text-ink">
           <section>
@@ -39,6 +57,17 @@ export default function PrivacyPage() {
           </section>
         </div>
       </div>
+
+      <footer className="border-t border-line bg-parchment/50">
+        <div className="max-w-3xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-ink-soft">
+          <span>{BRAND.copyright}</span>
+          <span className="flex items-center gap-4">
+            <Link href="/terms" className="hover:text-ink transition">Terms</Link>
+            <Link href="/privacy" className="hover:text-ink transition">Privacy</Link>
+            <Link href="/help" className="hover:text-ink transition">Help</Link>
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -28,20 +28,29 @@ function PinSetupContent() {
   const [error, setError] = useState<string | null>(null);
 
   // If the user already has a PIN, they belong on the verify page.
+  // 401s right after signup are almost always the session-cookie race
+  // (navigation lands before the sb auth cookie is visible to the API) —
+  // retry a few times before bouncing to /login, otherwise first-time
+  // users see the PIN page flash and disappear.
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const check = async (attempt: number) => {
       try {
-        const res = await fetch("/api/auth/login-pin");
+        const res = await fetch("/api/auth/login-pin", { cache: "no-store" });
         if (res.status === 401) {
-          router.replace("/login");
+          if (attempt < 4) {
+            setTimeout(() => { if (!cancelled) check(attempt + 1); }, 700);
+            return;
+          }
+          if (!cancelled) router.replace("/login");
           return;
         }
         const data = await res.json();
-        if (data.has_pin) {
-          router.replace("/login/pin");
-        }
+        if (!cancelled && data.has_pin) router.replace("/login/pin");
       } catch { /* transient — ignore */ }
-    })();
+    };
+    check(0);
+    return () => { cancelled = true; };
   }, [router]);
 
   const handleCreate = useCallback(() => {
