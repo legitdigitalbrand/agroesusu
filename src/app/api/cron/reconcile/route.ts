@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { reconcileAllWallets } from '@/modules/wallet';
+import { reconcileAllWallets, backfillProviderFees } from '@/modules/wallet';
 
 // ============================================================================
 // Cron Endpoint: Reconciliation
@@ -20,6 +20,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // ── PROVIDER FEE BACKFILL (fee drift fix, 2026-09-12) ─────────
+    // Runs BEFORE reconciliation so fees owed to Safe Haven are booked
+    // first and wallets reflect reality. Idempotent — replays are no-ops.
+    try {
+      const feeReport = await backfillProviderFees();
+      console.log(
+        `[Cron:reconcile] Fee backfill: scanned=${feeReport.scanned_events} fee_events=${feeReport.fee_events} ` +
+        `posted=${feeReport.fees_posted} (₦${feeReport.total_amount_posted}) skipped=${feeReport.fees_skipped} ` +
+        `failed=${feeReport.fees_failed} unresolvable=${feeReport.unresolvable_events.length}`
+      );
+    } catch (feeError) {
+      // Reconciliation still runs — fee backfill retries next night
+      console.error('[Cron:reconcile] Fee backfill failed (non-fatal):', feeError);
+    }
+
     const results = await reconcileAllWallets();
     
     const matched = results.filter(r => r.status === 'matched').length;
@@ -65,10 +80,27 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    let feeSummary: Record<string, unknown> | null = null;
+    try {
+      const feeReport = await backfillProviderFees();
+      feeSummary = {
+        fee_events: feeReport.fee_events,
+        fees_posted: feeReport.fees_posted,
+        total_amount_posted: feeReport.total_amount_posted,
+        fees_skipped: feeReport.fees_skipped,
+        fees_failed: feeReport.fees_failed,
+        wallets_linked: feeReport.wallets_linked,
+        unresolvable: feeReport.unresolvable_events,
+      };
+    } catch (feeError) {
+      feeSummary = { error: feeError instanceof Error ? feeError.message : 'Unknown' };
+    }
+
     const results = await reconcileAllWallets();
     
     return NextResponse.json({
       status: 'complete',
+      fee_backfill: feeSummary,
       total_wallets: results.length,
       matched: results.filter(r => r.status === 'matched').length,
       discrepancies: results.filter(r => r.status === 'discrepancy').length,

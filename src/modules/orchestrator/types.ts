@@ -25,6 +25,7 @@ export type FinancialTransactionType =
   | 'investment_returns'
   | 'investment_reinvest'
   | 'fee_charge'
+  | 'provider_fee'
   | 'fee_reversal'
   | 'reversal'
   | 'adjustment';

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { reconcileWithdrawal } from '@/modules/withdrawal';
 import { reconcileTransfer } from '@/modules/transfers';
 import { processIncomingCredit } from '@/modules/wallet/incoming-credit';
+import { linkWalletToProviderAccount, mirrorProviderFeeForEvent } from '@/modules/wallet/provider-fees';
 import { verifyWebhookToken } from '@/lib/webhook-security';
 import { getSafeHavenAuthService } from '@/modules/integrations/safe-haven/auth';
 
@@ -408,6 +409,28 @@ export async function POST(request: NextRequest) {
           const result = await processIncomingCredit(eventRecord.id, creditDetails);
           console.log(`[Webhook] Credit processing: ${result.status} - ${result.message} (${Date.now() - startTime}ms)`);
 
+          // ── PROVIDER FEE MIRRORING (fee drift fix, 2026-09-12) ────
+          // Safe Haven charges the DVA fees+VAT on incoming transfers too.
+          // Mirror the charge to the wallet so the ledger never overstates
+          // what the DVA can pay out. Also persist the provider account id
+          // on the wallet — required for debit-event fee mirroring and for
+          // external balance reconciliation. Never fails the webhook.
+          if (result.status === 'matched' || result.status === 'duplicate') {
+            try {
+              if (result.wallet_id) {
+                await linkWalletToProviderAccount(result.wallet_id, payload);
+              }
+              const feeResult = await mirrorProviderFeeForEvent(payload, result.wallet_id);
+              if (feeResult.status === 'posted') {
+                console.log(`[Webhook] Provider fee mirrored: ₦${feeResult.amount} on wallet ${feeResult.wallet_id}`);
+              } else if (feeResult.status === 'failed') {
+                console.warn(`[Webhook] Provider fee mirroring failed: ${feeResult.error}`);
+              }
+            } catch (feeError) {
+              console.error('[Webhook] Provider fee mirroring error (non-fatal):', feeError);
+            }
+          }
+
           if (result.status === 'failed') {
             await supabase
               .from('inbound_events')
@@ -438,12 +461,26 @@ export async function POST(request: NextRequest) {
           .eq('id', eventRecord.id);
       }
     } else if (eventType === 'account_debit') {
-      // ── OUTBOUND DEBIT (informational) ─────────────────────
+      // ── OUTBOUND DEBIT (informational) + FEE MIRRORING ──────
       // Debit events are informational — outbound transfers are already
       // reconciled via transfer_completed/transfer_failed events.
-      // We log the debit for audit trail completeness and mark as processed.
+      // But the fee Safe Haven charged against the DVA (fees+VAT in the
+      // payload) is REAL money leaving the customer's account. If we do
+      // not book it, the wallet ledger overstates the DVA and transfers
+      // eventually bounce with "No sufficient funds" (2026-09-12 fix).
       const debitData = (payload.data || payload) as Record<string, unknown>;
-      console.log(`[Webhook] Outbound debit: ₦${debitData.amount || 0} from ${debitData.accountNumber || 'unknown'}`);
+      console.log(`[Webhook] Outbound debit: ₦${debitData.amount || 0} from ${debitData.accountNumber || debitData.account || 'unknown'}`);
+      try {
+        const feeResult = await mirrorProviderFeeForEvent(payload);
+        if (feeResult.status === 'posted') {
+          console.log(`[Webhook] Provider fee mirrored: ₦${feeResult.amount} on wallet ${feeResult.wallet_id}`);
+        } else if (feeResult.status === 'failed') {
+          // The nightly /api/cron/reconcile backfill retries these
+          console.warn(`[Webhook] Provider fee mirroring pending: ${feeResult.error}`);
+        }
+      } catch (feeError) {
+        console.error('[Webhook] Provider fee mirroring error (non-fatal):', feeError);
+      }
       await supabase
         .from('inbound_events')
         .update({ processing_status: 'processed', processed_at: new Date().toISOString() })

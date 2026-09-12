@@ -52,6 +52,7 @@ const WALLET_TX_TYPE_MAP: Record<string, string> = {
   loan_penalty: 'penalty',
   savings_interest: 'interest',
   fee_charge: 'fee',
+  provider_fee: 'fee',
   reversal: 'reversal',
 };
 

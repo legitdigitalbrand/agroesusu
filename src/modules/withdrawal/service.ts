@@ -58,6 +58,51 @@ export async function performNameEnquiry(req: NameEnquiryRequest): Promise<NameE
   return result;
 }
 
+
+// ─── PROVIDER-SIDE PRE-FLIGHT (fee drift guard, 2026-09-12) ────────────────
+// The wallet ledger and the real Safe Haven DVA can drift apart (provider
+// fees charged directly at the bank, holds at the bank). Without this
+// check the reservation posts, Safe Haven bounces the transfer with
+// "No sufficient funds", and the reservation reverses — noisy history and
+// a confusing error. With a live provider balance we fail fast, BEFORE any
+// hold or ledger posting, with a clear message. Balance API trouble never
+// blocks a withdrawal — the check is best-effort.
+const PROVIDER_FEE_BUFFER = 25; // observed Safe Haven fee: ₦10 + ₦0.75 VAT
+
+async function providerBalancePreflight(
+  walletId: string,
+  amount: number
+): Promise<{ blocked: boolean; message?: string }> {
+  try {
+    const supabase = getServiceClient();
+    const { data: wallet } = await supabase
+      .from('wallets')
+      .select('safe_haven_account_id')
+      .eq('id', walletId)
+      .maybeSingle();
+    const providerAccountId = wallet?.safe_haven_account_id as string | null;
+    if (!providerAccountId) {
+      // No provider account mapping — cannot check; do not block
+      return { blocked: false };
+    }
+    const provider = getBankingProvider();
+    const balance = await provider.getAccountBalance(providerAccountId);
+    const available = Number(balance.availableBalance ?? balance.balance ?? 0);
+    if (available < amount + PROVIDER_FEE_BUFFER) {
+      return {
+        blocked: true,
+        message:
+          `Your account balance at the payment provider (₦${available.toLocaleString('en-NG', { maximumFractionDigits: 2 })}) ` +
+          `cannot cover this transfer of ₦${amount.toLocaleString('en-NG')} plus fees. ` +
+          'Please fund your wallet by bank transfer and try again.',
+      };
+    }
+  } catch (err) {
+    console.warn('[Withdrawal] Provider balance pre-flight unavailable (non-blocking):', err);
+  }
+  return { blocked: false };
+}
+
 /**
  * Step 2: Initiate Withdrawal — the full flow.
  *
@@ -92,6 +137,19 @@ export async function initiateWithdrawal(
         amount: req.amount,
         fee: 0,
         message: validation.errors.join('; '),
+      };
+    }
+
+    // ── 1b. PROVIDER BALANCE PRE-FLIGHT ──────────────────────────
+    const preflight = await providerBalancePreflight(req.wallet_id, req.amount);
+    if (preflight.blocked) {
+      return {
+        id: '',
+        status: 'failed',
+        payment_reference: '',
+        amount: req.amount,
+        fee: 0,
+        message: preflight.message,
       };
     }
 

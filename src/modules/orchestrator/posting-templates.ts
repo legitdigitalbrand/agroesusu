@@ -204,6 +204,20 @@ const TEMPLATES: Record<string, PostingTemplate> = {
       ];
     },
   },
+  // Provider fee mirroring — Safe Haven charges fees + VAT (+ stamp duty)
+  // against the customer's real DVA on transfers in and out. Those charges
+  // drain REAL provider money, so the internal books must mirror them or
+  // the wallet ledger permanently overstates what the DVA can actually pay
+  // out (root cause of the 2026-09-11 "No sufficient funds" transfer
+  // bounces: wallet showed ₦100, the DVA held ~₦41 because ₦48+ of
+  // provider fees were never booked). The customer's DVA paid the fee, so
+  // the customer's claim on us drops: D Wallet, C Safe Haven (1000).
+  provider_fee: {
+    buildLines: ({ amount, walletAccountId, safeHavenAccountId, description }) => [
+      { account_id: walletAccountId, entry_type: 'debit', amount, description: `Provider fee: ${description}` },
+      { account_id: safeHavenAccountId, entry_type: 'credit', amount, description: `Provider fee charged at Safe Haven: ${description}` },
+    ],
+  },
   adjustment: {
     buildLines: ({ amount, walletAccountId, safeHavenAccountId, description }) => [
       { account_id: walletAccountId, entry_type: 'debit', amount, description: `Adjustment: ${description}` },
