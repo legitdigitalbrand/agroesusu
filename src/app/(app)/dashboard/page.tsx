@@ -53,7 +53,8 @@ interface WalletTransaction {
   direction: "credit" | "debit";
   status: string;
   narration: string | null;
-  reference: string;
+  transaction_reference?: string | null;
+  reference?: string | null;
   external_reference?: string | null;
   counterparty_account_number?: string | null;
   counterparty_account_name?: string | null;

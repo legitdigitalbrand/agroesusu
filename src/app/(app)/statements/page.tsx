@@ -48,7 +48,8 @@ interface WalletTransaction {
   status: string;
   narration: string | null;
   counterparty_account_name?: string | null;
-  reference: string;
+  transaction_reference?: string | null;
+  reference?: string | null;
   external_reference?: string | null;
   counterparty_account_number?: string | null;
   counterparty_bank_name?: string | null;
@@ -106,7 +107,7 @@ export default function StatementsPage() {
       if (search.trim()) {
         const q = search.toLowerCase().trim();
         const descMatch = tx.narration?.toLowerCase().includes(q) ?? false;
-        const refMatch = tx.reference?.toLowerCase().includes(q) ?? false;
+        const refMatch = (tx.reference ?? tx.transaction_reference ?? "").toLowerCase().includes(q);
         const typeMatch = tx.transaction_type?.toLowerCase().includes(q) ?? false;
         if (!descMatch && !refMatch && !typeMatch) return false;
       }
@@ -225,7 +226,7 @@ export default function StatementsPage() {
           </p>
         </TableCell>
         <TableCell className="font-mono text-xs text-ink-soft whitespace-nowrap">
-          {tx.reference}
+          {tx.reference ?? tx.transaction_reference ?? "—"}
         </TableCell>
         <TableCell className="capitalize text-xs font-semibold text-ink-soft whitespace-nowrap">
           {tx.transaction_type?.replace(/_/g, " ")}
@@ -283,7 +284,7 @@ export default function StatementsPage() {
       tx.direction,
       tx.amount.toString(),
       tx.status,
-      tx.reference,
+      tx.reference ?? tx.transaction_reference ?? "",
       tx.narration || "",
     ]);
 

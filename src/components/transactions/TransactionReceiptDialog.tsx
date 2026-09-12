@@ -29,7 +29,10 @@ export interface ReceiptTransaction {
   direction: "credit" | "debit";
   status: string;
   narration: string | null;
-  reference: string;
+  // wallet_transactions stores the reference as transaction_reference
+  // (savings history uses reference) — the dialog accepts either.
+  reference?: string | null;
+  transaction_reference?: string | null;
   external_reference?: string | null;
   counterparty_account_number?: string | null;
   counterparty_account_name?: string | null;
@@ -89,6 +92,12 @@ const STATUS_TEXT: Record<ReceiptStatus, string> = {
   Reversed: "text-clay",
 };
 
+// Resolve the reference from whichever field carries it (WTX-YYYY-NNNNNNNN)
+function resolveReference(tx: ReceiptTransaction): string {
+  const ref = tx.reference ?? tx.transaction_reference ?? tx.id;
+  return String(ref ?? "");
+}
+
 // ─── Type-aware detail rows ────────────────────────────────────────────────
 
 interface DetailRow {
@@ -129,7 +138,7 @@ function buildDetailRows(tx: ReceiptTransaction): DetailRow[] {
   }
 
   // Transaction reference (ours)
-  rows.push({ label: "Transaction Reference", value: tx.reference });
+  rows.push({ label: "Transaction Reference", value: resolveReference(tx) });
 
   // Provider reference / session id, when present
   const providerRef =
@@ -138,7 +147,7 @@ function buildDetailRows(tx: ReceiptTransaction): DetailRow[] {
     (meta.session_id as string) ||
     (meta.provider_reference as string) ||
     (meta.payment_reference as string);
-  if (providerRef && String(providerRef) !== tx.reference) {
+  if (providerRef && String(providerRef) !== resolveReference(tx)) {
     rows.push({ label: "Session ID", value: String(providerRef) });
   }
 
@@ -253,9 +262,7 @@ export function TransactionReceiptDialog({
 
   const filename = useMemo(
     () =>
-      transaction
-        ? `receipt-${transaction.reference.replace(/[^a-zA-Z0-9-]/g, "")}.png`
-        : "receipt.png",
+      `receipt-${resolveReference(transaction ?? ({ id: "tx" } as ReceiptTransaction)).replace(/[^a-zA-Z0-9-]/g, "")}.png`,
     [transaction]
   );
 
@@ -307,7 +314,7 @@ export function TransactionReceiptDialog({
           files: [file],
           title: "AgroPocket Transaction Receipt",
           text: transaction
-            ? `Receipt ${transaction.reference} — ${formatNaira(transaction.amount)} (${statusLabel(transaction.status)})`
+            ? `Receipt ${resolveReference(transaction)} — ${formatNaira(transaction.amount)} (${statusLabel(transaction.status)})`
             : "AgroPocket receipt",
         });
       } else {
