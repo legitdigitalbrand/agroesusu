@@ -268,24 +268,11 @@ export async function backfillProviderFees(): Promise<BackfillReport> {
     const payload = (event.raw_payload || {}) as Record<string, unknown>;
     const data = (payload.data || payload) as Record<string, unknown>;
     const eventId = (event.external_event_id as string) || (payload._id as string) || (data._id as string) || event.id;
-    const fee = extractProviderFee(payload);
-    if (!(fee > 0)) continue;
-    report.fee_events += 1;
 
-    // The fee is only real if the underlying event was actually processed.
-    if (['failed', 'rejected', 'processing_failed'].includes(event.processing_status as string)) {
-      report.unresolvable_events.push({
-        event_id: eventId,
-        event_type: event.event_type,
-        amount: Number(data.amount || 0),
-        fee,
-        reason: `Event processing_status=${event.processing_status} — underlying transaction unresolved, fee not charged`,
-      });
-      continue;
-    }
-
-    // Resolve the wallet: prefer the event's own linkage (credit events),
-    // fall back to the provider account id → wallets mapping.
+    // Resolve the wallet for EVERY event (not just fee-bearing ones):
+    // the wallet ↔ provider-account mapping must be learned from
+    // resolved credit events even when they carry no fee, or later debit
+    // events for the same DVA cannot be fee-mirrored or reconciled.
     let walletId = (event.wallet_id as string | null) || null;
     if (!walletId && event.customer_id) {
       const { data: wallet } = await supabase
@@ -309,8 +296,9 @@ export async function backfillProviderFees(): Promise<BackfillReport> {
       }
     }
 
-    // Credit events teach us the wallet ↔ provider-account mapping.
-    if (walletId) {
+    // Learn the wallet ↔ provider-account mapping whenever we know
+    // the wallet (idempotent: only when the column is still null).
+    if (walletId && !['failed', 'rejected'].includes(event.processing_status as string)) {
       try {
         const before = await supabase
           .from('wallets')
@@ -324,6 +312,22 @@ export async function backfillProviderFees(): Promise<BackfillReport> {
       } catch {
         // Non-fatal: linking is an optimization for reconciliation
       }
+    }
+
+    const fee = extractProviderFee(payload);
+    if (!(fee > 0)) continue;
+    report.fee_events += 1;
+
+    // The fee is only real if the underlying event was actually processed.
+    if (['failed', 'rejected', 'processing_failed'].includes(event.processing_status as string)) {
+      report.unresolvable_events.push({
+        event_id: eventId,
+        event_type: event.event_type,
+        amount: Number(data.amount || 0),
+        fee,
+        reason: `Event processing_status=${event.processing_status} — underlying transaction unresolved, fee not charged`,
+      });
+      continue;
     }
 
     if (!walletId) {
